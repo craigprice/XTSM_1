@@ -782,6 +782,8 @@ class CommandLibrary():
     def link_to_instrument(self,params):
         try:        
             self.owner.DataBombDispatcher.link_to_instrument(params)
+        except:
+            raise
         #send back errors - return fail - ie no instrument.
 
     def get_global_variable_from_socket(self,params):

@@ -504,4 +504,8 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             for dest in destinations:
                 try: 
                     self.server.send(dest,self.data)
+                except:
+                    raise
+
+
                 
