@@ -1,91 +1,57 @@
 # -*- coding: utf-8 -*-
 """
-Python twisted server, implements an HTTP socket-server and command queue to
-execute python commands, parse XTSM, and manage data in user-specific contexts.  
+Python twisted server, implements an HTTP socket-server and command queue to execute python commands, parse XTSM, and manage data in user-specific contexts.  
 
 Created on Thu May 16 18:24:40 2013
            
-This software is described at
-https://amo.phys.psu.edu/GemelkeLabWiki/index.php/Python_server
+This software is described at https://amo.phys.psu.edu/GemelkeLabWiki/index.php/Python_server
 
 TODO:
-    permit standard command library calls with POST payloads on websocket
-    connections (for faster exchanges on standard calls) ?
-    is this done and working ?
+    broadcast changes to shotnumber and active xtsm on websockets
+    permit standard command library calls with POST payloads on websocket connections (for faster exchanges on standard calls)
     redirect stdio to console
     execute command queue items on schedule
     queue in databomb upkeep (links and storage)
     
 @author: Nate, Jed
 """
-
-import uuid
-import time
-import sys
-import inspect
-import pickle
-import types
-import collections
-import io
-import os
-import platform #Access to underlying platform’s identifying data
-from datetime import datetime
-import pdb
-import __main__ as main
-
-import msgpack
-import msgpack_numpy
-from autobahn.twisted.websocket import WebSocketServerProtocol
-from autobahn.twisted.websocket import WebSocketServerFactory
-from autobahn.twisted.websocket import WebSocketClientFactory
-from autobahn.twisted.websocket import WebSocketClientProtocol
-from autobahn.twisted.websocket import connectWS
-from autobahn.twisted.websocket import listenWS
-from twisted.internet import wxreactor
-from twisted.internet import defer
+from autobahn.twisted.websocket import WebSocketServerProtocol, \
+                                       WebSocketServerFactory, listenWS
+from twisted.internet import wxreactor, defer
 from twisted.internet.protocol import DatagramProtocol
+
 wxreactor.install()
-from twisted.internet import protocol
-from twisted.internet import reactor
-from twisted.internet import task
+from twisted.internet import protocol, reactor, task
 from lxml import etree
 from BaseHTTPServer import BaseHTTPRequestHandler
 from StringIO import StringIO
-import wx
-import wx.html
+import wx, wx.html
+import uuid, time, sys, inspect, pickle, types, collections, io, os, simplejson
+import socket, __main__ as main
+import pdb
+import XTSMobjectify
+from datetime import datetime
+import DataBomb, InfiniteFileStream
 from enthought.traits.api import HasTraits
 from enthought.traits.api import Int as TraitedInt
 from enthought.traits.api import Str as TraitedStr
-
-import simplejson
-import socket
-import XTSMobjectify
-import DataBomb
-import InfiniteFileStream
+import msgpack, msgpack_numpy
 msgpack_numpy.patch()
-import XTSM_Server_Objects
-import XTSM_Transforms
-import live_content
-import xstatus_ready
+import XTSM_Server_Objects, XTSM_Transforms, live_content
 import file_locations
-import server_initializations
-
-
 
 def tracefunc(frame, event, arg, indent=[0]):
       global DEBUG_LINENO, TRACE_IGNORE
       try: 
           filename = frame.f_globals["__file__"]
-          if filename.count("C:\\wamp\\vortex\\WebSocketServer\\DataBomb")==0:
-              return tracefunc
+          if filename.count("C:\\wamp\\vortex\\WebSocketServer\\DataBomb")==0: return tracefunc
       except: return
       for ti in TRACE_IGNORE: 
           if frame.f_code.co_name==ti: return
       DEBUG_LINENO+=1
       if event == "call":
           indent[0] += 2
-          print "-" * indent[0] + "> call function", \
-          frame.f_code.co_name, str(DEBUG_LINENO)
+          print "-" * indent[0] + "> call function", frame.f_code.co_name, str(DEBUG_LINENO)
       elif event == "return":
           print "<" + "-" * indent[0], "exit function", frame.f_code.co_name
           indent[0] -= 2
@@ -219,7 +185,6 @@ class MulticastProtocol(DatagramProtocol):
     Protocol to handle UDP multi-receiver broadcasts - used for servers
     to announce their presence to one another through periodic pings
     """
-    resident=True
     def startProtocol(self):
         """
         Join the multicast address
@@ -236,11 +201,12 @@ class MulticastProtocol(DatagramProtocol):
         """
         called when a udp broadcast is received
         """
-        print "Datagram received from "+ repr(address) 
-        if simplejson.loads(datagram).has_key("server_ping"): 
-            #pdb.set_trace()
-            self.server.server_pong(datagram)
-    
+        print "Datagram received from "+ repr(address)
+        try: 
+            if simplejson.loads(datagram).has_key("server_ping"): 
+                self.server.server_pong(datagram)
+        except: pass
+
 class HTTPRequest(BaseHTTPRequestHandler):
     """
     A class to handle HTTP request interpretation
@@ -254,36 +220,6 @@ class HTTPRequest(BaseHTTPRequestHandler):
         self.error_code = code
         self.error_message = message
 
-        
-class WSClientProtocol(WebSocketClientProtocol):
-
-   def onConnect(self, response):
-      print("Server connected: {0}".format(response.peer))
-
-   def onOpen(self):
-      print("WebSocket connection opened as client.")
-
-      def hello():
-         print "Saying hello as client"
-         self.sendMessage(simplejson.dumps({"IDLSocket_ResponseFunction":
-                                            "set_global_variable_from_socket",
-                                            "terminator":"die"}))
-         #self.sendMessage("df")Test Case
-         #self.sendMessage(simplejson.dumps("IDLSocket_Resp"))TestCase
-         self.sendMessage(b"\x00\x01\x03\x04", isBinary = True)
-         #self.factory.reactor.callLater(1, hello)
-         
-      hello()
-
-   def onMessage(self, payload, isBinary):
-      if isBinary:
-         print("Binary message received: {0} bytes".format(len(payload)))
-      else:
-         print("Text message received: {0}".format(payload.decode('utf8')))
-
-   def onClose(self, wasClean, code, reason):
-      print("WebSocket connection close_: {0}".format(reason))
-
 class WSServerProtocol(WebSocketServerProtocol):
     """
     This is the websocket protocol - it defines the server's response to
@@ -292,22 +228,19 @@ class WSServerProtocol(WebSocketServerProtocol):
     
     added by NDG on 3-25-14, most methods not yet finished
     """
-    resident=True
-    bidirectional=True
+
     def onConnect(self, request):
         print("Client connecting: {0}".format(request.peer))
 
     def onOpen(self):
-        print("WebSocket connection open as server.")
-        self.ctime = time.time()
+        print("WebSocket connection open.")
+        self.ctime=time.time()
         p=self.transport.getPeer()
         self.peer ='%s:%s' % (p.host,p.port)
-        self.ConnectionUID = uuid.uuid1().__str__()
-        try:
-            self.factory.openConnections.update({self.ConnectionUID:self})
-        except AttributeError: 
-            self.factory.openConnections = {self.ConnectionUID:self}
-        self.clientManager.connectLog(self)
+        self.ConnectionUID=uuid.uuid1().__str__()
+        try: self.factory.openConnections.update({self.ConnectionUID:self})
+        except AttributeError: self.factory.openConnections={self.ConnectionUID:self}
+        self.clientManager.connectLog(self.peer)
 
     def failHandshake(self,code=1001,reason='Going Away'):
         pass        
@@ -319,13 +252,12 @@ class WSServerProtocol(WebSocketServerProtocol):
         self.request.update({'timereceived':time.time()})
         self.request.update({'write':self.sendMessage})
         # record where this request is coming from
-        self.clientManager.elaborateLog(self,self.request)
+        self.clientManager.elaborateLog(self.peer,self.request)
 
         if isBinary:
             self.onBinaryMessage(payload)
         else:
             self.onTextMessage(payload)
-        pdb.set_trace()
         ## echo back message verbatim
         #self.sendMessage(payload, isBinary)
 
@@ -338,18 +270,7 @@ class WSServerProtocol(WebSocketServerProtocol):
     def onTextMessage(self,payload):
         # we will treat incoming websocket text using the same commandlibrary as HTTP        
         # but expect incoming messages to be JSON data key-value pairs
-        try:
-            data = simplejson.loads(payload)
-        except JSONDecodeError:
-            self.transport.write("The server is expecting JSON, not simple text")
-            print "The server is expecting JSON, not simple text"
-            self.transport.loseConnection()
-        # if someone on this network has broadcast a shotnumber change, update the shotnumber in
-        # the server's data contexts under _running_shotnumber
-        if hasattr(data, "shotnumber"):
-            pdb.set_trace() # need to test the below
-            #for dc in self.parent.dataContexts:
-                #dc['_running_shotnumber']=data['shotnumber']
+        data = simplejson.loads(payload)
         data.update({'request':self.request})
         data.update({'socket_type':"Websocket"})
         SC=SocketCommand(params=data, request=self.request, CommandLibrary=self.commandQueue.commandLibrary)
@@ -363,21 +284,21 @@ class WSServerProtocol(WebSocketServerProtocol):
     def onClose(self, wasClean, code, reason):
         print("WebSocket connection closed: {0}".format(reason))
 
-#class EchoProtocol(protocol.Protocol):
-#    """
-#    A simple example protocol to echo requests back on HTTP
-#    """
-#    def connectionMade(self):
-#        p=self.transport.getPeer()
-#        self.peer ='%s:%s' % (p.host,p.port)
-#        print  datetime.now(), ":Connected from", self.peer
-#    def dataReceived(self,data):
-#        print data
-#        self.transport.write('You Sent:\n')
-#        self.transport.write(data)
-#        self.transport.loseConnection()
-#    def connectionLost(self,reason):
-#        print datetime.now() , ":Disconnected from %s: %s" % (self.peer,reason.value)
+class EchoProtocol(protocol.Protocol):
+    """
+    A simple example protocol to echo requests back on HTTP
+    """
+    def connectionMade(self):
+        p=self.transport.getPeer()
+        self.peer ='%s:%s' % (p.host,p.port)
+        print  datetime.now(), ":Connected from", self.peer
+    def dataReceived(self,data):
+        print data
+        self.transport.write('You Sent:\n')
+        self.transport.write(data)
+        self.transport.loseConnection()
+    def connectionLost(self,reason):
+        print datetime.now() , ":Disconnected from %s: %s" % (self.peer,reason.value)
         
 class CommandProtocol(protocol.Protocol):
     """
@@ -385,29 +306,16 @@ class CommandProtocol(protocol.Protocol):
     listen on a socket, and insert command requests into a command queue - if 
     the request is valid, it will eventually be executed by the queue 
     """
-    resident=False
-    bidirectional=False
     def connectionMade(self):
-        self.ctime = time.time()
-        p = self.transport.getPeer()
+        self.ctime=time.time()
+        p=self.transport.getPeer()
         self.peer ='%s:%s' % (p.host,p.port)
-        self.ConnectionUID = uuid.uuid1().__str__()
-        try:
-            self.factory.openConnections.update({self.ConnectionUID:self})
-        except AttributeError:
-            self.factory.openConnections={self.ConnectionUID:self}
+        self.ConnectionUID=uuid.uuid1().__str__()
+        try: self.factory.openConnections.update({self.ConnectionUID:self})
+        except AttributeError: self.factory.openConnections={self.ConnectionUID:self}
         print datetime.now(), "Connected from", self.peer, "at"
-        self.factory.clientManager.connectLog(self)
-        self.alldata = ''
-    
-    def provide_console(self):
-        """
-        default face of server when contacted with a get request
-        """
-        #self.transport.write("this is a running XTSM server\n\r\n\r")
-        #pdb.set_trace()
-        self.transport.write("<XML>"+self.factory.parent.xstatus()+"</XML>")
-        self.transport.loseConnection()
+        self.factory.clientManager.connectLog(self.peer)
+        self.alldata=''
     
     def dataReceived(self,data):
         """
@@ -418,26 +326,23 @@ class CommandProtocol(protocol.Protocol):
         # NOTE: this can only handle header lengths smaller than the fragment size - 
         # the header MUST arrive in the first fragment
         # append the new data 
-        self.alldata += data
-        if u"?console" in data: self.provide_console()
+        self.alldata+=data
         #requests = 0   #For use with priorities
         if not hasattr(self,'mlength'):
             # attempt to extract the header info with the current message subset
             try:            
-                self.dataHTTP = HTTPRequest(self.alldata)
-                self.boundary = self.dataHTTP.headers['content-type'].split('boundary=')[-1]
-                fb = data.find('--' + self.boundary) # find the first used boundary string
-                if fb == -1:
-                    return # if there is none, the header must not be complete
+                self.dataHTTP=HTTPRequest(self.alldata)
+                self.boundary=self.dataHTTP.headers['content-type'].split('boundary=')[-1]
+                fb=data.find('--'+self.boundary) # find the first used boundary string
+                if fb==-1: return # if there is none, the header must not be complete
                 # if there is a boundary, header must be complete; get header data
-                self.mlength = fb + int(self.dataHTTP.headers.dict['content-length'])
-                headerItemsforCommand = ['host','origin','referer']
-                self.request = {k: self.dataHTTP.headers[k] for k in headerItemsforCommand if k in self.dataHTTP.headers}
+                self.mlength=fb+int(self.dataHTTP.headers.dict['content-length'])
+                headerItemsforCommand=['host','origin','referer']
+                self.request={k: self.dataHTTP.headers[k] for k in headerItemsforCommand if k in self.dataHTTP.headers}
                 self.request.update({'ctime':self.ctime,'protocol':self})
                 # record where this request is coming from
-                self.factory.clientManager.elaborateLog(self,self.request)
+                self.factory.clientManager.elaborateLog(self.peer,self.request)
             except: return  # if unsuccessful, wait for next packet and try again
-        
         # if we made it to here, the header has been received
         # if the entirety of message not yet received, append this fragment and continue
         if self.mlength > len(self.alldata):
@@ -446,8 +351,8 @@ class CommandProtocol(protocol.Protocol):
         # mark the 'all data received' time
         self.request.update({'timereceived':time.time()})
         # strip multipart data from incoming HTTP request
-        kv = [datas.split('name="')[-1].split('"\n\r\n\r') for datas in self.alldata.split('--'+self.boundary+'--')]
-        self.params = {k:v.rstrip() for k,v in kv[:-1]}
+        kv=[datas.split('name="')[-1].split('"\n\r\n\r') for datas in self.alldata.split('--'+self.boundary+'--')]
+        self.params={k:v.rstrip() for k,v in kv[:-1]}
         # insert request, if valid, into command queue (persistently resides in self.Factory)        
         SC=SocketCommand(self.params,self.request)
         try:
@@ -455,16 +360,13 @@ class CommandProtocol(protocol.Protocol):
         except AttributeError:
             self.factory.commandQueue=CommandQueue(SC)
         except:
-            self.transport.write(str('Failed to insert SocketCommand in Queue,',
-                                     'reason unknown'))
+            self.transport.write('Failed to insert SocketCommand in Queue, reason unknown')
             self.transport.loseConnection()
     # close the connection - should be closed by the command execution
     # self.transport.loseConnection()
     def connectionLost(self,reason):      
-        try:
-            del self.factory.openConnections[self.ConnectionUID]
-        except KeyError:
-            pass
+        try: del self.factory.openConnections[self.ConnectionUID]
+        except KeyError: pass
         print datetime.now(), "Disconnected from %s: %s" % (self.peer,reason.value)
 
 class DataContext(XTSM_Server_Objects.XTSM_Server_Object):
@@ -488,26 +390,11 @@ class DataContext(XTSM_Server_Objects.XTSM_Server_Object):
     def __getitem__(self,vname):
         return self.get(vname)
     def xstatus(self):
-        stat = '<DataContext><Name>' + self.name + '</Name>'
+        stat='<DataContext><Name>'+self.name+'</Name>'
         for var in self.dict:
-            try:
-                stat +='<Variable>'
-                stat += '<Name>'
-                stat += var
-                stat += '</Name>'
-                stat += '<Type>'
-                stat += '<![CDATA['
-                stat += str(type(self.dict[var]))
-                stat += ']]></Type>'
-                stat += '<Value>'
-                stat += '<![CDATA['
-                stat += str(self.dict[var])[0:25]
-                stat += ']]>'
-                stat += '</Value>'
-                stat += '</Variable>'
-            except:
-                stat += '<Unknown></Unknown>'
-        stat += '</DataContext>'
+            try: stat+='<Variable><Name>'+var+'</Name><Type><![CDATA['+str(type(self.dict[var]))+']]></Type><Value><![CDATA['+str(self.dict[var])[0:25]+']]></Value></Variable>'
+            except: stat+='<Unknown></Unknown>'
+        stat+='</DataContext>'
         return stat
     def __flush__(self):
         for item in self.dict:
@@ -515,159 +402,28 @@ class DataContext(XTSM_Server_Objects.XTSM_Server_Object):
             except AttributeError: pass
         XTSM_Server_Objects.XTSM_Server_Object.__flush__(self)
         
-class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
+class ClientManager():
     """
     The client manager retains a list of recent clients, their IP addresses,
     and can later be used for permissioning, etc...
     """
-    def __init__(self,owner=None):
+    def __init__(self):
         self.clients={}
-        self.server=owner
-        self.maintenance_task = self.server.task.LoopingCall(self.periodic_maintainence)
-        self.maintenance_task.start(120)
-        self.peer_servers={}
-        
-       
-    def identify_client(self,protocol):
-        """
-        attempts to identify a client by the connection protocol 
-        
-        resident protocols are identified by the ip:port string
-        non-resident (ephemoral) protocols are identified by ip address and
-        header info
-        """
-        if protocol.resident:
-            return protocol.peer
-        pdb.set_trace()
-        
-    def connectLog(self,protocol):
-        return # temporary disable
-        #pdb.set_trace()
-        pid = self.identify_client(protocol)
-        try:
-            self.clients[pid].connectLog()
-        except KeyError:
-            self.clients.update({pid:self.client(params={"protocol":protocol})})
-
-    def elaborateLog(self,protocol,request):
-        return # temporary disable
-        pid = self.identify_client(protocol)
-        try:
-            self.clients[pid].elaborateLog()
-        except KeyError:
-            self.clients.update({pid:self.client(params={"protocol":protocol})})
-        
-    def update_client_roles(self,request,role):
-        """
-        keeps list of clients by 'role' the role is ascribed by the caller
-        
-        if peer is a request object, the ip:port will be determined, and if 
-        request is an emphemeral TCP port, will ...
-        
-        """
-        pdb.set_trace()
-        if not self.client_roles.has_key(request['protocol'].peer):
-            self.client_roles.update({request['protocol'].peer:{role:time.time()}})
-        else:
-            self.client_roles[request['protocol'].peer].update({role:time.time()})
-    role_timeouts={}
-    def periodic_maintainence(self):
-        """
-        performs periodic maintenance on connection data with clients
-        """
-        return # temporary disable
-        self.__periodic_maintenance__()
-#        for peer in self.client_roles:
-#            for role in self.client_roles[peer]:
-#                try: 
-#                    if (time-time()-self.client_roles[peer][role])>self.role_timeouts[role]:
-#                        del self.client_roles[peer][role]
-#                except KeyError: pass
+    def connectLog(self,peer):
+        self.clients.update({peer:{'lastConnect':time.time()}})
+    def elaborateLog(self,peer,request):
+        self.clients[peer].update(request)
     def xstatus(self):
         stat='<Clients>'
         try:
             statd=''
             for client in self.clients:
-                statd += '<Client>'
-                statd += '<Name>'
-                statd += socket.gethostbyaddr(client.split(":")[0])[0]
-                statd += '</Name>'
-                statd += '<IP>'
-                statd += client
-                statd += '</IP>'
-                statd += '<Referer>'
-                statd += (self.clients[client])['referer']
-                statd += '</Referer>'
-                statd += '<LastConnect>'
-                statd += str(round(-(self.clients[client])['lastConnect']
-                                + time.time()))
-                statd += '</LastConnect>'
-                statd += '</Client>'
+                statd+='<Client><Name>'+socket.gethostbyaddr(client.split(":")[0])[0]+'</Name><IP>'+client+'</IP><Referer>'+(self.clients[client])['referer']+'</Referer><LastConnect>'+str(round(-(self.clients[client])['lastConnect']+time.time()))+'</LastConnect></Client>'
             stat+=statd
-        except:
-            stat+='<Updating></Updating>'
+        except: stat+='<Updating></Updating>'
         stat+='</Clients>'
         return stat
-    
-    class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
-        """
-        a generic class for clients
-        """
-        def __init__(self, params={}):
-            for key in params: setattr(self,key,params[key])
-            self.uuid=str(uuid.uuid4())
-            self.time_of_first_contact=time.time()
-        def __periodic_maintenance__(self):
-            """
-            flushes old connections and relations
-            """
-            pass
-        def log_communication(self,request):
-            """
-            logs a request
-            """
-            
-    class PeerServer(GlabClient):
-        """
-        class to hold data regarding other XTSM servers on network
-        when added open web socket. server connects to this peer server.
-        Others open with TCP
-        """
-#Loopiong Call, under server.chck for new image on cameradatabomb -> databomb dispatcher - 
-        #dispatcher periodically called bvia looping call and the dispatcher periodically sends it off. - 1s eg.
-        #add function in command library that gets all instrucments attached to that server. - children of GLabInstrument.
-        #second function in command library that adds you as a destination to the databomb dispatcher. - send it back over the client websocket.
-        #databomb dispatcher is also a member objct of the Server.
-        
 
-        
-        
-        
-        
-        def __init__(self,payload):
-            ClientManager.GlabClient.__init__(self)
-            self.ping_payload = payload
-            self.server_id = payload['server_id']
-            self.server_name = payload['server_name']
-            self.server_time = payload['server_time']
-            self.server_ip = payload['server_ip']
-            self.server_ping = payload['server_ping']
-    
-    def add_peerServer(self,payload):
-        """
-        adds a peer server client to the manager's clients
-        """
-        self.peer_servers.update({payload['server_id']:self.PeerServer(payload)})
-
-    def ping(self,payload):
-        print "In ping()"
-        print self.peer_servers
-        for key in self.peer_servers:
-            print self.peer_servers[key].ping_payload
-        self.peer_servers[payload['server_id']].ping_payload = payload
-        self.peer_servers[payload['server_id']].server_time = payload['server_time']
-        print "End of ping()"
-        
 class CommandQueue():
     """
     The CommandQueue manages server command executions; it is basically a stack
@@ -688,25 +444,16 @@ class CommandQueue():
         stat="<Commands>"
         if hasattr(self,'queue'):
             for command in self.queue:
-                stat += '<Command>'
+                stat+='<Command>'
                 try:
-                    statd = ''
-                    statd += "<Name>"
-                    statd += command.params['IDLSocket_ResponseFunction']
-                    statd += "</Name>"
+                    statd=''
+                    statd+="<Name>"+command.params['IDLSocket_ResponseFunction']+"</Name>"
                     for param in command.params:
-                        statd += "<Parameter>"
-                        statd += "<Name>" + param + "</Name>"
-                        statd += "<Value>"
-                        statd += "<![CDATA["
-                        statd += command.params[param][0:25]
-                        statd += "]]>"
-                        statd += "</Value>"
-                        statd += "</Parameter>"
-                    stat += statd
-                except: stat += "<Updating></Updating>"
-                stat += '</Command>'
-        stat += "</Commands>"
+                        statd+="<Parameter><Name>"+param+"</Name><Value><![CDATA["+command.params[param][0:25]+"]]></Value></Parameter>"
+                    stat+=statd
+                except: stat+="<Updating></Updating>"
+                stat+='</Command>'
+        stat+="</Commands>"
         return stat
 
 class CommandLibrary():
@@ -715,22 +462,20 @@ class CommandLibrary():
     to an HTTP request; the command is specified by name with the 
     "IDLSocket_ResponseFunction" parameter in an HTTP request
     Note: it is the responsibility of each routine to write responses
-    _AND CLOSE_ the initiating HTTP communication using
-    params>request>protocol>loseConnection()
+    _AND CLOSE_ the initiating HTTP communication using params>request>protocol>loseConnection()
     """
     def __init__(self, owner=None):
         if owner!=None: self.owner=owner
         
     def __determineContext__(self,params):
         try: 
-            dcname = params['data_context']
-            if not params['request']['protocol'].factory.parent.dataContexts.has_key(dcname):
-                raise KeyError
+            dcname=params['data_context']
+            if not params['request']['protocol'].factory.parent.dataContexts.has_key(dcname): raise KeyError
         except KeyError:
             # look for a default data context for this IP address, if none, create
-            dcname = "default:"+params['request']['protocol'].peer.split(":")[0]
+            dcname="default:"+params['request']['protocol'].peer.split(":")[0]
             if not params['request']['protocol'].factory.parent.dataContexts.has_key(dcname):
-                dc = DataContext(dcname)
+                dc=DataContext(dcname)
                 params['request']['protocol'].factory.parent.dataContexts.update({dcname:dc})
         return params['request']['protocol'].factory.parent.dataContexts[dcname]
     # below are methods available to external HTTP requests - such as those required
@@ -743,17 +488,14 @@ class CommandLibrary():
         sets a variable by name in the caller's data context
         """
         if params.has_key('IDLSPEEDTEST'):
-            srtime = time.time()
+            srtime=time.time()
             params['request']['protocol'].transport.write(params['IDLSPEEDTEST'])
-            ertime = time.time()
+            ertime=time.time()
             params['request']['protocol'].transport.write(str(srtime-params['request']['ctime'])+','+str(ertime-srtime)+','+str(params['request']['timereceived']-params['request']['ctime'])+',0,0,0')      
             params['request']['protocol'].transport.loseConnection()
             return
         try: 
-            varname=set(params.keys()).difference(set(['IDLSocket_ResponseFunction',
-                                                       'terminator',
-                                                       'request',
-                                                       'data_context'])).pop()
+            varname=set(params.keys()).difference(set(['IDLSocket_ResponseFunction','terminator','request','data_context'])).pop()
         except KeyError:
             params['request']['protocol'].transport.write('Error: Set_global requested, but no Variable Supplied')
             params['request']['protocol'].transport.loseConnection()
@@ -761,38 +503,11 @@ class CommandLibrary():
         if varname!='_active_xtsm':
             dc=self.__determineContext__(params)
             dc.update({varname:params[varname]})
-            params['request']['protocol'].transport.write(str(varname)+
-                                                              ' updated at ' +
-                                                              time.strftime("%H:%M:%S") +
-                                                              '.' )
+            params['request']['protocol'].transport.write(str(varname)+' updated at ' + time.strftime("%H:%M:%S") + '.' )
             params['request']['protocol'].transport.loseConnection()
             return
         else:
             self.post_active_xtsm(params)
-
-    def scan_instruments(self):
-        #Test
-        pass
-        '''
-        listmy = []
-        for dc in self.data_contexts:
-            for key in dc:
-                if isinstance(dc[key], of GLab_Instruments):
-                    list.append(dc[key])
-                    
-        return list
-        '''
-        
-        
-        
-        #End Test
-
-    def link_to_instrument(self,params):
-        try:        
-            self.owner.databomb_dispatcher.link_to_instrument(params)
-        except:
-            pass
-        #send back errors - return fail - ie no instrument.
 
     def get_global_variable_from_socket(self,params):
         """
@@ -879,20 +594,18 @@ class CommandLibrary():
         """
         Retrieves and returns xtsm by shotnumber
         """
-        dc = self.__determineContext__(params)
-        message = 'XTSM requested, but shot number does not exist'
+        dc=self.__determineContext__(params)
         try: 
             exp_sync=dc.get('_exp_sync')
         except:
             self._respond_and_close(params,"XTSM requested, but none exists")
             return
         try:
-            reqxtsm = simplejson.dumps({"xtsm_return":simplejson.dumps({"xtsm":exp_sync.compiled_xtsm[int(params['shotnumber'])].XTSM.write_xml(),
-                                                                        "shotnumber":int(params['shotnumber'])})})
+            reqxtsm=simplejson.dumps({"xtsm_return":simplejson.dumps({"xtsm":exp_sync.compiled_xtsm[int(params['shotnumber'])].XTSM.write_xml(),"shotnumber":int(params['shotnumber'])})})
         except KeyError: 
-            try: params['request']['write']('{"server_console":"'+message+'"}')
+            try: params['request']['write']('{"server_console":"XTSM requested, but shot number does not exist"}')
             except KeyError: 
-                params['request']['protocol'].transport.write(message)
+                params['request']['protocol'].transport.write('XTSM requested, but shot number does not exist')
                 params['request']['protocol'].transport.loseConnection()
 
         try: params['request']['write'](reqxtsm)
@@ -912,9 +625,6 @@ class CommandLibrary():
         the requester's data context.  If any are missing the _exp_sync element
         containing the active_xtsm string and shotnumber, they are skipped.
         """
-        # mark requestor as an XTSM compiler
-        self.owner.clientManager.update_client_roles(params['request'],
-                                                     'active_XTSM_compiler')
         
         dc=self.__determineContext__(params)
         parent_dc = ''
@@ -924,17 +634,15 @@ class CommandLibrary():
         else:
             for name, pdc in params['request']['protocol'].factory.parent.dataContexts.iteritems():
                 try:
-                    if ((pdc.get('pxi_data_context') == dc.get('__context__')) and
-                        pdc.dict.has_key('_exp_sync')):
+                    if (pdc.get('pxi_data_context') == dc.get('__context__')) and pdc.dict.has_key('_exp_sync'):
                         parent_dc = pdc
                 except KeyError:
                     pass
         # if none exists, exit and return
         if parent_dc == '':
-            self.owner.broadcast('{"server_console": "'+
-                                 params['request']['protocol'].peer.split(":")[0] +
-                                ' requested timing data, but nothing is ' +
-                                'assigned to run on this system."}')
+            self.owner.broadcast('{"server_console": "'
+                                +params['request']['protocol'].peer.split(":")[0]
+                                +' requested timing data, but nothing is assigned to run on this system."}')
             params['request']['protocol'].transport.loseConnection()
             return
         else:
@@ -948,42 +656,26 @@ class CommandLibrary():
             xtsm_object = dc.get('_active_xtsm_obj')
 
             # parse the active xtsm to produce timingstrings
-            self.owner.broadcast('{"server_console": "' +
-                                 str(datetime.now()) +
-                                 " Parsing started" +
-                                 " Shotnumber= " +
-                                 str(sn) +
-                                 '"}')
+            self.owner.broadcast('{"server_console": "' + str(datetime.now()) + " Parsing started" + " Shotnumber= " + str(sn) + '"}')
             XTSMobjectify.preparse(xtsm_object)
-            t0 = time.time()
+            t0=time.time()
             parserOutput = xtsm_object.parse(sn)
-            tp = time.time()
+            tp=time.time()
             XTSMobjectify.postparse(parserOutput)            
-            t1 = time.time()
+            t1=time.time()
             print "Parse Time: " , t1-t0, "s", "(postparse ", t1-tp, " s)"
-            self.owner.broadcast('{"server_console": "' +
-                                 str(datetime.now()) +
-                                 " Parsing finished" +
-                                 " Shotnumber= " +
-                                 str(sn) +
-                                 '"}')
-            self.owner.broadcast('{"parsed_active_xtsm": "' +
-                                 str(datetime.now()) +
-                                 '"}')
+            self.owner.broadcast('{"server_console": "' + str(datetime.now()) + " Parsing finished" + " Shotnumber= " + str(sn) + '"}')
+            self.owner.broadcast('{"parsed_active_xtsm": "' + str(datetime.now()) + '"}')
 
             # send back the timingstrings
             timingstringOutput = str(bytearray(parserOutput.package_timingstrings()))
             params['request']['protocol'].transport.write(timingstringOutput)
-            dc.get('_exp_sync').shotnumber = sn + 1
+            dc.get('_exp_sync').shotnumber=sn+1
             params['request']['protocol'].transport.loseConnection()
 
             # setup data listeners for returned data
-            if (not dc.dict.has_key('_bombstack')):
-                dc.update({'_bombstack':DataBomb.DataBombList()})
-            if (not hasattr(dc['_bombstack'],'dataListenerManagers')):
-                setattr(dc['_bombstack'],
-                        'dataListenerManagers',
-                        DataBomb.DataListenerManager())            
+            if (not dc.dict.has_key('_bombstack')): dc.update({'_bombstack':DataBomb.DataBombList()})
+            if (not hasattr(dc['_bombstack'],'dataListenerManagers')): setattr(dc['_bombstack'],'dataListenerManagers',DataBomb.DataListenerManager())            
 
             if (not dc.dict.has_key('_analysis_stream')): dc.update({'_analysis_stream':InfiniteFileStream.FileStream(params={'file_root_selector':'analysis_stream'})})
             xtsm_object.XTSM._analysis_stream = dc['_analysis_stream']
@@ -1041,38 +733,25 @@ class CommandLibrary():
         and for analyses to be initiated 
         """
         dc=self.__determineContext__(params)
-        if (not dc.dict.has_key('_bombstack')):
-            dc.update({'_bombstack':DataBomb.DataBombList()})
+        if (not dc.dict.has_key('_bombstack')): dc.update({'_bombstack':DataBomb.DataBombList()})
         # data listeners should be attached under the bombstack!!
         # if (not dc.dict.has_key('dataListenerManagers')): dc.update({'dataListenerManagers':DataBomb.DataListenerManager()})
-        if (not hasattr(dc['_bombstack'],'dataListenerManagers')):
-            setattr(dc['_bombstack'],
-                    'dataListenerManagers',
-                    DataBomb.DataListenerManager())
+        if (not hasattr(dc['_bombstack'],'dataListenerManagers')): setattr(dc['_bombstack'],'dataListenerManagers',DataBomb.DataListenerManager())
 
         dbombnum=dc['_bombstack'].add(DataBomb.DataBombList.DataBomb(params['databomb']))
-        params['request']['protocol'].transport.write('databomb ' +
-                                                      dbombnum +
-                                                      ' updated at ' +
-                                                      time.strftime("%H:%M:%S") +
-                                                      '.')
+        params['request']['protocol'].transport.write('databomb '+dbombnum+' updated at ' + time.strftime("%H:%M:%S") + '.' )
         params['request']['protocol'].transport.loseConnection()
         # next line adds a deployment command to the command queue
         self.owner.commandQueue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
-        
-        # mark requestor as a data generator
-        pdb.set_trace()
 
     def stop_listening(self,params):
         """
         Exit routine, stops twisted reactor (abruptly).
         """
         print "Closing Python Manager"
-        broadcastMessage = "Python Manager Shutting Down on Request."
-        self.owner.broadcast('{"server_console":'+broadcastMessage+'}')
+        self.owner.broadcast('{"server_console": "Python Manager Shutting Down on Request."}')
         msg = "Closing Python Manager - Goodbye."
-        try:
-            params['request']['write'](msg)
+        try: params['request']['write'](msg)
         except KeyError: 
              params['request']['protocol'].transport.write(msg)
              params['request']['protocol'].transport.loseConnection()
@@ -1082,40 +761,34 @@ class CommandLibrary():
         """
         generates or looks up and supplies a live content item
         """
-        dc = self.__determineContext__(params)
-        if (not dc.dict.has_key('_content_manager')):
-            dc.update({'_content_manager':live_content.Live_Content_Manager()})
-        content = dc['_content_manager'].get_content(params["content_id"],
-                                                     requester=params["request"]["protocol"])
+        dc=self.__determineContext__(params)
+        if (not dc.dict.has_key('_content_manager')): dc.update({'_content_manager':live_content.Live_Content_Manager()})
+        content=dc['_content_manager'].get_content(params["content_id"],requester=params["request"]["protocol"])
         self._deliver_content(params,params["content_id"],content)
 
     def live_content_event(self,params):
         """
         responds to a live content event by passing it to the content manager
         """
-        dc = self.__determineContext__(params)
-        if (not dc.dict.has_key('_content_manager')):
-            dc.update({'_content_manager':live_content.Live_Content_Manager()})
+        dc=self.__determineContext__(params)
+        if (not dc.dict.has_key('_content_manager')): dc.update({'_content_manager':live_content.Live_Content_Manager()})
         dc['_content_manager'].registerEvent(params)
         
     def _deliver_content(self,params,content_id,content):
         """
         sends live_content items to a consumer - is called by request_content
         """
-        try: 
-            write_method = params["request"]["write"]
-        except KeyError:
-            write_method = params["request"]["protocol"].sendMessage
-        content_json = simplejson.dumps({content_id:content})
-        msg = simplejson.dumps({"receive_live_content":content_json})
+        try: write_method=params["request"]["write"]
+        except KeyError: write_method=params["request"]["protocol"].sendMessage
+        content_json=simplejson.dumps({content_id:content})
+        msg=simplejson.dumps({"receive_live_content":content_json})
         write_method(msg)
 
     def _respond_and_close(params,msg):
         """
         resonds to and closes (for standard HTTP) the socket communication 
         """
-        try:
-            params['request']['write']('{"server_console":'+msg+'}')
+        try: params['request']['write']('{"server_console":'+msg+'}')
         except KeyError: 
             params['request']['protocol'].transport.write(msg)
             params['request']['protocol'].transport.loseConnection()
@@ -1150,22 +823,20 @@ class SocketCommand():
         if not params.has_key('IDLSocket_ResponseFunction'):
             self.functional=False
             if request != None:
-                if request.has_key("write"):
-                    request["write"]('No command included in request.')
+                if request.has_key("write"): request["write"]('No command included in request.')
                 else:                
                     request.protocol.transport.write('No command included in request.')
                     request.protocol.transport.loseConnection()
             return None
-        self.params = params
-        self.request = request
-        if CommandLibrary == None:
+        self.params=params
+        self.request=request
+        if CommandLibrary==None:
             return None
         if hasattr(CommandLibrary,self.params['IDLSocket_ResponseFunction']):
             self.functional=True
             return None
         else:
-            if request.has_key("write"):
-                request["write"]('No command included in request.')
+            if request.has_key("write"): request["write"]('No command included in request.')
             else:                
                 request.protocol.transport.write('No command included in request.')
                 request.protocol.transport.loseConnection()            
@@ -1179,13 +850,14 @@ class SocketCommand():
         p.update({'request':self.request})
         
         try:
-            ThisResponseFunction = getattr(CommandLibrary,
-                                           self.params['IDLSocket_ResponseFunction'])
+            ThisResponseFunction=getattr(CommandLibrary,self.params['IDLSocket_ResponseFunction'])
         except AttributeError:
-            print ('Missing Socket_ResponseFunction:',
-                   self.params['IDLSocket_ResponseFunction'])
+            print 'Missing Socket_ResponseFunction: ', self.params['IDLSocket_ResponseFunction']
         ThisResponseFunction(p)
 
+#        try:
+#            ThisResponseFunction(p)
+#        except Exception as e: pdb.set_trace()
         
 class GlabServerFactory(protocol.Factory):
     """
@@ -1194,9 +866,9 @@ class GlabServerFactory(protocol.Factory):
     """
 
     def associateCommandQueue(self,commandQueue):
-        self.commandQueue = commandQueue
+        self.commandQueue=commandQueue
     def associateClientManager(self,clientManager):
-        self.clientManager = clientManager
+        self.clientManager=clientManager
     def xstatus(self):
         stat=""
         if hasattr(self,'openConnections'):
@@ -1224,90 +896,50 @@ class GlabPythonManager():
     and other things as time goes on...
     """
     def __init__(self):
-        if debug:
-            print "debug: GlabPythonManager(), __init__"
-        # general identifiers
-        self.uuid = str(uuid.uuid1())
-        self.hostid = platform.node()# The computer’s network name
-
-        # create a TCP socket listener (called a factory by twisted)
-        self.listener = GlabServerFactory()
-        self.listener.parent = self
-
-        # tell the twisted reactor what port to listen on and
-        # which factory to use for response protocols
-        global port
-        global wsport        
-        self.reactor = reactor
-        self.task = task
-        #reactor.listenTCP(port, self.listener)
-        def hello():
-            print ('Listening on ports ' + str(port) +' (standard HTTP),',
-            str(wsport) + ' (websocket)',
-            str(udpbport) + ' (udp port)')
-        reactor.callWhenRunning(hello)
-
+        self.uuid=str(uuid.uuid1())
         # create a Command Queue, Client Manager, and Default Data Context
-        self.commandQueue = CommandQueue(owner=self)
-        self.clientManager = ClientManager(owner=self)
-        self.dataContexts = {'default':DataContext('default')}
-                
+        self.commandQueue=CommandQueue(owner=self)
+        self.clientManager=ClientManager()
+        self.dataContexts={'default':DataContext('default')}
+        # create a TCP socket listener (called a factory by twisted)
+        self.listener=GlabServerFactory()
+        self.listener.parent=self
         # associate the CommandProtocol as a response method on that socket
-        self.listener.protocol = CommandProtocol
-
+        self.listener.protocol=CommandProtocol
+        # tell the twisted reactor what port to listen on, and which factory to use for response protocols
+        global port, wsport        
+        self.reactor=reactor
+        self.task=task
+        reactor.listenTCP(port, self.listener)
+        def hello(): print 'Listening on ports '+str(port)+' (standard HTTP), '+str(wsport)+' (websocket) and 228.0.0.5:'+str(udpbport) + ' (udp broadcasts)'
+        reactor.callWhenRunning(hello)
         # associate the Command Queue and ClienManager with the socket listener
         self.listener.associateCommandQueue(self.commandQueue)
         self.listener.associateClientManager(self.clientManager)
-        
         # create a periodic command queue execution
-        self.queueCommand = task.LoopingCall(self.commandQueue.popexecute)
+        self.queueCommand=task.LoopingCall(self.commandQueue.popexecute)
         self.queueCommand.start(0.03)
         self.initdisplay()
 
-        # setup the udp broadcast for peer discovery
-        self.multicast = reactor.listenMulticast(udpbport, 
-                                                 MulticastProtocol(),
-                                                 listenMultiple=True)
-        #pdb.set_trace()
-        self.multicast.protocol.server = self        
-        self.server_pinger = task.LoopingCall(self.server_ping)
-        self.server_ping_period = 5.0
+        self.multicast=reactor.listenMulticast(udpbport, MulticastProtocol(), listenMultiple=True)
+        self.multicast.server=self        
+        self.server_pinger=task.LoopingCall(self.server_ping)
+        self.server_ping_period=120.
         self.server_pinger.start(self.server_ping_period)
 
-        # setup the websocket services
-        self.wsfactory = WebSocketServerFactory("ws://localhost:" + 
-                                                str(wsport),
-                                                debug=False)
+        self.wsfactory = WebSocketServerFactory("ws://localhost:"+str(wsport), debug = False)
         self.wsfactory.setProtocolOptions(failByDrop=False)
-        self.wsfactory.parent = self
+        self.wsfactory.parent=self
         self.wsfactory.protocol = WSServerProtocol
-        self.wsfactory.protocol.commandQueue = self.commandQueue
-        self.wsfactory.protocol.clientManager = self.clientManager
+        self.wsfactory.protocol.commandQueue=self.commandQueue
+        self.wsfactory.protocol.clientManager=ClientManager()
+        #self.magnify=listenWS(self.wsfactory)
+        #self.site=Site(File("."))
+        self.laud=reactor.listenTCP(wsport, self.wsfactory)
         
-
-        # run initialization script specific to this machine
-        try: 
-            init_code = server_initializations.initializations[uuid.getnode()]
-            if init_code:
-                exec(init_code) in globals(), locals()
-        except KeyError:
-            print ("WARNING:: no supplementary server_initialization data",
-                   "present for this machine")
-
-        # listen on standard TCP port
-        self.laud = reactor.listenTCP(wsport, self.wsfactory)
-        
-        #Testing CP 08/2014
-        self.client_factory = WebSocketClientFactory("ws://10.1.1.178:8084", debug = True)
-        self.client_factory.protocol = WSClientProtocol
-        connectWS(self.client_factory)
-        #pdb.set_trace()
-        
-        
-        # the display has been disabled due to conflicts and hangs
         #self.refreshdisplay=task.LoopingCall(self.display.refresh)
         #self.refreshdisplay.start(0.5)
-
+        # run the main response loop through twisted framework
     def run(self):
         """
         Run the server
@@ -1333,33 +965,22 @@ class GlabPythonManager():
         sends an identifying message on udp broadcast port
         """
         if not hasattr(self,"ping_data"):
-            #need to include a list called ping_data - which is updated as needed. by "ping_data fnctions in objects of the server.
-        #Nmaely this includes a list of instruments that are attached to the server.
-            self.ping_data={"server_id":self.uuid,
-                            "server_name":socket.gethostname(),
-                            "server_ip":socket.gethostbyname(socket.gethostname()),
-                            "server_ping":"ping!"}
+            self.ping_data={"server_id":self.uuid,"server_name":socket.gethostname()
+                            ,"server_ip":socket.gethostbyname(socket.gethostname())}
         self.ping_data.update({"server_time":time.time()})
         self.multicast.protocol.send(simplejson.dumps(self.ping_data))
         
     def server_pong(self,payload):
         """
-        recieves an identifying message on udp broadcast port from other
-        servers, and establishes a list of all other servers
+        recieves an identifying message on udp broadcast port from other servers, and establishes a list of all other servers
         """
-        print "In GlabPythonManager, server_pong()"
-        #pdb.set_trace()
-        #self.peer_servers[payload['server_name']]
-        try:
-            self.clientManager.ping(simplejson.loads(payload))
-        except (AttributeError, KeyError): 
-            self.clientManager.add_peerServer(simplejson.loads(payload))
-        #if not hasattr(self,"server_network"): self.server_network={}
-        #self.server_network.update({data['server_id']:data})
+        data=simplejson.loads(payload)
+        if not hasattr(self,"server_network"): self.server_network={}
+        self.server_network.update({data['server_id']:data})
 
     def broadcast(self,messagestring, UDP=False):
         """
-        broadcasts a message to all clients connected through the websockets 
+        broadcasts a message to all clients connected through the websockets (default) 
         or by udp broadcast (UDP flag) - the latter will reach all listeners
         """
         if UDP: 
@@ -1368,48 +989,8 @@ class GlabPythonManager():
         try:
             for client in self.wsfactory.openConnections.keys():
                 self.wsfactory.openConnections[client].sendMessage(messagestring)
-        except AttributeError:
-            pass
+        except AttributeError: pass
         
-    def send(self,address,data):
-        """
-        sends data to a specified address, provided as a sting in the form
-        ip:port, a server_id string in the form of a uuid1 provided through
-        peer discovery, or by role, in the form of a string "role:XXX" where
-        XXX is one of:
-            
-        the send method will be chosen from among existing websocket connection
-        if it exists, or establishes one if it does not.  Returns False if
-        failed returns data if there was a response
-        """
-        dest = self.resolve_address(address)
-        #pdb.set_trace()
-        
-        {"IDLSocket_ResponseFunction":"nameoffunctionin commandlibrary.","anotherparam to pass":"its value","terminator":"die"}
-
-    
-    
-    def resolve_address(self,address):
-        """
-        attempts to resolve a network address string in the form ip:port, 
-        a server_id string in the form of a uuid1 provided through peer
-        discovery, or by role, in the form of a string "role:XXX" where XXX
-        is one of:
-            
-        returns an ip:port string if successful, "" if not
-        """
-        return "Not yet functional"
-        if type(address)!=type(""): address=str(address)
-        if (len(address.split(":"))==2) and (len(address.split("."))==3):
-            return address
-        if "role:" in address:
-            try:
-                return self.clients_by_role[address.split("role:")[1]]
-            except AttributeError:
-                return ""
-        
-        
-    
     class display():
         pass
     class IORedirector(object):
@@ -1437,26 +1018,6 @@ class GlabPythonManager():
         self.display.updateHTML(splash+self.xstatus("html"))
         #tried to redirect stdout to tkinter console, not working:
         #sys.stdout = self.StdoutRedirector( self.display.statuswindow )
-    def attach_poll_callback(self,poll,callback,poll_time):
-        """
-        attaches a poll-and-callback event mechanism to the main event-loop
-        - used by the Glab_instrument class for data read-outs
-        poll and callback should be functions or methods, and poll_time is
-        a float representing the time in seconds between polls
-        
-        the task assigned to the polling is stored in a list 'pollcallbacks'
-        attached to the server object, and a reference to this task is returned 
-        to the caller
-        """
-        def pollcallback():
-            if poll(): callback()
-            else: return
-        thistask=task.LoopingCall(pollcallback)
-        if not hasattr(self, "pollcallbacks"): self.pollcallbacks=[]        
-        self.pollcallbacks.append(thistask)
-        thistask.start(poll_time)
-        return thistask
-        
     class HtmlPanel(wx.Panel):
         """
         class HtmlPanel inherits wx.Panel and adds a button and HtmlWindow
@@ -1485,14 +1046,7 @@ class GlabPythonManager():
         """
         stat='<Status>'
         # Server parameters
-        stat += '<Server>'
-        stat += '<Host>'
-        stat += '<Name>'+ socket.gethostname()+  '</Name>'
-        stat += '<IP>' + socket.gethostbyname(socket.gethostname()) + '</IP>'
-        stat += '</Host>'
-        stat += '<Script>' + main.__file__ + '</Script>'
-        stat += '<LocalTime>' + time.asctime() + '</LocalTime>'
-        stat += '</Server>'
+        stat+='<Server><Host><Name>'+socket.gethostname()+'</Name><IP>'+socket.gethostbyname(socket.gethostname())+'</IP></Host><Script>'+main.__file__+'</Script><LocalTime>'+time.asctime()+'</LocalTime></Server>'
         # Clients
         stat+=self.clientManager.xstatus()        
         # Active Connections        
@@ -1553,4 +1107,3 @@ active_xtsm = ''
 
 theBeast=GlabPythonManager()
 theBeast.run()
-

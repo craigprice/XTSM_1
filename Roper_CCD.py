@@ -13,6 +13,262 @@ from time import sleep
 import matplotlib.pyplot as plt
 import numpy, pdb
 import DataBomb
+import win32com.client
+import pythoncom
+import time, psutil, sys, os, uuid
+import glab_instrumnet as Glab_Instrument
+
+def pkill(process_name):
+    """
+    kills a running process in windows
+    """
+    try:
+        killed = os.system('taskkill /im ' + process_name)
+    except Exception:
+        killed = 0
+    return killed
+
+default_databomb_destination_priorities = ["active_parser","169.254.174.200:8084","169.254.174.200:8083","127.0.0.1:8084","127.0.0.1:8083"]
+
+
+
+        
+class Princeton_CCD(Glab_Instrument):
+    """
+    an object class for control of the Roper Scientific / Princeton Instruments
+    Camera through activeX com with the WinView application.
+    
+    Note any currently running winview process will be terminated to start this one
+    """
+    defaults={"EXP_TIMING_MODE":3,"EXP_EXPOSURETIME":10.0, "EXP_ACCUMS":2}
+    class MultipleWinviewInstancesError(Exception):
+        pass
+    def __init__(self, params={} ):
+        """
+        constructor;  launches winview application, sets default parameters
+        """
+        # first check if winview is already running; kill it if so
+        self.data_destination=None
+        for p in params:
+            setattr(self,p,params[p])
+        plist=psutil.get_pid_list()
+        for p in plist:
+            try: 
+                if (psutil.Process(p).name()==u"Winview.exe"):
+                    try:
+                        print "Attempting to kill a WinView Process..."
+                        pkill("Winview.exe")
+                        sleep(1) # necessary to free resources before relaunch?
+                    except: raise self.MultipleWinviewInstancesError
+            except: pass
+        self.app = win32com.client.Dispatch("WINX32.ExpSetup")
+        #sleep(3) # not clear this is necessary
+        self.appdoc = win32com.client.Dispatch("WINX32.DocFile")
+        print "New Winview Process Launched"
+        self.gather_experiment_parameters()
+        self.set_param(self.defaults)
+        self.params_pending = False
+        self.pending_params={}
+        Glab_Instrument.__init__(self,params)
+        
+    def start_acquisition(self,block=False):
+        """
+        Starts an acquisition
+        """
+        (suc,self.last_acq_doc)=self.app.Start(self.appdoc)
+        if not suc:
+            print "Failed to start acquisition using winview through activeX - is another session active?"
+            return
+        if block:
+            self.block()
+            
+    def block(self):
+        """
+        block program until acquisition is completed; returns true if
+        run state becomes not running; false if maximum wait time reached first
+        """
+        start=time.time()
+        max_wait=100
+        while ((time.time()-start)<max_wait):
+            if not self.query_running(): break
+        return (time.time()-start)<max_wait
+        
+    def query_running(self):
+        """
+        checks if acquisition in progress
+        """
+        qp=win32com.client.constants.__dicts__[0]['EXP_RUNNING_EXPERIMENT']
+        return self.app.GetParam(qp)[0]
+        
+    def get_frame(self, frame_num=1, display=False):
+        """
+        gets an acquired frame by number
+        """
+        frame_size=(512,512)
+        frame_data=win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_ARRAY | pythoncom.VT_UI2, numpy.empty(frame_size))
+        frame_data=self.appdoc.GetFrame(frame_num,frame_data)
+        if hasattr(self,"display"): display = (display or self.display)
+        if display:
+            plt.imshow(frame_data, cmap='gray')
+            plt.show()
+        return numpy.array(frame_data, dtype=numpy.uint16)
+        
+    def __del__(self):
+        """
+        destructor cleans up the applications, calls the inherited destructor
+        """
+        self.appdoc.Close()
+        self.app.Stop()
+        Glab_Instrument.__del__(self)
+        
+    def gather_experiment_parameters(self):
+        """
+        reads all parameters from com components
+        """
+        ps=[r for r in win32com.client.constants.__dicts__[0].keys() if len(r.split("EXP_"))>1]
+        self.app_param={}        
+        for p in ps:
+            self.app_param.update({p:self.app.GetParam(win32com.client.constants.__dicts__[0][p])})
+        ps=[r for r in win32com.client.constants.__dicts__[0].keys() if len(r.split("DM_"))>1]
+        self.appdoc_param={}        
+        for p in ps:
+            self.appdoc_param.update({p:self.app.GetParam(win32com.client.constants.__dicts__[0][p])})
+
+    def set_param(self,set_dict):
+        """
+        sets a series of parameters of the experiment setup or document according to a dictionary
+        
+        if an experiment is currently running, will attach as a pending update,
+        which will be set once the experiment stops running through the server callback
+        method for the experiment completed event
+        """
+        if self.query_running:
+            self.params_pending = True
+            self.pending_params = set_dict
+            return "Pending"
+        for param in set_dict:
+            root={"EXP":self.app,"DM":self.appdoc}[param.split("_")[0]]
+            root.SetParam(win32com.client.constants.__dicts__[0][param],set_dict[param])
+            rootd={"EXP":self.app_param,"DM":self.appdoc_param}[param.split("_")[0]]
+            rootd.update({param:root.GetParam(win32com.client.constants.__dicts__[0][param])[0]})
+        return "Updated"
+
+    def set_autoframing(self,value=True):
+        """
+        sets the camera autoframing mode, which if true will
+        immediately begin collection of the next frame after each arrives
+        """
+        self.autoframe=value
+        
+
+    # polls and callbacks for server:
+
+    class CallBackWhileRunningError(Exception):
+        pass
+        
+    def _server_poll_expcompleted_(self):
+        """
+        method that polls for frame completion - a local variable is
+        stored from last poll, indicating whether an experiment was in
+        progress.  If the new poll indicates it is not, returns True
+        """
+        try: ls=self.polled_running
+        except AttributeError: ls=self.polled_running=False
+        self.polled_running=self.query_running()
+        if ((ls==True) and (self.polled_running==False)):
+            self.last_exp_time=time.time()
+            return True
+        else: return False
+    _server_poll_expcompleted_._poll_period=0.05 # time in seconds between pollings for completion
+
+    def _server_callback_expcompleted_(self):
+        """
+        callback initiated by server when experiment is completed
+        """
+        print "server callback"
+        if self.query_running(): raise self.CallBackWhileRunningError
+        framedata=self.get_frame(frame_num=1) # get the second frame; the first is clearing shot
+        if self.params_pending: self.set_param(self.pending_params)        
+        if self.autoframe: 
+            self.start_acquisition()
+        self.serve_data(framedata)
+        
+
+'''
+Old version of Glab_instrument
+
+class Glab_Instrument():
+    """
+    Core class for an instrument interface, which initializes hardware,
+    collects data, and posts it to an XTSM server somewhere, running from within
+    an XTSM server (not necessarily the same it is running within (i.e. is attached to))
+    """
+    def __init__(self,params={}):
+        self.generator_uid=str(uuid.uuid1())
+        try: self.server=params['server']
+        except KeyError:
+            print "WARNING:: Instrument " + str(self)+" created without associated server"
+            self.server=None
+        self.server_tasks=[]
+        if self.server:
+            server_polls=[m for m in dir(self) if "_server_poll" in m]
+            server_callbacks=[m for m in dir(self) if "_server_callback" in m]
+            for poll in server_polls:
+                callback=poll.replace("poll","callback")
+                if callback not in server_callbacks:
+                    print "WARNING:: Instrument provides poll mechanism without a callback; it is ignored"
+                self.server_tasks.append(self.server.attach_poll_callback(getattr(self,poll),getattr(self,callback),getattr(self,poll)._poll_period))
+    def __del__(self):
+        # this won't be sufficient to prevent memory leaks stemming from server callbacks -
+        # their linkage to the server will prevent an instrument from being
+        # garbage collected.
+        for task in self.server_tasks:
+            task.stop()
+            
+    def register_server_callback(self,callback,execute_time):
+        """
+        schedules a routine to be executed via the attached server at
+        a specific machine time
+        """
+        pass # not written yet            
+        
+    def serve_data(self, data):
+        """
+        routine to post data through the attached server - 
+        data is provided by the incoming argument data (ideally a dictionary)
+        
+        by default this will append identifiers for the data [time, generator ids, etc...]
+        any of which can be overwritten by items in incoming data
+        """
+        print "serving data"
+        if not self.server: 
+            return False
+            
+        # assemble the data payload
+        if type(data)!=type({}): data={"data":data}
+        # some default data-packaging parameters 
+        default_data = {"generator":str(self), "generator_instance":self.generator_uid,"time_served":time.time(), "destination_priorities":default_databomb_destination_priorities}     
+        try: default_data.update({"server_instance":self.server.uuid,"server_machine":self.server.hostid})
+        except: pass
+        # attempt to get the active shot-number and rep_number from the server
+        try: default_data.update({"shotnumber":self.server.dataContexts['default']['_running_shotnumber']})  
+        except: pass     
+        try: default_data.update({"repnumber":self.server.dataContexts['default']['_running_repnumber']})  
+        except: pass  
+        default_data.update(data)
+        data=default_data
+        # construct the data-bomb and instruct server to send it
+        if not hasattr(self.server,"DataBombDispatcher"):
+            self.server.DataBombDispatcher=DataBomb.DataBombDispatcher(params={"server":self.server})
+        self.last_served_dispatchid=self.server.DataBombDispatcher.add(data)
+        '''
+
+
+'''
+The following is an attempt at communicating with the camera. There are 
+different ways to do this, and what is below is some of those ways.
+'''
+
 #import time
 
 #devlabel = 'Camera'
@@ -1480,248 +1736,3 @@ import DataBomb
 ##            self._prev_max_discard = self._max_discard
 ##            self.max_discard = 0
 ##            self._sync_event.subscribe(comp)
-
-
-import win32com.client
-import pythoncom
-import time, psutil, sys, os, uuid
-
-def pkill(process_name):
-    """
-    kills a running process in windows
-    """
-    try:
-        killed = os.system('taskkill /im ' + process_name)
-    except Exception:
-        killed = 0
-    return killed
-
-default_databomb_destination_priorities = ["active_parser","169.254.174.200:8084","169.254.174.200:8083","127.0.0.1:8084","127.0.0.1:8083"]
-
-class Glab_Instrument():
-    """
-    Core class for an instrument interface, which initializes hardware,
-    collects data, and posts it to an XTSM server somewhere, running from within
-    an XTSM server (not necessarily the same it is running within (i.e. is attached to))
-    """
-    def __init__(self,params={}):
-        self.generator_uid=str(uuid.uuid1())
-        try: self.server=params['server']
-        except KeyError:
-            print "WARNING:: Instrument " + str(self)+" created without associated server"
-            self.server=None
-        self.server_tasks=[]
-        if self.server:
-            server_polls=[m for m in dir(self) if "_server_poll" in m]
-            server_callbacks=[m for m in dir(self) if "_server_callback" in m]
-            for poll in server_polls:
-                callback=poll.replace("poll","callback")
-                if callback not in server_callbacks:
-                    print "WARNING:: Instrument provides poll mechanism without a callback; it is ignored"
-                self.server_tasks.append(self.server.attach_poll_callback(getattr(self,poll),getattr(self,callback),getattr(self,poll)._poll_period))
-    def __del__(self):
-        # this won't be sufficient to prevent memory leaks stemming from server callbacks -
-        # their linkage to the server will prevent an instrument from being
-        # garbage collected.
-        for task in self.server_tasks:
-            task.stop()
-            
-    def register_server_callback(self,callback,execute_time):
-        """
-        schedules a routine to be executed via the attached server at
-        a specific machine time
-        """
-        pass # not written yet            
-        
-    def serve_data(self, data):
-        """
-        routine to post data through the attached server - 
-        data is provided by the incoming argument data (ideally a dictionary)
-        
-        by default this will append identifiers for the data [time, generator ids, etc...]
-        any of which can be overwritten by items in incoming data
-        """
-        print "serving data"
-        if not self.server: 
-            return False
-            
-        # assemble the data payload
-        if type(data)!=type({}): data={"data":data}
-        # some default data-packaging parameters 
-        default_data = {"generator":str(self), "generator_instance":self.generator_uid,"time_served":time.time(), "destination_priorities":default_databomb_destination_priorities}     
-        try: default_data.update({"server_instance":self.server.uuid,"server_machine":self.server.hostid})
-        except: pass
-        # attempt to get the active shot-number and rep_number from the server
-        try: default_data.update({"shotnumber":self.server.dataContexts['default']['_running_shotnumber']})  
-        except: pass     
-        try: default_data.update({"repnumber":self.server.dataContexts['default']['_running_repnumber']})  
-        except: pass  
-        default_data.update(data)
-        data=default_data
-        # construct the data-bomb and instruct server to send it
-        if not hasattr(self.server,"DataBombDispatcher"):
-            self.server.DataBombDispatcher=DataBomb.DataBombDispatcher(params={"server":self.server})
-        self.last_served_dispatchid=self.server.DataBombDispatcher.add(data)
-
-        
-class Princeton_CCD(Glab_Instrument):
-    """
-    an object class for control of the Roper Scientific / Princeton Instruments
-    Camera through activeX com with the WinView application.
-    
-    Note any currently running winview process will be terminated to start this one
-    """
-    defaults={"EXP_TIMING_MODE":3,"EXP_EXPOSURETIME":10.0, "EXP_ACCUMS":2}
-    class MultipleWinviewInstancesError(Exception):
-        pass
-    def __init__(self, params={} ):
-        """
-        constructor;  launches winview application, sets default parameters
-        """
-        # first check if winview is already running; kill it if so
-        self.data_destination=None
-        for p in params:
-            setattr(self,p,params[p])
-        plist=psutil.get_pid_list()
-        for p in plist:
-            try: 
-                if (psutil.Process(p).name()==u"Winview.exe"):
-                    try:
-                        print "Attempting to kill a WinView Process..."
-                        pkill("Winview.exe")
-                        sleep(1) # necessary to free resources before relaunch?
-                    except: raise self.MultipleWinviewInstancesError
-            except: pass
-        self.app = win32com.client.Dispatch("WINX32.ExpSetup")
-        #sleep(3) # not clear this is necessary
-        self.appdoc = win32com.client.Dispatch("WINX32.DocFile")
-        print "New Winview Process Launched"
-        self.gather_experiment_parameters()
-        self.set_param(self.defaults)
-        self.params_pending = False
-        self.pending_params={}
-        Glab_Instrument.__init__(self,params)
-        
-    def start_acquisition(self,block=False):
-        """
-        Starts an acquisition
-        """
-        (suc,self.last_acq_doc)=self.app.Start(self.appdoc)
-        if not suc:
-            print "Failed to start acquisition using winview through activeX - is another session active?"
-            return
-        if block:
-            self.block()
-            
-    def block(self):
-        """
-        block program until acquisition is completed; returns true if
-        run state becomes not running; false if maximum wait time reached first
-        """
-        start=time.time()
-        max_wait=100
-        while ((time.time()-start)<max_wait):
-            if not self.query_running(): break
-        return (time.time()-start)<max_wait
-        
-    def query_running(self):
-        """
-        checks if acquisition in progress
-        """
-        qp=win32com.client.constants.__dicts__[0]['EXP_RUNNING_EXPERIMENT']
-        return self.app.GetParam(qp)[0]
-        
-    def get_frame(self, frame_num=1, display=False):
-        """
-        gets an acquired frame by number
-        """
-        frame_size=(512,512)
-        frame_data=win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_ARRAY | pythoncom.VT_UI2, numpy.empty(frame_size))
-        frame_data=self.appdoc.GetFrame(frame_num,frame_data)
-        if hasattr(self,"display"): display = (display or self.display)
-        if display:
-            plt.imshow(frame_data, cmap='gray')
-            plt.show()
-        return numpy.array(frame_data, dtype=numpy.uint16)
-        
-    def __del__(self):
-        """
-        destructor cleans up the applications, calls the inherited destructor
-        """
-        self.appdoc.Close()
-        self.app.Stop()
-        Glab_Instrument.__del__(self)
-        
-    def gather_experiment_parameters(self):
-        """
-        reads all parameters from com components
-        """
-        ps=[r for r in win32com.client.constants.__dicts__[0].keys() if len(r.split("EXP_"))>1]
-        self.app_param={}        
-        for p in ps:
-            self.app_param.update({p:self.app.GetParam(win32com.client.constants.__dicts__[0][p])})
-        ps=[r for r in win32com.client.constants.__dicts__[0].keys() if len(r.split("DM_"))>1]
-        self.appdoc_param={}        
-        for p in ps:
-            self.appdoc_param.update({p:self.app.GetParam(win32com.client.constants.__dicts__[0][p])})
-
-    def set_param(self,set_dict):
-        """
-        sets a series of parameters of the experiment setup or document according to a dictionary
-        
-        if an experiment is currently running, will attach as a pending update,
-        which will be set once the experiment stops running through the server callback
-        method for the experiment completed event
-        """
-        if self.query_running:
-            self.params_pending = True
-            self.pending_params = set_dict
-            return "Pending"
-        for param in set_dict:
-            root={"EXP":self.app,"DM":self.appdoc}[param.split("_")[0]]
-            root.SetParam(win32com.client.constants.__dicts__[0][param],set_dict[param])
-            rootd={"EXP":self.app_param,"DM":self.appdoc_param}[param.split("_")[0]]
-            rootd.update({param:root.GetParam(win32com.client.constants.__dicts__[0][param])[0]})
-        return "Updated"
-
-    def set_autoframing(self,value=True):
-        """
-        sets the camera autoframing mode, which if true will
-        immediately begin collection of the next frame after each arrives
-        """
-        self.autoframe=value
-        
-
-    # polls and callbacks for server:
-
-    class CallBackWhileRunningError(Exception):
-        pass
-        
-    def _server_poll_expcompleted_(self):
-        """
-        method that polls for frame completion - a local variable is
-        stored from last poll, indicating whether an experiment was in
-        progress.  If the new poll indicates it is not, returns True
-        """
-        try: ls=self.polled_running
-        except AttributeError: ls=self.polled_running=False
-        self.polled_running=self.query_running()
-        if ((ls==True) and (self.polled_running==False)):
-            self.last_exp_time=time.time()
-            return True
-        else: return False
-    _server_poll_expcompleted_._poll_period=0.05 # time in seconds between pollings for completion
-
-    def _server_callback_expcompleted_(self):
-        """
-        callback initiated by server when experiment is completed
-        """
-        print "server callback"
-        if self.query_running(): raise self.CallBackWhileRunningError
-        framedata=self.get_frame(frame_num=1) # get the second frame; the first is clearing shot
-        if self.params_pending: self.set_param(self.pending_params)        
-        if self.autoframe: 
-            self.start_acquisition()
-        self.serve_data(framedata)
-        
-
