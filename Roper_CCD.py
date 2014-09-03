@@ -16,7 +16,7 @@ import DataBomb
 import win32com.client
 import pythoncom
 import time, psutil, sys, os, uuid
-import glab_instrumnet as Glab_Instrument
+import glab_instrument
 
 def pkill(process_name):
     """
@@ -33,7 +33,7 @@ default_databomb_destination_priorities = ["active_parser","169.254.174.200:8084
 
 
         
-class Princeton_CCD(Glab_Instrument):
+class Princeton_CCD(glab_instrument.Glab_Instrument):
     """
     an object class for control of the Roper Scientific / Princeton Instruments
     Camera through activeX com with the WinView application.
