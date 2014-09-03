@@ -92,7 +92,7 @@ class Glab_Instrument():
         if self._poll_example_it==0:
             return True
         else: return False
-    _Xserver_poll._poll_period=15.
+    _Xserver_poll._poll_period=15.#"15" seconds is being attached to the function as an element of the function-object
     
     def _Xserver_callback(self):
         """

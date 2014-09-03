@@ -179,7 +179,7 @@ class Princeton_CCD(Glab_Instrument):
             self.last_exp_time=time.time()
             return True
         else: return False
-    _server_poll_expcompleted_._poll_period=0.05 # time in seconds between pollings for completion
+    _server_poll_expcompleted_._poll_period=0.4 # time in seconds between pollings for completion
 
     def _server_callback_expcompleted_(self):
         """

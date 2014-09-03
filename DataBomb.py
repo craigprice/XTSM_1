@@ -428,9 +428,10 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         #from params find instruments
     #Then add the ip address to the instruments_with_destinations
     #
+        
+        pdb.set_trace()
         self.instruments_with_destinations.update(params)
         self.all_requests.update(params)
-        pdb.set_trace()
         
     def delink_to_instrument(self,params):
         pass
@@ -501,6 +502,6 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 self.destinations=[self.data['destination_priorities'][0]]
                 self.dest_by_priority=True
             for dest in destinations:
-                try: self.server.send(dest,self.data)
-                except:  pass # here we need to handle comm errors
+                try: 
+                    self.server.send(dest,self.data)
                 

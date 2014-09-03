@@ -69,7 +69,7 @@ import live_content
 import xstatus_ready
 import file_locations
 import server_initializations
-
+import glab_instrument
 
 
 def tracefunc(frame, event, arg, indent=[0]):
@@ -633,16 +633,6 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         when added open web socket. server connects to this peer server.
         Others open with TCP
         """
-#Loopiong Call, under server.chck for new image on cameradatabomb -> databomb dispatcher - 
-        #dispatcher periodically called bvia looping call and the dispatcher periodically sends it off. - 1s eg.
-        #add function in command library that gets all instrucments attached to that server. - children of GLabInstrument.
-        #second function in command library that adds you as a destination to the databomb dispatcher. - send it back over the client websocket.
-        #databomb dispatcher is also a member objct of the Server.
-        
-
-        
-        
-        
         
         def __init__(self,payload):
             ClientManager.GlabClient.__init__(self)
@@ -770,28 +760,28 @@ class CommandLibrary():
         else:
             self.post_active_xtsm(params)
 
-    def scan_instruments(self):
-        #Test
-        pass
-        '''
-        listmy = []
-        for dc in self.data_contexts:
-            for key in dc:
-                if isinstance(dc[key], of GLab_Instruments):
-                    list.append(dc[key])
-                    
-        return list
-        '''
+#Loopiong Call, under server.chck for new image on cameradatabomb -> databomb dispatcher - 
+        #dispatcher periodically called bvia looping call and the dispatcher periodically sends it off. - 1s eg.
+        #add function in command library that gets all instrucments attached to that server. - children of GLabInstrument.
+        #second function in command library that adds you as a destination to the databomb dispatcher. - send it back over the client websocket.
+        #databomb dispatcher is also a member objct of the Server.
         
+
+    def scan_instruments(self):
+        interested_instruments = []
+        for dc in self.owner.dataContexts:
+            for key in dc:
+                if isinstance(dc[key], glab_instrument.Glab_Instrument):
+                    interested_instruments.append(dc[key])
+                    
+        return interested_instruments
         
         
         #End Test
 
     def link_to_instrument(self,params):
         try:        
-            self.owner.databomb_dispatcher.link_to_instrument(params)
-        except:
-            pass
+            self.owner.DataBombDispatcher.link_to_instrument(params)
         #send back errors - return fail - ie no instrument.
 
     def get_global_variable_from_socket(self,params):
@@ -1382,10 +1372,13 @@ class GlabPythonManager():
         if it exists, or establishes one if it does not.  Returns False if
         failed returns data if there was a response
         """
-        dest = self.resolve_address(address)
-        #pdb.set_trace()
+        #dest = self.resolve_address(address)
+        pdb.set_trace()
+        for key, value in self.clientManager.peer_servers:
+            if key == 'server_ip':
+                ipaddress = self.clientManager.peer_servers[key]
+        self.clientManager.peer_servers[ipaddress].sendMessage(data)
         
-        {"IDLSocket_ResponseFunction":"nameoffunctionin commandlibrary.","anotherparam to pass":"its value","terminator":"die"}
 
     
     
