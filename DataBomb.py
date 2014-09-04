@@ -398,6 +398,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
     handle exceptions and handshaking such that data is (ideally) never lost
     """
     def __init__(self,params={}):
+        print "class DataBombDispatcher function __init__"
         defaultparams={ }
         self.instruments_with_destinations = {}
         self.all_requests = {}
@@ -443,6 +444,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             'next' - deploys one based on a First-In-First-Out (FIFO) model
             uuid - deploys by the unique identifier assigned to the bomb on add
         """
+        print "class DataBombDispather, function dispatch"
         if len(self.databombers)==0: return
         print "dispatching data"
 
@@ -474,6 +476,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             """
             constructs an outgoing payload from a dictionary of data
             """
+            print "class DataBomber, __init__"
             self.uuid='DBR'+uuid.uuid1().__str__()
             self.server=server
             try: caller=inspect.stack()[1][3]
@@ -488,6 +491,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             self.destinations=destinations
             
         def dispatch(self,destinations=None):
+            print "DataBomber, dispatch"
             """
             sends the payload to the specified destination(s) (as well as any provided at initialization)
             , provided as an ip address string, e.g. "10.1.1.101:8083"

@@ -325,7 +325,7 @@ class WSServerProtocol(WebSocketServerProtocol):
             self.onBinaryMessage(payload)
         else:
             self.onTextMessage(payload)
-        pdb.set_trace()
+        #pdb.set_trace()
         ## echo back message verbatim
         #self.sendMessage(payload, isBinary)
 
