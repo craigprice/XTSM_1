@@ -402,8 +402,10 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         defaultparams={ }
         self.instruments_with_destinations = {}
         self.all_requests = {}
-        for key in params.keys(): defaultparams.update({key:params[key]})
-        for key in defaultparams.keys(): setattr(self,key,defaultparams[key])   
+        for key in params.keys():
+            defaultparams.update({key:params[key]})
+        for key in defaultparams.keys():
+            setattr(self,key,defaultparams[key])   
         self.databombers={}
         if not hasattr(self, "server"): 
             print "WARNING:: DatabombDispatcher created with no attached server"
@@ -418,7 +420,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         if bomber.__class__!=self.DataBomber: 
             try: 
                 bomber=self.DataBomber(bomber)
-                bomber.server=self.server
+                bomber.server = self.server
             except: 
                 raise self.BadBomberError
                 return
@@ -445,7 +447,8 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             uuid - deploys by the unique identifier assigned to the bomb on add
         """
         print "class DataBombDispather, function dispatch"
-        if len(self.databombers)==0: return
+        if len(self.databombers)==0:
+            return
         print "dispatching data"
 
         def all_c(o):
@@ -463,7 +466,8 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             try: 
                 self.databombers[criteria].dispatch()
                 del self.databombers[criteria]
-            except KeyError: raise self.UnknownBomberError
+            except KeyError:
+                raise self.UnknownBomberError
 
     class BadBomberError(Exception):
         pass
@@ -479,35 +483,43 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             print "class DataBomber, __init__"
             self.uuid='DBR'+uuid.uuid1().__str__()
             self.server=server
-            try: caller=inspect.stack()[1][3]
-            except: caller="Unknown"
+            try: 
+                caller=inspect.stack()[1][3]
+            except: 
+                caller="Unknown"
             default_data={"generator":caller}
             default_data.update(data)
             data=default_data
-            data.update({"packed_time":time.time(),"packed_by":str(uuid.getnode())+"_DataBomber_init"})           
+            data.update({"packed_time":time.time(),
+            "packed_by":str(uuid.getnode())+"_DataBomber_init"})           
             self.data=data            
             # packs data into a msgpack format (binary key-value pairs)
             self.payload=msgpack.packb(data)
             self.destinations=destinations
             
-        def dispatch(self,destinations=None):
+        def dispatch(self,destinations_=None):
             print "DataBomber, dispatch"
             """
-            sends the payload to the specified destination(s) (as well as any provided at initialization)
+            sends the payload to the specified destination(s) 
+            (as well as any provided at initialization)
             , provided as an ip address string, e.g. "10.1.1.101:8083"
             """
             if not self.server: 
                 print "WARNING:: databomber dispatched without an attached server - dispatch ignored"
                 return
-            if type(destinations)!=type([]): destinations=[destinations]
-            if type(self.destinations)!=type([]): self.destinations=[self.destinations]
-            self.destinations = list(set(self.destinations + destinations))    
+            if type(destinations_) != type([]):
+                destinations_=[destinations_]
+            if type(self.destinations) != type([]):
+                self.destinations=[self.destinations]
+            self.destinations = list(set(self.destinations + destinations_))    
             if not self.destinations[0]:
                 self.destinations=[self.data['destination_priorities'][0]]
                 self.dest_by_priority=True
-            for dest in destinations:
+            #for dest in destinations_:
+            for dest in self.destinations:
                 try: 
-                    self.server.send(dest,self.data)
+                    self.server.send(self.data,dest)
+                    print dest
                 except:
                     raise
 

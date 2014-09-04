@@ -609,6 +609,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         stat+='</Clients>'
         return stat
     
+    
     class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
         """
         a generic class for clients
@@ -642,6 +643,11 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             self.server_time = payload['server_time']
             self.server_ip = payload['server_ip']
             self.server_ping = payload['server_ping']
+            connect_string = "ws://" + str(self.server_ip) + ":" + str(wsport)
+            self.client_factory = WebSocketClientFactory(connect_string,
+                                                         debug = True)
+            self.client_factory.protocol = WSClientProtocol
+            connectWS(self.client_factory)
     
     def add_peerServer(self,payload):
         """
@@ -649,6 +655,10 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         """
         self.peer_servers.update({payload['server_id']:self.PeerServer(payload)})
 
+
+    def sendMessageToPeerServer(self,message, peer_server):
+        peer_server.client_factory.protocol.sendMessage(message)
+        
     def ping(self,payload):
         print "In ping()"
         print self.peer_servers
@@ -1363,7 +1373,7 @@ class GlabPythonManager():
         except AttributeError:
             pass
         
-    def send(self,address,data):
+    def send(self,data,address):
         """
         sends data to a specified address, provided as a sting in the form
         ip:port, a server_id string in the form of a uuid1 provided through
@@ -1374,12 +1384,16 @@ class GlabPythonManager():
         if it exists, or establishes one if it does not.  Returns False if
         failed returns data if there was a response
         """
+        
+        #pdb.set_trace()
         #dest = self.resolve_address(address)
+        peer_to_send_message = None
+        for uid in self.clientManager.peer_servers:
+            peer_server = self.clientManager.peer_servers[uid]
+            if peer_server.server_ip == address:
+                peer_to_send_message = peer_server
         pdb.set_trace()
-        for key, value in self.clientManager.peer_servers:
-            if key == 'server_ip':
-                ipaddress = self.clientManager.peer_servers[key]
-        self.clientManager.peer_servers[ipaddress].sendMessage(data)
+        self.clientManager.sendMessageToPeerServer(data,peer_server)
         
 
     

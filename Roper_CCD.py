@@ -69,6 +69,8 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         self.set_param(self.defaults)
         self.params_pending = False
         self.pending_params={}
+        self.start_acquisition()
+        self.autoframe = False
         glab_instrument.Glab_Instrument.__init__(self,params)
         
     def start_acquisition(self,block=False):
@@ -106,9 +108,9 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         """
         frame_size=(512,512)
         frame_data=win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_ARRAY | pythoncom.VT_UI2, numpy.empty(frame_size))
-        pdb.set_trace()
+        #pdb.set_trace()
         frame_data=self.appdoc.GetFrame(frame_num,frame_data)
-        pdb.set_trace()
+        #pdb.set_trace()
         if hasattr(self,"display"):
             display = (display or self.display)
         if display:
@@ -175,18 +177,16 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         stored from last poll, indicating whether an experiment was in
         progress.  If the new poll indicates it is not, returns True
         """
-        print "class Princeton_CCD function _server_poll_expcompleted_"
+        #print "class Princeton_CCD function _server_poll_expcompleted_"   
         try:
-            ls=self.polled_running
-        except AttributeError:
-            #ls=self.polled_running=False CP
-            ls = False
+            last_state = self.polled_running
+        except AttributeError,UnboundLocalError:
             self.polled_running = False
+            last_state = False
         self.polled_running = self.query_running()
-        print self.polled_running
-        #if ((ls==True) and (self.polled_running==False)): CP
-        if ((self.polled_running==False)):
-            self.last_exp_time=time.time()
+        #if ((last_state == True) and (self.polled_running == False)): CP
+        if (bool(last_state) and not bool(self.polled_running)):
+            self.last_exp_time = time.time()
             return True
         else:
             return False
@@ -198,10 +198,11 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         """
         print "server callback"
         if self.query_running(): raise self.CallBackWhileRunningError
-        framedata=self.get_frame(frame_num=0) # get the second frame; the first is clearing shot
+        framedata=self.get_frame(frame_num=1) # get the second frame; the first is clearing shot
         if self.params_pending: self.set_param(self.pending_params)        
         if self.autoframe: 
             self.start_acquisition()
+            #pdb.set_trace()
         self.serve_data(framedata)
         
 
