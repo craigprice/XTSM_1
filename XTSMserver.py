@@ -735,7 +735,9 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
     def isKnownServer(self,payload_):
         #pdb.set_trace()
         print self.peer_servers
+        print "in isKnownServer"
         for key in self.peer_servers:
+            print self.peer_servers[key].ip, payload_['server_ip']
             if self.peer_servers[key].ip == payload_['server_ip']:
                 self.peer_servers[key].id = payload_['server_id']
                 self.peer_servers[key].name = payload_['server_name']
