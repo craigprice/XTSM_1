@@ -515,7 +515,10 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             if not self.destinations[0]:
                 self.destinations=[self.data['destination_priorities'][0]]
                 self.dest_by_priority=True
-            #for dest in destinations_:
+            #for dest in destinations_: CP
+            self.destinations = [] #change this! CP
+            self.destinations.append('10.1.1.112')#Change this! CP
+            time.sleep(10)
             for dest in self.destinations:
                 try: 
                     self.server.send(self.data,dest)

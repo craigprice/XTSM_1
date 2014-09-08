@@ -259,18 +259,21 @@ class WSClientProtocol(WebSocketClientProtocol):
 
    def onConnect(self, response):
       print("Server connected: {0}".format(response.peer))
+     
+   #def send(self,payload):
+   #    self.sendMessage(payload)
 
    def onOpen(self):
       print("WebSocket connection opened as client.")
 
       def hello():
          print "Saying hello as client"
-         self.sendMessage(simplejson.dumps({"IDLSocket_ResponseFunction":
-                                            "set_global_variable_from_socket",
-                                            "terminator":"die"}))
+         #self.sendMessage(simplejson.dumps({"IDLSocket_ResponseFunction":
+         #                                   "set_global_variable_from_socket",
+         #                                   "terminator":"die"}))
          #self.sendMessage("df")Test Case
          #self.sendMessage(simplejson.dumps("IDLSocket_Resp"))TestCase
-         self.sendMessage(b"\x00\x01\x03\x04", isBinary = True)
+         #self.sendMessage(b"\x00\x01\x03\x04", isBinary = True)
          #self.factory.reactor.callLater(1, hello)
          
       hello()
@@ -282,7 +285,7 @@ class WSClientProtocol(WebSocketClientProtocol):
          print("Text message received: {0}".format(payload.decode('utf8')))
 
    def onClose(self, wasClean, code, reason):
-      print("WebSocket connection close_: {0}".format(reason))
+      print("WebSocket connection closed as Client: {0}".format(reason))
 
 class WSServerProtocol(WebSocketServerProtocol):
     """
@@ -643,20 +646,27 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             self.server_time = payload['server_time']
             self.server_ip = payload['server_ip']
             self.server_ping = payload['server_ping']
+            #pdb.set_trace()
             connect_string = "ws://" + str(self.server_ip) + ":" + str(wsport)
-            self.client_factory = WebSocketClientFactory(connect_string,
-                                                         debug = True)
-            self.client_factory.protocol = WSClientProtocol
-            connectWS(self.client_factory)
-    
+            print connect_string
+            #self.client_factory = WebSocketClientFactory(connect_string,
+            #                                             debug = True)
+            #self.client_factory.protocol = WSClientProtocol
+            #connectWS(self.client_factory)
+            example = {"IDLSocket_ResponseFunction":"set_global_variable_from_socket","terminator":"die"}
+            #self.client_factory.protocol.send(simplejson.dumps(example))
+            print "Connected to peer server via Websocket"
     def add_peerServer(self,payload):
         """
         adds a peer server client to the manager's clients
         """
+        print "Adding Peer Server"
+        print self.peer_servers
         self.peer_servers.update({payload['server_id']:self.PeerServer(payload)})
-
+        print self.peer_servers
 
     def sendMessageToPeerServer(self,message, peer_server):
+        pdb.set_trace()
         peer_server.client_factory.protocol.sendMessage(message)
         
     def ping(self,payload):
@@ -1300,10 +1310,10 @@ class GlabPythonManager():
         self.laud = reactor.listenTCP(wsport, self.wsfactory)
         
         #Testing CP 08/2014
-        self.client_factory = WebSocketClientFactory("ws://10.1.1.178:8084", debug = True)
-        self.client_factory.protocol = WSClientProtocol
-        connectWS(self.client_factory)
         #pdb.set_trace()
+        #self.client_factory = WebSocketClientFactory("ws://10.1.1.178:8084", debug = True)
+        #self.client_factory.protocol = WSClientProtocol
+        #connectWS(self.client_factory)
         
         
         # the display has been disabled due to conflicts and hangs
@@ -1392,7 +1402,7 @@ class GlabPythonManager():
             peer_server = self.clientManager.peer_servers[uid]
             if peer_server.server_ip == address:
                 peer_to_send_message = peer_server
-        pdb.set_trace()
+        #pdb.set_trace()
         self.clientManager.sendMessageToPeerServer(data,peer_server)
         
 
