@@ -258,7 +258,7 @@ class HTTPRequest(BaseHTTPRequestHandler):
 class WSClientProtocol(WebSocketClientProtocol):
 
    def onConnect(self, response):
-      print("Server connected: {0}".format(response.peer))
+      print("Server connected. Message as Client Protocol. : {0}".format(response.peer))
      
    #def send(self,payload):
    #    self.sendMessage(payload)
@@ -298,7 +298,7 @@ class WSServerProtocol(WebSocketServerProtocol):
     resident=True
     bidirectional=True
     def onConnect(self, request):
-        print("Client connecting: {0}".format(request.peer))
+        print("Client connecting. Message from server class. : {0}".format(request.peer))
 
     def onOpen(self):
         print("WebSocket connection open as server.")
@@ -364,7 +364,7 @@ class WSServerProtocol(WebSocketServerProtocol):
             self.sendMessage("{'server_console':'Failed to insert SocketCommand in Queue, reason unknown'}")
 
     def onClose(self, wasClean, code, reason):
-        print("WebSocket connection closed: {0}".format(reason))
+        print("WebSocket connection closed as Server: {0}".format(reason))
 
 #class EchoProtocol(protocol.Protocol):
 #    """
@@ -640,22 +640,23 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         
         def __init__(self,payload):
             ClientManager.GlabClient.__init__(self)
+            print "in PeerServer class, __init__()"
             self.ping_payload = payload
             self.server_id = payload['server_id']
             self.server_name = payload['server_name']
             self.server_time = payload['server_time']
             self.server_ip = payload['server_ip']
             self.server_ping = payload['server_ping']
-            #pdb.set_trace()
             connect_string = "ws://" + str(self.server_ip) + ":" + str(wsport)
             print connect_string
-            #self.client_factory = WebSocketClientFactory(connect_string,
-            #                                             debug = True)
-            #self.client_factory.protocol = WSClientProtocol
-            #connectWS(self.client_factory)
+            self.client_factory = WebSocketClientFactory(connect_string,
+                                                         debug = True)
+            self.client_factory.protocol = WSClientProtocol
+            connectWS(self.client_factory)
             example = {"IDLSocket_ResponseFunction":"set_global_variable_from_socket","terminator":"die"}
             #self.client_factory.protocol.send(simplejson.dumps(example))
-            print "Connected to peer server via Websocket"
+            print "End __init__ from PeerServer class"
+            #pdb.set_trace()
     def add_peerServer(self,payload):
         """
         adds a peer server client to the manager's clients
@@ -664,6 +665,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         print self.peer_servers
         self.peer_servers.update({payload['server_id']:self.PeerServer(payload)})
         print self.peer_servers
+        print "Added Peer Server"
 
     def sendMessageToPeerServer(self,message, peer_server):
         pdb.set_trace()
@@ -1354,6 +1356,14 @@ class GlabPythonManager():
         self.ping_data.update({"server_time":time.time()})
         self.multicast.protocol.send(simplejson.dumps(self.ping_data))
         
+    def isOwnPingBroadcast(self,payload_):
+        print payload_['server_id']
+        print self.uuid
+        if payload_['server_id'] == self.uuid:
+            return True
+        else:
+            return False        
+        
     def server_pong(self,payload):
         """
         recieves an identifying message on udp broadcast port from other
@@ -1362,13 +1372,16 @@ class GlabPythonManager():
         print "In GlabPythonManager, server_pong()"
         #pdb.set_trace()
         #self.peer_servers[payload['server_name']]
+        if self.isOwnPingBroadcast(simplejson.loads(payload)):
+            print "ignoring own broadcast"
+            return
         try:
             self.clientManager.ping(simplejson.loads(payload))
         except (AttributeError, KeyError): 
             self.clientManager.add_peerServer(simplejson.loads(payload))
         #if not hasattr(self,"server_network"): self.server_network={}
         #self.server_network.update({data['server_id']:data})
-
+            
     def broadcast(self,messagestring, UDP=False):
         """
         broadcasts a message to all clients connected through the websockets 
