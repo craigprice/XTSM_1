@@ -446,7 +446,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             'next' - deploys one based on a First-In-First-Out (FIFO) model
             uuid - deploys by the unique identifier assigned to the bomb on add
         """
-        print "class DataBombDispather, function dispatch"
+        #print "class DataBombDispather, function dispatch"
         if len(self.databombers)==0:
             return
         print "dispatching data"
@@ -518,7 +518,6 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             #for dest in destinations_: CP
             self.destinations = [] #change this! CP
             self.destinations.append('10.1.1.112')#Change this! CP
-            time.sleep(10)
             for dest in self.destinations:
                 try: 
                     self.server.send(self.data,dest)
