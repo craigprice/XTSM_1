@@ -272,6 +272,7 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
         onattach - callback method after data has been attached to listener
         onclose - callback after item is destroyed 
         """
+        print "class DataListenerManager, function spawn"
         defaultparams={'listen_for':{'sender':'',
                                      'shotnumber':-1,
                                      'repnumber': None},
@@ -350,14 +351,14 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             It chewcks a flag it it was dispatched - this way it might save even
             on a crash.
             """
-            pass
-            p = {'listener_instance':self,
+            print "class DataListener, function announce_interest"
+            p = {'listener_id':self.id,
                  'instrument_id':None,
                  'instrument_type':'camera',
                  'connection_id':None,
                  'ip_address':address,
                  'port':None,
-                 'shotnumber':None,
+                 #'shotnumber':None,
                  'data_type':'image'}
             self.server.announce_data_listener(params=p)
         
@@ -463,6 +464,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         #from params find instruments
     #Then add the ip address to the instruments_with_destinations
     #
+        print "class DataBombDispatcher, function link_to_instrument"  
         for key in params.keys():
             setattr(self,key,params[key]) 
         pdb.set_trace()
@@ -549,9 +551,6 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             if not self.destinations[0]:
                 self.destinations=[self.data['destination_priorities'][0]]
                 self.dest_by_priority=True
-            #for dest in destinations_: CP
-            self.destinations = [] #change this! CP
-            self.destinations.append('10.1.1.112')#Change this! CP
             for dest in self.destinations:
                 try: 
                     self.server.send(self.payload,dest, isBinary=True)

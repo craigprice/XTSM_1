@@ -336,12 +336,13 @@ class WSServerProtocol(WebSocketServerProtocol):
             
     def onMessage(self, payload, isBinary):
         headerItemsforCommand=['host','origin']
-        #self.request={k: self.http_headers[k] for k in headerItemsforCommand if k in self.http_headers}
-        #self.request.update({'ctime':self.ctime,'protocol':self})
-        #self.request.update({'timereceived':time.time()})
-        #self.request.update({'write':self.sendMessage})
+        self.request = {k: self.http_headers[k] for k in headerItemsforCommand if k in self.http_headers}
+        self.ctime = time.time()        
+        self.request.update({'ctime':self.ctime,'protocol':self})
+        self.request.update({'timereceived':time.time()})
+        self.request.update({'write':self.sendMessage})
         # record where this request is coming from
-        #self.clientManager.elaborateLog(self,self.request)
+        self.clientManagerOwningThisProtocol.elaborateLog(self,self.request)
 
         if isBinary:
             self.onBinaryMessage(payload)
@@ -371,7 +372,7 @@ class WSServerProtocol(WebSocketServerProtocol):
             self.transport.loseConnection()
         # if someone on this network has broadcast a shotnumber change, update the shotnumber in
         # the server's data contexts under _running_shotnumber
-        pdb.set_trace()        
+        #pdb.set_trace()        
         if hasattr(data, "shotnumber"):
             pdb.set_trace() # need to test the below
             #for dc in self.parent.dataContexts:
@@ -818,15 +819,18 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         return False
         
     def announce_data_listener(self,params):
+        print "class ClientManager, function announce_data_listener"
         announcement = {"IDLSocket_ResponseFunction":"announce_listener",
-                        "shotnumber":"",
+                        #"shotnumber":"",
+                        "ip_address":'10.1.1.112',
                         "server_id":self.server.uuid,
                         "instrument_of_interest":"ccd_camera",
                         "terminator":"die"}
         announcement.update(params)
         for i in self.connections:
-            self.connections[i].sendMessage(simplejson.dumps(announcement))
-   
+            #pdb.set_trace()
+            #self.connections[i].sendMessage(simplejson.dumps(announcement))
+            self.connections[i].sendMessage(simplejson.dumps(announcement),isBinary=False)
     
     def ping(self,payload):
         print "In ping()"
@@ -962,6 +966,7 @@ class CommandLibrary():
         #End Test
 
     def announce_listener(self,params):
+        print "class server, function announce_listener"
         self.server.DataBombDispatcher.link_to_instrument(params)
         #send back errors - return fail - ie no instrument.
 
@@ -1447,12 +1452,7 @@ class GlabPythonManager():
         self.server_ping_period = 5.0
         self.server_pinger.start(self.server_ping_period)
 
-        #Testing CP
-        for key in self.dataContexts:
-            m = self.dataContexts[key].dict['data_listener_manager']
-            m.spawn(params={'sender':'Pfaffian','server':self})
-            for key2 in m.listeners:
-                m.listeners[key2].announce_interest('10.1.1.112')
+
 
         #self.clientManager.announce_data_listener(self.data_listener_manager.listeners[i],'ccd_image','rb_analysis')
         
@@ -1500,6 +1500,7 @@ class GlabPythonManager():
         reactor.run()
 
     def announce_data_listener(self,params):
+        print "class server, function announce_data_listener"
         self.clientManager.announce_data_listener(params)
 
     def stop(self,dummy=None):
@@ -1529,6 +1530,12 @@ class GlabPythonManager():
                             "server_ping":"ping!"}
         self.ping_data.update({"server_time":time.time()})
         self.multicast.protocol.send(simplejson.dumps(self.ping_data))
+                #Testing CP
+        for key in self.dataContexts:
+            m = self.dataContexts[key].dict['data_listener_manager']
+            m.spawn(params={'sender':'Pfaffian','server':self})
+            for key2 in m.listeners:
+                m.listeners[key2].announce_interest('10.1.1.112')
         
     def isOwnPingBroadcast(self,payload_):
         if payload_['server_id'] == self.uuid:
