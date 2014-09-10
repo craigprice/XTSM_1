@@ -40,8 +40,10 @@ class DataBombList(xstatus_ready.xstatus_ready):
     """
     def __init__(self,params={}):
         defaultparams={ }
-        for key in params.keys(): defaultparams.update({key:params[key]})
-        for key in defaultparams.keys(): setattr(self,key,defaultparams[key])   
+        for key in params.keys(): 
+            defaultparams.update({key:params[key]})
+        for key in defaultparams.keys():
+            setattr(self,key,defaultparams[key])   
         self.databombs={}
         self.stream=self.FileStream(params={'file_root_selector':'raw_buffer_folders'})
 
@@ -254,7 +256,7 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
     """
     def __init__(self):
         self.listeners={}
-        self.instruments
+        self.instruments={}
         
     def spawn(self,params={}):
         """
@@ -270,11 +272,15 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
         onattach - callback method after data has been attached to listener
         onclose - callback after item is destroyed 
         """
-        defaultparams={'listen_for':{'sender':'','shotnumber':-1,'repnumber': None}
-                        , 'timecreated':time.time(), 'generator': None
-                        , 'timeout':360 }
-        for key in params.keys(): defaultparams.update({key:params[key]})
-        newguy=self.DataListener(defaultparams)        
+        defaultparams={'listen_for':{'sender':'',
+                                     'shotnumber':-1,
+                                     'repnumber': None},
+                       'timecreated':time.time(),
+                       'generator': None,
+                       'timeout':360 }
+        for key in params.keys():
+            defaultparams.update({key:params[key]})
+        newguy = self.DataListener(defaultparams)        
         self.listeners.update({newguy.id:newguy})
         
         #This needs to send the soon to be esnding servers  
@@ -316,13 +322,16 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             """
             constructor for class
             """
+            self.sender = None
+            self.server = None
             self.id='DL'+str(uuid.uuid1())
             defaultparams={'listen_for':{'sender':'','shotnumber':-1,'repnumber': None}
                             , 'timecreated':time.time(), 'generator': None
                             , 'timeout':360, 'eventcount':1 }        
-            for key in params.keys(): defaultparams.update({key:params[key]})
+            for key in params.keys():
+                defaultparams.update({key:params[key]})
             self.datalinks=[]
-            self.expirationtime=time.time()+defaultparams['timeout']
+            self.expirationtime = time.time() + defaultparams['timeout']
             for key in defaultparams.keys():
                 setattr(self,key,defaultparams[key])   
     
@@ -331,6 +340,26 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             NOTE:  listener must be killed by its owner manager - this is prone to cause memory leak
             """
             if hasattr(self,'onclose'): self.onclose(self)
+
+        def announce_interest(self,address):
+            """
+            announce to network servers that this element is interested in its data
+            Note: add to The databomb dispatcher functionality that will save
+            all databombs to disk that haven't been sent.
+            A good way of doing this is perhaps within the destrtuctor.
+            It chewcks a flag it it was dispatched - this way it might save even
+            on a crash.
+            """
+            pass
+            p = {'listener_instance':self,
+                 'instrument_id':None,
+                 'instrument_type':'camera',
+                 'connection_id':None,
+                 'ip_address':address,
+                 'port':None,
+                 'shotnumber':None,
+                 'data_type':'image'}
+            self.server.announce_data_listener(params=p)
         
         def query_interest(self, generator_id):
             """
@@ -402,6 +431,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         defaultparams={ }
         self.instruments_with_destinations = {}
         self.all_requests = {}
+        #This sets all the params to be member variables of DataBombDispatcher
         for key in params.keys():
             defaultparams.update({key:params[key]})
         for key in defaultparams.keys():
@@ -427,12 +457,16 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         self.databombers.update({bomber.uuid:bomber})
         return bomber.uuid
     
+    
+
     def link_to_instrument(self,params):
         #from params find instruments
     #Then add the ip address to the instruments_with_destinations
     #
-        
+        for key in params.keys():
+            setattr(self,key,params[key]) 
         pdb.set_trace()
+        self.destinations = [params['ip_address']]
         self.instruments_with_destinations.update(params)
         self.all_requests.update(params)
         
@@ -520,7 +554,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             self.destinations.append('10.1.1.112')#Change this! CP
             for dest in self.destinations:
                 try: 
-                    self.server.send(self.data,dest)
+                    self.server.send(self.payload,dest, isBinary=True)
                     print dest
                 except:
                     raise

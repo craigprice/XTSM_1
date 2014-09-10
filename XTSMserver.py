@@ -312,7 +312,7 @@ class WSServerProtocol(WebSocketServerProtocol):
         self.transport.write("df",debug=False)
         peer = self.transport.getPeer()
         self.clientManagerOwningThisProtocol.add_peer_server(self)
-        self.clientManagerOwningThisProtocol.add_peer_server_as_server(peer)
+        #self.clientManagerOwningThisProtocol.add_peer_server_as_server(peer)
         #try:
         #    self.factory.openConnections.update({self.ConnectionUID:self})
        # except AttributeError: 
@@ -336,12 +336,12 @@ class WSServerProtocol(WebSocketServerProtocol):
             
     def onMessage(self, payload, isBinary):
         headerItemsforCommand=['host','origin']
-        self.request={k: self.http_headers[k] for k in headerItemsforCommand if k in self.http_headers}
-        self.request.update({'ctime':self.ctime,'protocol':self})
-        self.request.update({'timereceived':time.time()})
-        self.request.update({'write':self.sendMessage})
+        #self.request={k: self.http_headers[k] for k in headerItemsforCommand if k in self.http_headers}
+        #self.request.update({'ctime':self.ctime,'protocol':self})
+        #self.request.update({'timereceived':time.time()})
+        #self.request.update({'write':self.sendMessage})
         # record where this request is coming from
-        self.clientManager.elaborateLog(self,self.request)
+        #self.clientManager.elaborateLog(self,self.request)
 
         if isBinary:
             self.onBinaryMessage(payload)
@@ -351,13 +351,16 @@ class WSServerProtocol(WebSocketServerProtocol):
         ## echo back message verbatim
         #self.sendMessage(payload, isBinary)
 
-    def onBinaryMessage(self,payload):
-        pass
+    def onBinaryMessage(self,payload_):
+        payload = msgpack.unpackb(payload_)
+        print "---------Data Below!-------------"
+        print payload
 
     def giveit(self):
         self.sendMessage("adsdasd")
 
     def onTextMessage(self,payload):
+        print "------------"
         # we will treat incoming websocket text using the same commandlibrary as HTTP        
         # but expect incoming messages to be JSON data key-value pairs
         try:
@@ -368,6 +371,7 @@ class WSServerProtocol(WebSocketServerProtocol):
             self.transport.loseConnection()
         # if someone on this network has broadcast a shotnumber change, update the shotnumber in
         # the server's data contexts under _running_shotnumber
+        pdb.set_trace()        
         if hasattr(data, "shotnumber"):
             pdb.set_trace() # need to test the below
             #for dc in self.parent.dataContexts:
@@ -401,6 +405,7 @@ class WSServerProtocol(WebSocketServerProtocol):
 #        self.transport.loseConnection()
 #    def connectionLost(self,reason):
 #        print datetime.now() , ":Disconnected from %s: %s" % (self.peer,reason.value)
+             
         
 class CommandProtocol(protocol.Protocol):
     """
@@ -498,9 +503,22 @@ class DataContext(XTSM_Server_Objects.XTSM_Server_Object):
     
     .dict contains dictionary of variables and values
     """
-    def __init__(self,name):
-        self.dict={"__context__":name}
-        self.name=name
+    def __init__(self, name, server):
+        self.dict = {"__context__":name}
+        self.name = name
+        self.server = server
+        #Create DataBombList
+        d = DataBomb.DataBombList(params={"server":self.server})
+        self.dict.update({'_bombstack':d})
+        #Create DataBombDispatcher
+        d = DataBomb.DataBombDispatcher(params={"server":self.server}) 
+        self.dict.update({'databomb_dispatcher':d})       
+        #Create DataListenerManager
+        d = DataBomb.DataListenerManager()
+        self.dict.update({'data_listener_manager':d}) 
+
+
+ 
     def update(self,data):
         """
         updates a variable or variables according to a dictionary of new values
@@ -706,10 +724,10 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         peer_server.connectionUID = uuid.uuid1().__str__()
         self.peer_servers.update({peer_server.connectionUID:peer_server})
         self.clients.update({peer_server.connectionUID:peer_server})
-        self.connections.update({peer_server.connectionUID:self})
+        self.connections.update({peer_server.connectionUID:protocol})
         #self.factory.openConnections.update({self.ConnectionUID:self})
         self.connectLog(self)       
-       
+        '''
     def add_peer_server_as_client(self,payload_):
         """
         adds a peer server client to the manager's clients
@@ -735,6 +753,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         self.factory.openConnections.update({self.ConnectionUID:self})
         self.clientManager.connectLog(self)
         '''
+        '''
         print self.peer_servers
         self.ping_payload = payload
         self.server_id = payload['server_id']
@@ -754,8 +773,10 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         self.peer_servers.update({payload['server_id']:self.PeerServer(payload)})
         print self.peer_servers
         '''
+        '''
         print "Added Peer Server"
-        
+        '''        
+        '''
     def add_peer_server_as_server(self,peer_):
         peer_server = self.PeerServer()
         peer_server.connection_time = time.time()
@@ -765,12 +786,16 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         self.peer_servers.update({peer_server.ConnectionUID:peer_server})
         self.clients.update({peer_server.ConnectionUID:peer_server})
         self.connectLog(peer_server)
+        '''
 
-    def sendMessageToPeerServer(self,message, peer_server):
-        for ws in self.clientWS:
+    def send(self,data_, peer_server,isBinary=False):
+        for client in self.connections.keys():
+            #pdb.set_trace()
+            self.connections[client].sendMessage(data_,isBinary)
+        #for ws in self.clientWS:
            # pdb.set_trace()
-            self.clientWS[ws].transport.write("hellod")
-            pass
+            #self.clientWS[ws].transport.write("hellod")
+            #pass
             #pdb.set_trace()
             #self.clientFactories[fac].protocol.sendMessage(message)
             #self.clientFactories[fac].protocol.hello()
@@ -792,6 +817,17 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         print "Unknown Server"
         return False
         
+    def announce_data_listener(self,params):
+        announcement = {"IDLSocket_ResponseFunction":"announce_listener",
+                        "shotnumber":"",
+                        "server_id":self.server.uuid,
+                        "instrument_of_interest":"ccd_camera",
+                        "terminator":"die"}
+        announcement.update(params)
+        for i in self.connections:
+            self.connections[i].sendMessage(simplejson.dumps(announcement))
+   
+    
     def ping(self,payload):
         print "In ping()"
         print self.peer_servers
@@ -807,16 +843,19 @@ class CommandQueue():
     of requests generated by incoming requests, combined with a library of
     known commands with which to respond.
     """
-    def __init__(self,Command=None,owner=None):
-        if Command!=None: self.queue=[Command]
-        else: self.queue=[]
-        if owner!=None: self.owner=owner
-        self.commandLibrary=CommandLibrary(self.owner)
+    def __init__(self,server,Command=None,owner=None):
+        self.server = server
+        if Command!=None:
+            self.queue=[Command]
+        else: 
+            self.queue=[]
+        if owner!=None: 
+            self.owner=owner
     def add(self,Command):
         self.queue.append(Command)
     def popexecute(self):
         if len(self.queue)>0:
-            self.queue.pop().execute(self.commandLibrary)
+            self.queue.pop().execute(self.server.commandLibrary)
     def xstatus(self):
         stat="<Commands>"
         if hasattr(self,'queue'):
@@ -851,8 +890,8 @@ class CommandLibrary():
     _AND CLOSE_ the initiating HTTP communication using
     params>request>protocol>loseConnection()
     """
-    def __init__(self, owner=None):
-        if owner!=None: self.owner=owner
+    def __init__(self, server):
+        self.server = server
         
     def __determineContext__(self,params):
         try: 
@@ -922,12 +961,10 @@ class CommandLibrary():
         
         #End Test
 
-    def link_to_instrument(self,params):
-        try:        
-            self.owner.DataBombDispatcher.link_to_instrument(params)
-        except:
-            raise
+    def announce_listener(self,params):
+        self.server.DataBombDispatcher.link_to_instrument(params)
         #send back errors - return fail - ie no instrument.
+
 
     def get_global_variable_from_socket(self,params):
         """
@@ -1383,9 +1420,10 @@ class GlabPythonManager():
         reactor.callWhenRunning(hello)
 
         # create a Command Queue, Client Manager, and Default Data Context
-        self.commandQueue = CommandQueue(owner=self)
-        self.clientManager = ClientManager(owner=self)
-        self.dataContexts = {'default':DataContext('default')}
+        self.commandQueue = CommandQueue(self)
+        self.commandLibrary = CommandLibrary(self)
+        self.clientManager = ClientManager(self)
+        self.dataContexts = {'default':DataContext('default',self)}
                 
         # associate the CommandProtocol as a response method on that socket
         self.listener.protocol = CommandProtocol
@@ -1408,6 +1446,16 @@ class GlabPythonManager():
         self.server_pinger = task.LoopingCall(self.server_ping)
         self.server_ping_period = 5.0
         self.server_pinger.start(self.server_ping_period)
+
+        #Testing CP
+        for key in self.dataContexts:
+            m = self.dataContexts[key].dict['data_listener_manager']
+            m.spawn(params={'sender':'Pfaffian','server':self})
+            for key2 in m.listeners:
+                m.listeners[key2].announce_interest('10.1.1.112')
+
+        #self.clientManager.announce_data_listener(self.data_listener_manager.listeners[i],'ccd_image','rb_analysis')
+        
 
         #Moved into Client Manager CP
         # setup the websocket services
@@ -1450,6 +1498,9 @@ class GlabPythonManager():
         Run the server
         """
         reactor.run()
+
+    def announce_data_listener(self,params):
+        self.clientManager.announce_data_listener(params)
 
     def stop(self,dummy=None):
         """
@@ -1531,7 +1582,7 @@ class GlabPythonManager():
         except AttributeError:
             pass
         
-    def send(self,data,address):
+    def send(self,data,address,isBinary=False):
         """
         sends data to a specified address, provided as a sting in the form
         ip:port, a server_id string in the form of a uuid1 provided through
@@ -1544,18 +1595,18 @@ class GlabPythonManager():
         """
         print "In send()"
         #dest = self.resolve_address(address)
-        #peer_to_send_message = None
-        #for uid in self.clientManager.peer_servers:
-            #pdb.set_trace()
-            #peer_server = self.clientManager.peer_servers[uid]
-            #if peer_server.ip == address:
-            #    peer_to_send_message = peer_server
+        peer_to_send_message = None
+        #or uid in self.clientManager.peer_servers:
         #pdb.set_trace()
-        #self.clientManager.sendMessageToPeerServer(data,peer_to_send_message)
+        #peer_server = self.clientManager.connections[uid]
+        #if peer_server.ip == address:
+            #peer_to_send_message = peer_server
+        #pdb.set_trace()
+        self.clientManager.send(data,address,isBinary)
         
-        for client in self.clientManager.connections.keys():
-            self.clientManager.connections[client].sendMessage("---------------------Hi")
-    
+        #for client in self.clientManager.connections.keys():
+            #pdb.set_trace()
+            #self.clientManager.connections[client].sendMessage("------From RBAnalysis---Hi")
     
     def resolve_address(self,address):
         """

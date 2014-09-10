@@ -64,16 +64,28 @@ class Glab_Instrument():
         # assemble the data payload
         if type(data)!=type({}): data={"data":data}
         # some default data-packaging parameters 
-        default_data = {"generator":str(self), "generator_instance":self.generator_uid,"time_served":time.time(), "destination_priorities":default_databomb_destination_priorities}     
-        try: default_data.update({"server_instance":self.server.uuid,"server_machine":self.server.hostid})
-        except: pass
+        default_data = {"generator":str(self),
+                        "generator_instance":self.generator_uid,
+                        "time_served":time.time(), 
+                        "destination_priorities":default_databomb_destination_priorities}     
+        try: default_data.update({"server_instance":self.server.uuid,
+                                  "server_machine":self.server.hostid})
+        except:
+            raise
+            pass
         # attempt to get the active shot-number and rep_number from the server
-        try: default_data.update({"shotnumber":self.server.dataContexts['default']['_running_shotnumber']})  
-        except: pass     
-        try: default_data.update({"repnumber":self.server.dataContexts['default']['_running_repnumber']})  
-        except: pass  
+        try:
+            default_data.update({"shotnumber":self.server.dataContexts['default']['_running_shotnumber']})  
+        except:
+            raise
+            pass     
+        try: 
+            default_data.update({"repnumber":self.server.dataContexts['default']['_running_repnumber']})  
+        except:
+            raise
+            pass  
         default_data.update(data)
-        data=default_data
+        data = default_data
         # construct the data-bomb and instruct server to send it
         #Change this to be part of a data context.
         if not hasattr(self.server,"DataBombDispatcher"):
