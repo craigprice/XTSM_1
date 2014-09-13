@@ -17,7 +17,8 @@ class Glab_Instrument():
     """
     def __init__(self,params={}):
         self.generator_uid=str(uuid.uuid1())
-        try: self.server=params['server']
+        try:
+            self.server=params['server']
         except KeyError:
             print "WARNING:: Instrument " + str(self)+" created without associated server"
             self.server=None
@@ -77,12 +78,12 @@ class Glab_Instrument():
         try:
             default_data.update({"shotnumber":self.server.dataContexts['default']['_running_shotnumber']})  
         except:
-            raise
+            #raise
             pass     
         try: 
             default_data.update({"repnumber":self.server.dataContexts['default']['_running_repnumber']})  
         except:
-            raise
+            #raise
             pass  
         default_data.update(data)
         data = default_data

@@ -18,6 +18,7 @@ import time
 import hdf5_liveheap, tables
 import sheltered_script, live_content, glab_figure, softstring
 import XTSM_cwrappers
+import simplejson
 
 XO_IGNORE=['PCDATA']  # ignored elements on XML_write operations
 
@@ -2135,6 +2136,49 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         """
         self.syn_tree=ast.parse(saxutils.unescape(self.ScriptBody.PCDATA))
 
+    def dispatch(self,server):
+        """
+        Searches for "Remote" tag and sends that to that server it figures out
+        it needs to go to.
+        If Remote does not contain a valid address (e.g. ip address,
+        host name, etc...), then the script object looks into its xml context
+        (e.g. am i a child of an instrument, etc... and finds what the
+        host the instrument is on, etc...)
+        """
+        
+        xtsm_owner = script.getOwnerXTSM()
+        def destination_from_instrument(script):
+            #This gets the instrument object's metadata
+            instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
+                                                             "Name",
+                                                             script.__parent__.OnInstrument[0].PCDATA)
+            return instrument_head.ServerAddress[0].PCDATA
+            
+        if hasattr(self,'Remote'):
+            self.destination = self.Remote.PCDATA  
+        else:
+            # No Remote tag given, so look for the ServerAddress in the
+            # metadata of the Instrument.
+            # determine context of script node.
+            # These are details of how to identify the destination
+            anticipated_contexts = {("__parent__","InstrumentCommand"): destination_from_instrument }  # {"relation":"tag_type"}
+            for cont,action in anticipated_contexts.items():
+                #self.__parent__.get_tag() == InstrumentCommand
+                if getattr(self,cont[0]).get_tag() == cont[1]:
+                    self.destination = action(self)
+        sn = xtsm_owner.Parameter[0] # Change to make robust to always get shotnumber.
+        self.insert(sn)
+        self.Time[0].parse()
+        msg = self.write_xml()
+
+        #shotnumber = self.parse().shotnumber.PCDATA Add this
+        pckg = simplejson.dumps({"IDLSocket_ResponseFunction":"execute_script",
+                                 "script_xml":msg,
+                                 "shotnumber":self.Shotnumber,
+                                 "terminator":"die"})
+        while not self.server.send(pckg,self.destination):
+            pass
+
     class ScriptVisitor(ast.NodeVisitor):
         """
         helper-class to allow walking the syntax tree to find assignments
@@ -2152,6 +2196,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                 else: 
                     self.assignments.update({targ.id:[targ.lineno]})
                 self.visit(node.value)
+                
 
 class ScriptOutput(gnosis.xml.objectify._XO_,XTSM_core):
     """
