@@ -17,11 +17,12 @@ import uuid,sys
 #    setattr(sys.modules[__name__],mod,__import__(mod))
 
 fqhe_master_init="""
-import Roper_CCD
-self.dataContexts['default'].update({'Roper_CCD':Roper_CCD.Princeton_CCD(params={'server':self})})
-self.dataContexts['default']['Princeton_CCD'].set_autoframing()
-self.dataContexts['default']['Princeton_CCD'].start_acquisition()
+self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self,'create_example_pollcallback':True})})
 """
+#import Roper_CCD
+#self.dataContexts['default'].update({'Roper_CCD':Roper_CCD.Princeton_CCD(params={'server':self})})
+#self.dataContexts['default']['Princeton_CCD'].set_autoframing()
+#self.dataContexts['default']['Princeton_CCD'].start_acquisition()
 
 natural_init="""
 import glab_instrument
@@ -30,6 +31,7 @@ self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Inst
 
 pfaffian_init="""
 print 'here is pfaffians init script - im in server_initializations.py'
+self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self,'create_example_pollcallback':True})})
 """
 # the dictionary below has an entry for each machine, with a script
 # that should be executed at the time the server is initialized

@@ -809,7 +809,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
                 self.script_servers[key].in_use = True
                 return self.script_servers[key]
                 
-        if len(self.script_servers) < 3:
+        if len(self.script_servers) < 1:
             self._open_new_script_server()
         else:
             print "Too Many Script_Servers. Killing oldest and using its resources."
@@ -1714,9 +1714,9 @@ class GlabPythonManager():
 
         #self.clientManager.announce_data_listener(self.data_listener_manager.listeners[i],'ccd_image','rb_analysis')
         
-        self.execu = task.LoopingCall(self.commandLibrary.execute_script)
-        self.period = 5.0
-        self.execu.start(self.period)
+        #self.execu = task.LoopingCall(self.commandLibrary.execute_script)
+        #self.period = 5.0
+        #self.execu.start(self.period)
         
 
       

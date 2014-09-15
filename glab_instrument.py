@@ -103,9 +103,10 @@ class Glab_Instrument():
         if not hasattr(self,"_poll_example_it"): self._poll_example_it = 0
         self._poll_example_it = (self._poll_example_it+1)%2 
         if self._poll_example_it==0:
+            print "Return True from example Poll"
             return True
         else: return False
-    _Xserver_poll._poll_period=15.#"15" seconds is being attached to the function as an element of the function-object
+    _Xserver_poll._poll_period=3.#"15" seconds is being attached to the function as an element of the function-object
     
     def _Xserver_callback(self):
         """
