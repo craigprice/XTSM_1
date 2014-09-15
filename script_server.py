@@ -2,6 +2,8 @@ from autobahn.twisted.websocket import WebSocketServerProtocol, \
                                        WebSocketServerFactory
 import time
 import sys
+import simplejson
+
 
 class MyServerProtocol(WebSocketServerProtocol):
 
@@ -18,13 +20,20 @@ class MyServerProtocol(WebSocketServerProtocol):
          print("Text message received: {0}".format(payload.decode('utf8')))
          
          
-      time.sleep(10)
+      time.sleep(1)
       print "This is inside the Script Server"
-      self.sendMessage("Done!", isBinary)
+      #self.sendMessage("Done!", isBinary)
 
-      ## echo back message verbatim
-      #code = compile(payload, '<string>', 'exec')
-      #exec code in context
+      # echo back message verbatim
+      print "compile...."
+      code = compile(payload, '<string>', 'exec')
+      code_locals = {}
+      exec code in code_locals
+      print payload
+      print code_locals
+      data = simplejson.dumps(code_locals['output_from_script'])
+      print data
+      self.sendMessage(data, isBinary=False)
 
    def onClose(self, wasClean, code, reason):
       print("WebSocket connection closed: {0}".format(reason))

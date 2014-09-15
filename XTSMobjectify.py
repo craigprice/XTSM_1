@@ -2196,7 +2196,38 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                 else: 
                     self.assignments.update({targ.id:[targ.lineno]})
                 self.visit(node.value)
-                
+
+class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
+    """
+    A class for instructing instrumnets that are attached to servers and taking in data.
+    """
+    def __init__(self):
+        XTSM_core.__init__(self)
+        
+    def __generate_listener__(self):#This is called by installListeners - which is called in Server, compile active xtsm
+        if hasattr(self,'PullData'):
+            self.__generate_listener__()
+            sn = 0
+            xtsm_owner = self.getOwnerXTSM()
+            def destination_from_instrument(self):
+                #This gets the instrument object's metadata
+                instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
+                                                             "Name",
+                                                             self.OnInstrument[0].PCDATA)
+                return instrument_head.ServerAddress[0].PCDATA
+            gen = destination_from_instrument()
+            self.__listener_criteria__ = {'shotnumber':sn,
+                                          'generator':gen,
+                                          'number_in_data_sequence':0}
+            self.data_link = None
+            
+            # Testing CP
+            for key in self.dataContexts:
+                m = self.dataContexts[key].dict['data_listener_manager']
+                m.spawn(params={'sender':'Pfaffian','server':self})
+                for key2 in m.listeners:
+                    m.listeners[key2].announce_interest('10.1.1.112')
+        
 
 class ScriptOutput(gnosis.xml.objectify._XO_,XTSM_core):
     """
