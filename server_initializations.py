@@ -17,8 +17,8 @@ import uuid,sys
 #    setattr(sys.modules[__name__],mod,__import__(mod))
 
 fqhe_master_init="""
-import PI_Camera_Python
-self.dataContexts['default'].update({'Princeton_CCD':PI_Camera_Python.Princeton_CCD(params={'server':self})})
+import Roper_CCD
+self.dataContexts['default'].update({'Roper_CCD':Roper_CCD.Princeton_CCD(params={'server':self})})
 self.dataContexts['default']['Princeton_CCD'].set_autoframing()
 self.dataContexts['default']['Princeton_CCD'].start_acquisition()
 """

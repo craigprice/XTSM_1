@@ -2206,7 +2206,6 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         
     def __generate_listener__(self):#This is called by installListeners - which is called in Server, compile active xtsm
         if hasattr(self,'PullData'):
-            self.__generate_listener__()
             sn = 0
             xtsm_owner = self.getOwnerXTSM()
             def destination_from_instrument(self):
@@ -2217,16 +2216,12 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
                 return instrument_head.ServerAddress[0].PCDATA
             gen = destination_from_instrument()
             self.__listener_criteria__ = {'shotnumber':sn,
-                                          'generator':gen,
-                                          'number_in_data_sequence':0}
+                                        'data_generator':gen,
+                                        'number_in_data_sequence':0}
             self.data_link = None
+            return {'listen_for':self.__listener_criteria__}
             
-            # Testing CP
-            for key in self.dataContexts:
-                m = self.dataContexts[key].dict['data_listener_manager']
-                m.spawn(params={'sender':'Pfaffian','server':self})
-                for key2 in m.listeners:
-                    m.listeners[key2].announce_interest('10.1.1.112')
+
         
 
 class ScriptOutput(gnosis.xml.objectify._XO_,XTSM_core):

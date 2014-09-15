@@ -1242,11 +1242,18 @@ class CommandLibrary():
                 dc.update({'_analysis_stream':InfiniteFileStream.FileStream(params={'file_root_selector':'analysis_stream'})})
             xtsm_object.XTSM._analysis_stream = dc['_analysis_stream']
             xtsm_object.installListeners(dc['_bombstack'].dataListenerManagers)#This calls _generate_listeners_ and passes in the DLM instance.
-
+            #InstallListeners passes the return of __generate_listeners__ to spawn in DLM class
             # InstrumentCommands
             commands = parserOutput.getDescendentsByType("InstrumentCommand")
             for c in commands:
                 c.Script.dispatch(self.server)
+
+            ## Testing CP
+            #for key in self.dataContexts:
+            #    m = self.dataContexts[key].dict['data_listener_manager']
+            #    m.spawn(params={'sender':'Pfaffian','server':self})
+            #    for key2 in m.listeners:
+            #        m.listeners[key2].announce_interest('10.1.1.112')
 
             # Send scripts CP
             #scripts = parserOutput.getDescendentsByType("Script")

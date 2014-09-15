@@ -40,6 +40,8 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
     
     Note any currently running winview process will be terminated to start this one
     """
+    #EXP_TIMING_MODE = 3 for External Sync
+    #EXP_TIMING_MODE = 1 for Freerun
     defaults={"EXP_TIMING_MODE":3,"EXP_EXPOSURETIME":10.0, "EXP_ACCUMS":2}
     class MultipleWinviewInstancesError(Exception):
         pass
@@ -65,6 +67,7 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         #sleep(3) # not clear this is necessary
         self.appdoc = win32com.client.Dispatch("WINX32.DocFile")
         print "New Winview Process Launched"
+        pdb.set_trace()
         self.gather_experiment_parameters()
         self.set_param(self.defaults)
         self.params_pending = False
