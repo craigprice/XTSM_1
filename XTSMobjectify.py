@@ -19,6 +19,8 @@ import time
 import hdf5_liveheap, tables
 import sheltered_script, live_content, glab_figure, softstring
 import XTSM_cwrappers
+import simplejson
+
 
 XO_IGNORE=['PCDATA']  # ignored elements on XML_write operations
 
@@ -2239,7 +2241,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         host the instrument is on, etc...)
         """
         
-        xtsm_owner = script.getOwnerXTSM()
+        xtsm_owner = self.getOwnerXTSM()
         def destination_from_instrument(script):
             #This gets the instrument object's metadata
             instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
@@ -2259,17 +2261,19 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                 #self.__parent__.get_tag() == InstrumentCommand
                 if getattr(self,cont[0]).get_tag() == cont[1]:
                     self.destination = action(self)
-        sn = xtsm_owner.Parameter[0] # Change to make robust to always get shotnumber.
+        sn = xtsm_owner.getItemByFieldValue("Parameter","Name","shotnumber")
         self.insert(sn)
         self.Time[0].parse()
-        msg = self.write_xml()
+        #msg = self.write_xml()
+        msg = self.ScriptBody.write_xml()
 
+        #pdb.set_trace()
         #shotnumber = self.parse().shotnumber.PCDATA Add this
         pckg = simplejson.dumps({"IDLSocket_ResponseFunction":"execute_script",
                                  "script_xml":msg,
-                                 "shotnumber":self.Shotnumber,
+                                 "shotnumber":str(self.Parameter.Value.PCDATA),
                                  "terminator":"die"})
-        while not self.server.send(pckg,self.destination):
+        while not server.send(pckg,self.destination):
             pass
 
 

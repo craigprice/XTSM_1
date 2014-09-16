@@ -1244,7 +1244,9 @@ class CommandLibrary():
             xtsm_object.installListeners(dc['_bombstack'].dataListenerManagers)#This calls _generate_listeners_ and passes in the DLM instance.
             #InstallListeners passes the return of __generate_listeners__ to spawn in DLM class
             # InstrumentCommands
-            commands = parserOutput.getDescendentsByType("InstrumentCommand")
+            print "here"
+            #pdb.set_trace()
+            commands = xtsm_object.XTSM.getDescendentsByType("InstrumentCommand")
             for c in commands:
                 c.Script.dispatch(self.server)
 
