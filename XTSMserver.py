@@ -722,6 +722,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         request is an emphemeral TCP port, will ...
         
         """
+        return
         pdb.set_trace()
         if not self.client_roles.has_key(request['protocol'].peer):
             self.client_roles.update({request['protocol'].peer:{role:time.time()}})
@@ -804,7 +805,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         
     def get_available_script_server(self):
         for key in self.script_servers.keys():
-            print "in use:", self.script_servers[key].in_use
+            #print "in use:", self.script_servers[key].in_use
             if self.script_servers[key].in_use == False:
                 self.script_servers[key].in_use = True
                 return self.script_servers[key]
@@ -812,7 +813,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         if len(self.script_servers) < 1:
             self._open_new_script_server()
         else:
-            print "Too Many Script_Servers. Killing oldest and using its resources."
+            #print "Too Many Script_Servers. Killing oldest and using its resources."
             pass
             
         return None
@@ -959,11 +960,11 @@ class ScriptQueue(Queue):
         Queue.__init__(self,server)
         
     def popexecute(self):
-        print "class ScriptQueue, function popexecute"
-        print "script_servers:", self.server.clientManager.script_servers
+        #print "class ScriptQueue, function popexecute"
+        #print "script_servers:", self.server.clientManager.script_servers
         ss = self.server.clientManager.get_available_script_server()
-        print "return from get_avail... ss =", ss
-        print "script_queue =", self.queue
+        #print "return from get_avail... ss =", ss
+        #print "script_queue =", self.queue
         if len(self.queue)>0 and ss != None:
             #self.queue.pop().execute(self.server.commandLibrary)    
             #Trying to connect to a server that is not responsive will restart that server and try to connect again.
@@ -993,7 +994,7 @@ class CommandLibrary():
             # look for a default data context for this IP address, if none, create
             dcname = "default:"+params['request']['protocol'].peer.split(":")[0]
             if not params['request']['protocol'].factory.parent.dataContexts.has_key(dcname):
-                dc = DataContext(dcname)
+                dc = DataContext(dcname, self.server)
                 params['request']['protocol'].factory.parent.dataContexts.update({dcname:dc})
         return params['request']['protocol'].factory.parent.dataContexts[dcname]
     # below are methods available to external HTTP requests - such as those required
@@ -1042,7 +1043,7 @@ class CommandLibrary():
 
     def scan_instruments(self):
         interested_instruments = []
-        for dc in self.owner.dataContexts:
+        for dc in self.server.dataContexts:
             for key in dc:
                 if isinstance(dc[key], glab_instrument.Glab_Instrument):
                     interested_instruments.append(dc[key])
@@ -1128,7 +1129,7 @@ class CommandLibrary():
         try: 
             exp_sync=dc.get('_exp_sync')        
         except: 
-            exp_sync=Experiment_Sync_Group(self.owner)
+            exp_sync=Experiment_Sync_Group(self.server)
             dc.update({'_exp_sync':exp_sync})
         try:
             ax=params['_active_xtsm']
@@ -1177,8 +1178,9 @@ class CommandLibrary():
         containing the active_xtsm string and shotnumber, they are skipped.
         """
         # mark requestor as an XTSM compiler
-        self.server.clientManager.update_client_roles(params['request'],
-                                                     'active_XTSM_compiler')
+        
+        #pdb.set_trace()
+        self.server.clientManager.update_client_roles(params['request'],'active_XTSM_compiler')
         
         dc=self.__determineContext__(params)
         parent_dc = ''
@@ -1188,15 +1190,13 @@ class CommandLibrary():
         else:
             for name, pdc in params['request']['protocol'].factory.parent.dataContexts.iteritems():
                 try:
-                    if ((pdc.get('pxi_data_context') == dc.get('__context__')) and
-                        pdc.dict.has_key('_exp_sync')):
+                    if ((pdc.get('pxi_data_context') == dc.get('__context__')) and pdc.dict.has_key('_exp_sync')):
                         parent_dc = pdc
                 except KeyError:
                     pass
         # if none exists, exit and return
         if parent_dc == '':
-            self.owner.broadcast('{"server_console": "'+
-                                 params['request']['protocol'].peer.split(":")[0] +
+            self.server.broadcast('{"server_console": "'+ params['request']['protocol'].peer.split(":")[0] +
                                 ' requested timing data, but nothing is ' +
                                 'assigned to run on this system."}')
             params['request']['protocol'].transport.loseConnection()
@@ -1212,7 +1212,7 @@ class CommandLibrary():
             xtsm_object = dc.get('_active_xtsm_obj')
 
             # parse the active xtsm to produce timingstrings
-            self.owner.broadcast('{"server_console": "' +
+            self.server.broadcast('{"server_console": "' +
                                  str(datetime.now()) +
                                  " Parsing started" +
                                  " Shotnumber= " + str(sn) + '"}')
@@ -1223,11 +1223,11 @@ class CommandLibrary():
             XTSMobjectify.postparse(parserOutput)            
             t1 = time.time()
             print "Parse Time: " , t1-t0, "s", "(postparse ", t1-tp, " s)"
-            self.owner.broadcast('{"server_console": "' +
+            self.server.broadcast('{"server_console": "' +
                                  str(datetime.now()) +
                                  " Parsing finished" +
                                  " Shotnumber= " + str(sn) +  '"}')
-            self.owner.broadcast('{"parsed_active_xtsm": "' +
+            self.server.broadcast('{"parsed_active_xtsm": "' +
                                  str(datetime.now()) + '"}')
 
             # setup data listeners for returned data
@@ -1268,7 +1268,7 @@ class CommandLibrary():
 
             # begin tracking changes to the xtsm_object
             def _changed_xtsm(changedelm):
-                self.owner.broadcast('{"xtsm_change":"'+str(sn)+'"}')
+                self.server.broadcast('{"xtsm_change":"'+str(sn)+'"}')
             xtsm_object.XTSM.onChange=_changed_xtsm
             
             # attach the xtsm object that generated the outgoing control arrays to the experiment sync's xtsm_stack
@@ -1358,7 +1358,7 @@ class CommandLibrary():
                                                       '.')
         params['request']['protocol'].transport.loseConnection()
         # next line adds a deployment command to the command queue
-        self.owner.commandQueue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
+        self.server.commandQueue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
         
         # mark requestor as a data generator
         pdb.set_trace()
@@ -1369,14 +1369,14 @@ class CommandLibrary():
         """
         print "Closing Python Manager"
         broadcastMessage = "Python Manager Shutting Down on Request."
-        self.owner.broadcast('{"server_console":'+broadcastMessage+'}')
+        self.server.broadcast('{"server_console":'+broadcastMessage+'}')
         msg = "Closing Python Manager - Goodbye."
         try:
             params['request']['write'](msg)
         except KeyError: 
              params['request']['protocol'].transport.write(msg)
              params['request']['protocol'].transport.loseConnection()
-        self.owner.stop()
+        self.server.stop()
 
     def request_content(self,params):
         """
@@ -1673,7 +1673,7 @@ class GlabPythonManager():
         global wsport        
         self.reactor = reactor
         self.task = task
-        #reactor.listenTCP(port, self.listener)
+        reactor.listenTCP(port, self.listener)
         def hello():
             print ('Listening on ports ' + str(port) +' (standard HTTP),',
             str(wsport) + ' (websocket)',
@@ -1944,18 +1944,18 @@ class GlabPythonManager():
         class HtmlPanel inherits wx.Panel and adds a button and HtmlWindow
         """
         def __init__(self, parent, id, owner):
-            self.owner=owner            
+            self.server=owner            
             # default pos is (0, 0) and size is (-1, -1) which fills the frame
             wx.Panel.__init__(self, parent, id)
             self.SetBackgroundColour("red")
             self.html1 = wx.html.HtmlWindow(self, id, pos=(0,30), size=(1000,600))            
             self.btn1 = wx.Button(self, -1, "Stop Twisted Reactor", pos=(0,0))
-            self.btn1.Bind(wx.EVT_BUTTON, self.owner.stop)            
+            self.btn1.Bind(wx.EVT_BUTTON, self.server.stop)            
             self.btn2 = wx.Button(self, -1, "Refresh", pos=(120,0))
             self.btn2.Bind(wx.EVT_BUTTON, self.refresh)
             wx.EVT_CLOSE(self, lambda evt: reactor.stop())
         def refresh(self, event=None):
-            self.html1.SetPage(self.owner.xstatus("html"))
+            self.html1.SetPage(self.server.xstatus("html"))
         def getHTML(self):
             return self.html1.GetParser().GetSource()
         def updateHTML(self,html):

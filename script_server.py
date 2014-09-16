@@ -59,5 +59,5 @@ if __name__ == '__main__':
    factory.protocol = MyServerProtocol
 
    reactor.listenTCP(int(sys.argv[2]), factory)
-   reactor.callLater(60*1, reactor.stop)
+   reactor.callLater(60*0.1, reactor.stop)
    reactor.run()

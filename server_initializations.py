@@ -31,8 +31,10 @@ self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Inst
 
 pfaffian_init="""
 print 'here is pfaffians init script - im in server_initializations.py'
-self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self,'create_example_pollcallback':True})})
 """
+
+#self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self,'create_example_pollcallback':True})})
+
 # the dictionary below has an entry for each machine, with a script
 # that should be executed at the time the server is initialized
 initializations={264840316731455L: natural_init, 

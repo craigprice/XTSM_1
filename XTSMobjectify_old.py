@@ -2,7 +2,6 @@
 This software is described in detail at https://amo.phys.psu.edu/GemelkeLabWiki/index.php/Python_parser
          
 """
-import copy
 import ast  # abstract syntax tree for scripts
 import msgpack, msgpack_numpy, struct  # support for messagepack format data
 msgpack_numpy.patch()
@@ -44,9 +43,9 @@ class XTSM_core(object):
 
     def insert(self,node,pos=0):
         "inserts a node node at the position pos into XTSM_core object"
-        node.__parent__=self
+        node.__parent__=self        
         if pos < 0: pos=0
-        if ((pos=="LAST") or (pos > self._seq.__len__())): pos=self._seq.__len__()
+        if pos > self._seq.__len__(): pos=self._seq.__len__()
         nodeType=type(node).__name__.split('_XO_')[-1]
         if hasattr(self, nodeType):  # begin insertion process
             if getattr(self,nodeType).__len__() > 1:
@@ -273,29 +272,18 @@ class XTSM_core(object):
         """
         return type(self).__name__.split('_XO_')[-1]
         
-    def set_value(self, value, REWRITE_NDG=False):
+    def set_value(self, value):
         """
         sets the textual value of a node
         """
-        if not REWRITE_NDG:
-            pos=0
-            if (self.PCDATA in self._seq):
-                pos=self._seq.index(unicode(str(value)))
-                self._seq.remove(unicode(str(value)))
-            self._seq.insert(pos,unicode(str(value)))
-            self.PCDATA=unicode(str(value))
-            self.onChange(self)
-            return self
-        else:
-            pos=0
-            if (self.PCDATA in self._seq):
-                pos=self._seq.index(self.PCDATA)
-                self._seq.remove(self.PCDATA)
-            self._seq.insert(pos,unicode(str(value)))
-            self.PCDATA=unicode(str(value))
-            self.onChange(self)
-            return self
-            
+        pos=0
+        if (self.PCDATA in self._seq):
+            pos=self._seq.index(unicode(str(value)))
+            self._seq.remove(unicode(str(value)))
+        self._seq.insert(pos,unicode(str(value)))
+        self.PCDATA=unicode(str(value))
+        self.onChange(self)
+        return self
         
     def generate_guid(self, depth=None):
         """
@@ -341,28 +329,8 @@ class XTSM_core(object):
     
     def remove_all(self, name):
         delattr(self,name)
-        self._seq=[it for it in self._seq if type(it)!=getattr(gnosis.xml.objectify,"_XO_"+name)] 
         self.onChange(self)
         pass
-
-    def remove_node(self,node):
-        """
-        removes a specified node from the element
-        """
-        # remove from xml sequence
-        self._seq.remove(node)
-        # remove from python object attributes
-        elmsthistype=getattr(self,node.get_tag())
-        # if there's only one and it's this one, delete the attribute
-        if (len(elmsthistype)==1):
-            if elmsthistype[0]==node: delattr(self,node.get_tag())
-            return
-        # if there are many, delete the one from list
-        for elmthistype in elmsthistype:
-            if elmthistype==node:
-                getattr(self,node.get_tag()).remove(node)
-                return
-        
 
     def onChange(self,elm=None):
         """
@@ -512,6 +480,7 @@ class body(gnosis.xml.objectify._XO_,XTSM_core):
         constructs control arrays, returns the ParserOutput node, which is also attached as a 
         subnode to the active Sequence node        
         """
+        
         try:
             if self.SequenceSelector:
                 if not hasattr(self.SequenceSelector[0],'current_value'): 
@@ -624,6 +593,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         constructs the timing control array for a timingGroup in given sequence
         sequence should already have collected TimingProffers
         """
+               
         
         TIMING=False
         timing=[]      
@@ -633,7 +603,9 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         self.sequence=sequence
         self.channelMap=channelMap
         self.tGroup=tGroup
+        #print 'Now Constructing', self.tGroup # JZ 08/15/14
         del sequence,channelMap,tGroup
+        
         
         
         # get data about the channel, sequence and its clocking channel
@@ -660,7 +632,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             # create a channelData object for every channel; accumulates all edges for each channel
             self.channels={channum:channelData(self,channum) for channum in range(self.numchan)} 
             if TIMING: timing.append(("channel creations",time.time()))        
-            # HERE WE NEED TO CONVERT FLAGGED DIGITAL BOARDS INTO SINGLE CHANNEL INTEGER REPRESENTATIONS
+            # HERE WE NEED TO CONVERT FLAGGED DIGITAL BOARDS INTO SINGLE CHANNEL INTEGER eESENTATIONS
             if self.ResolutionBits==1 and hasattr(self.tGroupNode,'ParserInstructions'):
                 if self.tGroupNode.ParserInstructions[0].get_childNodeValue_orDefault('RepresentAsInteger','yes').lower() == 'yes':
                     self.repasint=True
@@ -1082,9 +1054,8 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         This algorithm assumes the group is digital, channel intedges have no duplications, 
         and that the final edges all coincide - THIS LAST PART IS PROBLEMATIC
         """
-
+       
         BENCHMARK = False  # setting true benchmarks and compares output of this routine to the old one.
-
         if BENCHMARK:  t0=time.time()        
         Nchan = len(self.channels)  # number of channels
         Nbitout = math.ceil(Nchan/8.)*8  # number of bits in integer to use
@@ -1098,6 +1069,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             if str.upper(str(self.tGroupNode.ParserInstructions.Pulser.PCDATA)) == 'YES': pulse=True
         else: pulse=False
         
+
         # get number of updates for each channel 
         chanlengths = [ch.intedges.shape[1] for ch in self.channels.values()]
         # get whether each channel is a clock channel
@@ -1125,12 +1097,13 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
 #            if not channelclocks[i]:
 #                channeltimes[index - 1] = final_update
         ### NDG 3-11-14                
-
+        #pdb.set_trace()
         bits2 = bitarray([(not bool(ch.intedges[3,0])) for ch in self.channels.values()])        
         seed=0
         if not pulse: bits2.reverse()
         for bit in bits2.tolist(): seed = ((seed << 1) | bit)
         #tr=time.time()
+        #pdb.set_trace()
         fast_string=XTSM_cwrappers.repas.repasint(channeltimes.astype(numpy.uint32),seed,PULSER=pulse, DEV=pulse) # development method is currently ~30% faster for typical data
         #ts=time.time()
         #print "repas actual: ", ts-tr
@@ -1359,7 +1332,7 @@ class channelData():
     def __init__(self,parent,channelnumber,times=None,values=None):
         self.channel=channelnumber
         self.parent=parent
-               
+
         if times==None:
             self.clockchans=[parent.channelMap.isClock(parent.tGroup,x) for x in range(parent.numchan)] #LRJ 10-31-2013 create list of clock channels in the active timing group. False for non-clocker channels, clocked timing group number for clock channels
             self.isclock=parent.channelMap.isClock(parent.tGroup,self.channel)
@@ -1374,6 +1347,9 @@ class channelData():
                 else:
                     self.holdingval=0
             else: self.holdingval=0
+
+
+
             # retrieve intedges
             if self.isclock:
                 # if this is a clock channel, take the clock edges if already constructed or construct from clockstring
@@ -1407,6 +1383,7 @@ class channelData():
                 #t1=time.time()
                 #print "harvest: ", t1-t0
 
+
             if ((not self.isclock) and (not self.isinput)):
                 #t0=time.time()
                 # add first and last edge if necessary
@@ -1420,9 +1397,13 @@ class channelData():
                     self.intedges=numpy.hstack([self.intedges,numpy.array([[parent.denseT.searchsorted(parent.lasttimecoerced),self.channel,parent.lasttimecoerced,self.holdingval,-1]]).transpose()])
                 #t1=time.time()
                 #print "first/last edge insert: ", t1-t0
+#            try: 
+#                if self.chanObj.ChannelName.PCDATA=="MOTRepumperShutter": pdb.set_trace()
+#            except: pass
 
-
-
+                
+                # find duplicated edges (edges whose values is same as previous edge), remove them           
+                
                 if self.parent.ResolutionBits==1:         # Only remove the repeat values for digital Channel , JZ 08/13/14  
                     self.intedges=numpy.delete(self.intedges,numpy.where(self.intedges[3,:-1]==self.intedges[3,1:])[0]+1,axis=1)            
             
@@ -1538,13 +1519,9 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
         """
         top-level algorithm for parsing a sequence;
         equivalent to XTSM_parse in IDL code
+      
         """
-
-        # replicate subsequences with iterations specified (also strip any previously generated replications)
-        for subseq in self.getDescendentsByType("SubSequence"):
-            subseq.dereplicate()        
-        for subseq in self.getDescendentsByType("SubSequence"):
-            subseq.replicate()
+        
         # get the channelmap node from the XTSM object.
         cMap=self.getOwnerXTSM().getDescendentsByType("ChannelMap")[0]
       
@@ -1568,7 +1545,8 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
         # create an element to hold parser output
         pOutNode=self.insert(ParserOutput())
         # step through timing groups, starting from lowest on heirarchy
-        #sorted (channelHeir, key=channelHeir.__getitem__) returns a list of groupnumber in the order of clocklevel, from low to high
+        #sorted (channelHeir, key=channelHeir.__getitem__) returns a list of groupnumer in the order of clocklevel, from low to high        
+     
         for tgroup in sorted(channelHeir, key=channelHeir.__getitem__):
             cA=pOutNode.insert(ControlData()) # create a control array node tagged with group number
             cA.insert(GroupNumber().set_value(tgroup))
@@ -1621,7 +1599,8 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
                     self.endtime = maxlasttime
                     self.EndTime[0].addAttribute('parser_error','Invalid value: Coerced to '+str(maxlasttime)+' ms.')
         return self.endtime
-                
+        
+        
 # The following lines are not used - board initialization and holding values are inserted into intedges now without
 # creating explicit edges to do so - the downside of that is that a user does not get feedback from looking at the parsed
 # XTSM what values were used.  The reason the following was ultimately dropped was that initial and holding values
@@ -1749,60 +1728,8 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
                 self.starttime=substarttime+self.__parent__.get_starttime()
             except: print 'Subsequence StartTime Ivalid.'    
         return self.starttime
-
-    def replicate(self):
-        """
-        looks for "Iterations" subelement of SubSequence, and creates a copy
-        for each iteration.  
-        """
-        self.dereplicate()  # remove any previously generated replications
-        if not hasattr(self,"Iterate"): return
-        progenitor_name = self.Name[0].PCDATA
-        progenitor_time=self.StartTime[0].parse()
-        # create a container subsequence for the iterations of the progenitor subsequence
-        container_subsequence=SubSequence()
-        namer=copy.deepcopy(self.Name[0])
-        namer.set_value("_iterations_of_"+progenitor_name, REWRITE_NDG=True)
-        container_subsequence.insert(namer,pos="LAST")
-        st=copy.deepcopy(self.StartTime[0])
-        st.set_value(u"0", REWRITE_NDG=True)
-        container_subsequence.insert(st)
-        # create the iterated subsequences
-        for iters in self.Iterate:
-            try: per=iters.Period[0].parse()
-            except: iters.addAttribute("parser_error","Cannot Determine Iteration Period - is Period Element Declared?")
-            iters_num=int(iters.Repetitions[0].parse())
-            for it in range(iters_num):
-                newsubseq=copy.deepcopy(self)  # create a copy of the current subsequence
-                newsubseq.remove_all("Iterate")  # prevent an endless replication loop (wouldn't happen anyway based on calling sequence)
-                #newsubseq.remove_all("Name") 
-                #newsubseq.insert(Name("_iter_"+str(it)+"_"+progenitor_name))
-                if hasattr(newsubseq,"Name"): newsubseq.Name[0].set_value("_iter_"+str(it)+"_"+progenitor_name, REWRITE_NDG=True)
-                if hasattr(newsubseq,"StartTime"): newsubseq.StartTime[0].set_value(str(progenitor_time+float(1.+it)*per), REWRITE_NDG=True)  # set successive starttimes
-                else: 
-                    self.addAttribute("parser_error","Iterations Ignored - Progenitor Subsequence Missing a Start Time")
-                    return
-                container_subsequence.insert(newsubseq,pos="LAST")
-        # attach the container subsequence to the parent of the progenator
-        self.insert(container_subsequence,pos="LAST")
-
-    def dereplicate(self):
-        """
-        removes the replicated copies of an iterated subsequence
-        """
-        if not hasattr(self,"SubSequence"): return
-        for subseq in self.SubSequence:
-            subseq.dereplicate()
-            if "_iterations_of_" in subseq.Name[0].PCDATA: self.remove_node(subseq)
-
-# declaring an XTSM Name class was problematic, could probably reinstate this with effort
-#class Name(gnosis.xml.objectify._XO_,XTSM_core):
-#    def __init__(self, name=None):
-#        XTSM_core.__init__(self)
-#        if name!=None:
-#            self.set_value(name)
-#        return None
-
+        
+        
 class ChannelMap(gnosis.xml.objectify._XO_,XTSM_core):
     def getChannelIndices(self,channelName):
         """
@@ -2229,50 +2156,6 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         """
         self.syn_tree=ast.parse(saxutils.unescape(self.ScriptBody.PCDATA))
 
-    def dispatch(self,server):
-        """
-        Searches for "Remote" tag and sends that to that server it figures out
-        it needs to go to.
-        If Remote does not contain a valid address (e.g. ip address,
-        host name, etc...), then the script object looks into its xml context
-        (e.g. am i a child of an instrument, etc... and finds what the
-        host the instrument is on, etc...)
-        """
-        
-        xtsm_owner = script.getOwnerXTSM()
-        def destination_from_instrument(script):
-            #This gets the instrument object's metadata
-            instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
-                                                             "Name",
-                                                             script.__parent__.OnInstrument[0].PCDATA)
-            return instrument_head.ServerAddress[0].PCDATA
-            
-        if hasattr(self,'Remote'):
-            self.destination = self.Remote.PCDATA  
-        else:
-            # No Remote tag given, so look for the ServerAddress in the
-            # metadata of the Instrument.
-            # determine context of script node.
-            # These are details of how to identify the destination
-            anticipated_contexts = {("__parent__","InstrumentCommand"): destination_from_instrument }  # {"relation":"tag_type"}
-            for cont,action in anticipated_contexts.items():
-                #self.__parent__.get_tag() == InstrumentCommand
-                if getattr(self,cont[0]).get_tag() == cont[1]:
-                    self.destination = action(self)
-        sn = xtsm_owner.Parameter[0] # Change to make robust to always get shotnumber.
-        self.insert(sn)
-        self.Time[0].parse()
-        msg = self.write_xml()
-
-        #shotnumber = self.parse().shotnumber.PCDATA Add this
-        pckg = simplejson.dumps({"IDLSocket_ResponseFunction":"execute_script",
-                                 "script_xml":msg,
-                                 "shotnumber":self.Shotnumber,
-                                 "terminator":"die"})
-        while not self.server.send(pckg,self.destination):
-            pass
-
-
     class ScriptVisitor(ast.NodeVisitor):
         """
         helper-class to allow walking the syntax tree to find assignments
@@ -2290,30 +2173,6 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                 else: 
                     self.assignments.update({targ.id:[targ.lineno]})
                 self.visit(node.value)
-
-class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
-    """
-    A class for instructing instrumnets that are attached to servers and taking in data.
-    """
-    def __init__(self):
-        XTSM_core.__init__(self)
-        
-    def __generate_listener__(self):#This is called by installListeners - which is called in Server, compile active xtsm
-        if hasattr(self,'PullData'):
-            sn = 0
-            xtsm_owner = self.getOwnerXTSM()
-            def destination_from_instrument(self):
-                #This gets the instrument object's metadata
-                instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
-                                                             "Name",
-                                                             self.OnInstrument[0].PCDATA)
-                return instrument_head.ServerAddress[0].PCDATA
-            gen = destination_from_instrument()
-            self.__listener_criteria__ = {'shotnumber':sn,
-                                        'data_generator':gen,
-                                        'number_in_data_sequence':0}
-            self.data_link = None
-            return {'listen_for':self.__listener_criteria__}
 
 class ScriptOutput(gnosis.xml.objectify._XO_,XTSM_core):
     """
@@ -2895,6 +2754,7 @@ class XTSM_Object(object):
         parses the appropriate sequence, given a shotnumber (defaults to zero)
         - THIS IS A TOPLEVEL ROUTINE FOR THE PARSER
         """
+        
         self.XTSM.insert(Parameter(u'shotnumber',str(shotnumber)))
         parserOutput=self.XTSM.body[0].parseActiveSequence()
         return parserOutput

@@ -16,6 +16,7 @@ from numpy.ctypeslib import ndpointer
 
 class repas():
     def __init__(self):
+        print file_locations.file_locations['repasint_dll'][uuid.getnode()]
         self.lib = ctypes.cdll.LoadLibrary(file_locations.file_locations['repasint_dll'][uuid.getnode()])  #"c:\\Users\\Nate\\documents\\visual studio 2010\\Projects\\testctype\\x64\\Release\\testctype.dll"
         suffixes=["","dev","pulse","pulsedev"]
         # bit-flipping versions
@@ -32,13 +33,14 @@ class repas():
 #    def __del__(self):
 #        del self.lib
     def repasint(self,flipstring,firstelm,PULSER=False,DEV=False):
+        #pdb.set_trace()        
         ptrs = ((flipstring==0).nonzero())[0].astype(numpy.uint32)
         outbits=ptrs.size
-        outdata = numpy.empty(numpy.unique(flipstring).shape[0]+1, dtype=getattr(numpy,"uint"+str(outbits)))
+        outdata = numpy.empty(numpy.unique(flipstring).shape[0]+2, dtype=getattr(numpy,"uint"+str(outbits))) #JZ add +2 on the array size.
         func = "fun_repasuint" + str(outbits) + ({True: "pulse", False: ""})[PULSER] + ({True: "dev", False: ""})[DEV]
-        getattr(self,func)(flipstring, flipstring.size, ptrs,firstelm, outdata,outdata.size+1)
-        if not PULSER: outdata[-1]=0
-        return outdata[1:]
+        getattr(self,func)(flipstring, flipstring.size, ptrs,firstelm, outdata,outdata.size)  # JZ and NDG remove the +1 from the last parameter.
+        #if not PULSER: outdata[-1]=0  # this was inserted to reproduce a bug in original code NDG 081414
+        return outdata[1:-1]  # Change outdata[1:] to outdata[1:-1]  JZ 8/18/2014, the first element is the seed, and the last element is an extra one to reserve a memary space for last iteration of pointer.
 
     def OldRepresentAsInteger(self,channeltimes,seed, PULSER=False):
                 
