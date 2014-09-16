@@ -77,6 +77,7 @@ import xstatus_ready
 import file_locations
 import server_initializations
 import glab_instrument
+import script_server
 
 
 def tracefunc(frame, event, arg, indent=[0]):
@@ -821,7 +822,8 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
     def _open_new_script_server(self):
             new_port = 9000 + len(self.script_servers)
             print "About to open"
-            subprocess.Popen(['C:\\Python27\\python.exe','C:\\wamp\\www\\WebSocketServer\\script_server.py']+['localhost',str(new_port)])
+            script_server_path = os.path.abspath(script_server.__file__)
+            subprocess.Popen(['C:\\Python27\\python.exe',script_server_path]+['localhost',str(new_port)])
             print "Done Opening"            
             self.add_script_server(new_port)
             
@@ -842,6 +844,11 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             address.protocol.sendMessage(data,isBinary)
             print "Sent!"        
             return True
+        if address == 'active_parser':
+            print "--------------------"
+            #address.protocol.sendMessage(data,isBinary)
+            #print "Sent!"        
+            #return True
         for client in self.peer_servers.keys():
             #possible_matches = ["ws://"+str(self.peer_servers[client].ip)+":"+str(self.peer_servers[client].port)]
             possible_matches = ["ws://localhost:8086"]
@@ -1677,6 +1684,7 @@ class GlabPythonManager():
         self.reactor = reactor
         self.task = task
         reactor.listenTCP(port, self.listener)
+        #reactor.addSystemEventTrigger('before','shutdown',server_shutdown)
         def hello():
             print ('Listening on ports ' + str(port) +' (standard HTTP),',
             str(wsport) + ' (websocket)',
@@ -1710,9 +1718,9 @@ class GlabPythonManager():
                                                  MulticastProtocol(),
                                                  listenMultiple=True)
         self.multicast.protocol.server = self 
-        #self.server_pinger = task.LoopingCall(self.server_ping)
-        #self.server_ping_period = 5.0
-        #self.server_pinger.start(self.server_ping_period)
+        self.server_pinger = task.LoopingCall(self.server_ping)
+        self.server_ping_period = 5.0
+        self.server_pinger.start(self.server_ping_period)
         
 
         #self.clientManager.announce_data_listener(self.data_listener_manager.listeners[i],'ccd_image','rb_analysis')
@@ -1769,6 +1777,13 @@ class GlabPythonManager():
         """
         reactor.run()
 
+    def server_shutdown(self):
+        port = reactor.listenTCP(portNumber, factory)
+        port.stopListening()
+        
+        connector = reactor.connectTCP(host, port, factory)
+        connector.disconnect()
+
     def announce_data_listener(self,params):
         print "class server, function announce_data_listener"
         self.clientManager.announce_data_listener(params)
@@ -1798,6 +1813,7 @@ class GlabPythonManager():
                             "server_name":socket.gethostname(),
                             "server_ip":socket.gethostbyname(socket.gethostname()),
                             "server_port":str(wsport),
+                            "server_uuid_node":uuid.getnode(),
                             "server_ping":"ping!"}
         self.ping_data.update({"server_time":time.time()})
         self.multicast.protocol.send(simplejson.dumps(self.ping_data))
@@ -1815,11 +1831,12 @@ class GlabPythonManager():
         recieves an identifying message on udp broadcast port from other
         servers, and establishes a list of all other servers
         """
-        print "In GlabPythonManager, server_pong()"
+        #print "In GlabPythonManager, pong()"
         #pdb.set_trace()
         #self.peer_servers[payload['server_name']]
         if self.isOwnPingBroadcast(payload):
-            print "ignoring own broadcast"
+            pass
+            #print "ignoring own broadcast"
         else:
             print "ping from a peer server. Giving payload to the Client Manager."
             self.clientManager.pong(payload)

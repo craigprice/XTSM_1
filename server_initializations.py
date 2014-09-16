@@ -17,8 +17,10 @@ import uuid,sys
 #    setattr(sys.modules[__name__],mod,__import__(mod))
 
 fqhe_master_init="""
-self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self,'create_example_pollcallback':True})})
 """
+#self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self,'create_example_pollcallback':True})})
+
+
 #import Roper_CCD
 #self.dataContexts['default'].update({'Roper_CCD':Roper_CCD.Princeton_CCD(params={'server':self})})
 #self.dataContexts['default']['Princeton_CCD'].set_autoframing()

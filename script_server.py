@@ -3,7 +3,15 @@ from autobahn.twisted.websocket import WebSocketServerProtocol, \
 import time
 import sys
 import simplejson
+import pdb
+from twisted.internet.protocol import DatagramProtocol
+import uuid
 
+from twisted.internet import task
+
+last_connection_time = time.time()
+time_last_check = time.time()
+time_now = time.time()
 
 class MyServerProtocol(WebSocketServerProtocol):
 
@@ -38,7 +46,52 @@ class MyServerProtocol(WebSocketServerProtocol):
    def onClose(self, wasClean, code, reason):
       print("WebSocket connection closed: {0}".format(reason))
 
+class MulticastProtocol(DatagramProtocol):
+    """
+    Protocol to handle UDP multi-receiver broadcasts - used for servers
+    to announce their presence to one another through periodic pings
+    """
+    resident=True
+    def startProtocol(self):
+        """
+        Join the multicast address
+        """
+        self.transport.joinGroup("228.0.0.5")
 
+    def send(self,message):
+        """
+        sends message on udp broadcast channel
+        """
+        self.transport.write(message, ("228.0.0.5", udpbport))
+
+    def datagramReceived(self, datagram_, address):
+        """
+        called when a udp broadcast is received
+        """
+        #print "Datagram received from "+ repr(address) 
+        datagram = simplejson.loads(datagram_)
+        port = address[1]
+        if datagram['server_uuid_node'] == uuid.getnode() and port == 8085 and datagram.has_key("server_ping"): 
+            #pdb.set_trace()
+            global last_connection_time
+            last_connection_time = time.time()
+            
+    
+
+
+def server_shutdown():
+    print "------------------Shutting Down ScriptServer Now!------------------"
+    reactor.callLater(0.01, reactor.stop)
+       
+def check_for_main_server():
+    global time_last_check
+    global time_now
+    time_last_check = time_now
+    time_now = time.time()
+    #print time_last_check, time_now, last_connection_time
+    if (time_now - last_connection_time) > 11 and (time_now - time_last_check) < 11:
+        server_shutdown()
+        
 
 if __name__ == '__main__':
 
@@ -57,7 +110,14 @@ if __name__ == '__main__':
    factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug = True)
    factory.setProtocolOptions(failByDrop=False)
    factory.protocol = MyServerProtocol
+   
+   udpbport = 8085
+   multicast = reactor.listenMulticast(udpbport, MulticastProtocol(),listenMultiple=True)
+
+   check = task.LoopingCall(check_for_main_server)
+   call_period = 1#sec
+   check.start(call_period)
 
    reactor.listenTCP(int(sys.argv[2]), factory)
-   reactor.callLater(60*0.1, reactor.stop)
+   #reactor.callLater(60*30, reactor.stop)
    reactor.run()
