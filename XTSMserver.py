@@ -836,11 +836,12 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
     def send(self,data, address,isBinary=False):
         #address can be the following: shadow, analysis, ip, ip:port styrings and numbers, peer_server object, ''ws://localhost:8086''
         print "In class ClientManager, function, send()"
-        #pdb.set_trace()
+        pdb.set_trace()
         if address.__class__.__name__ == 'ScriptServer':
             print "--------------------"
             address.protocol.sendMessage(data,isBinary)
             print "Sent!"        
+            return True
         for client in self.peer_servers.keys():
             #possible_matches = ["ws://"+str(self.peer_servers[client].ip)+":"+str(self.peer_servers[client].port)]
             possible_matches = ["ws://localhost:8086"]
