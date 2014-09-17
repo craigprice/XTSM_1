@@ -324,6 +324,9 @@ class WSClientProtocol(WebSocketClientProtocol):
         print("WebSocket connection closed as Client: {0}".format(reason))
         print "Still need to delete Server instance"
         self.factory.isConnectionOpen = False
+        self.transport.loseConnection()
+        del self.server
+        #Does this work?? 
         
     def _add_self_to_ConnectionManager(self):
         # First look in peer servers
@@ -469,6 +472,9 @@ class WSServerProtocol(WebSocketServerProtocol):
         print("WebSocket connection closed as Server: {0}".format(reason))
         self.factory.isConnectionOpen = False
         #Should remove peer_server
+        self.transport.loseConnection()
+        del self.server
+        #Does this work?? 
 
     def _add_self_to_ConnectionManager(self):
         new_peer = self.factory.clientManager.PeerServer()
@@ -773,6 +779,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             self.name = None
             self.ping_payload = None
             self.last_broadcast_time = 0
+            self.is_active_parser = False
             #pdb.set_trace()
        
     class ScriptServer(GlabClient):
@@ -963,10 +970,11 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             return True
         if address == 'active_parser':
             print "--------------------"
-            pdb.set_trace()
-            #address.protocol.sendMessage(data,isBinary)
-            #print "Sent!"        
-            return True
+            for key in self.peer_servers:
+                if self.peer_servers[key].is_active_parser:
+                    self.peer_servers[key].protocol.sendMessage(data,isBinary)
+                    print "Sent!"        
+                    return True
         # Only thing left is assuming that the address is an ip address.
         #try:
         #    IP(address)
@@ -997,6 +1005,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             if self.peer_servers[key].ip == payload['server_ip']:
                 self.peer_servers[key].server_id = payload['server_id']
                 self.peer_servers[key].last_broadcast_time = time.time()
+                self.peer_servers[key].is_active_parser = bool(payload['is_active_parser'])
                 self.peer_servers[key].server_time = payload['server_time']
                 self.peer_servers[key].ping_payload = payload
                 print "Known Server"
@@ -1084,8 +1093,8 @@ class ScriptQueue(Queue):
             #Add functionality for timing
             print "Executing on Main Server"
             code_locals = {}
-            print "payload:"
-            print payload
+            print "print queue[0]:"
+            print self.queue[0]
             print "compile...."
             try:
                 code = compile(self.queue.pop()['script_body'], '<string>', 'exec')
@@ -1094,7 +1103,7 @@ class ScriptQueue(Queue):
                 raise
             print "compile successful"
             print "executing"
-            exec code in code_locals
+            exec code in globals(), locals()
             print "done executing"
             return
         else:
@@ -1337,6 +1346,7 @@ class CommandLibrary():
             return
         else:
             # get the experiment synchronization object; retrieve the current shotnumber
+            self.server.is_active_parser = True
             dc=parent_dc
             exp_sync = dc.get('_exp_sync')
             sn = exp_sync.shotnumber
@@ -1826,6 +1836,8 @@ class GlabPythonManager():
         self.commandLibrary = CommandLibrary(self)
         self.clientManager = ClientManager(self)
         self.dataContexts = {'default':DataContext('default',self)}
+        self.server = self
+        self.is_active_parser = False
                 
         # associate the CommandProtocol as a response method on that socket
         self.listener.protocol = CommandProtocol
@@ -1943,6 +1955,7 @@ class GlabPythonManager():
                             "server_ip":socket.gethostbyname(socket.gethostname()),
                             "server_port":str(wsport),
                             "server_uuid_node":uuid.getnode(),
+                            "is_active_parser":self.is_active_parser,
                             "server_ping":"ping!"}
         self.ping_data.update({"server_time":time.time()})
         self.multicast.protocol.send(simplejson.dumps(self.ping_data))

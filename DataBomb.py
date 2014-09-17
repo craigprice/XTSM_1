@@ -483,6 +483,10 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             uuid - deploys by the unique identifier assigned to the bomb on add
         """
         #print "class DataBombDispather, function dispatch"
+        #for d in self.databombers: delete if bomber has sent
+        for d in self.databombers:
+            if d.is_sent:
+                del d
         if len(self.databombers)==0:
             return
         print "dispatching data"
@@ -501,7 +505,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         except KeyError: 
             try: 
                 self.databombers[criteria].dispatch()
-                del self.databombers[criteria]
+                #del self.databombers[criteria] need to delete the bomber
             except KeyError:
                 raise self.UnknownBomberError
 
@@ -519,6 +523,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             print "class DataBomber, __init__"
             self.uuid='DBR'+uuid.uuid1().__str__()
             self.server=server
+            self.is_sent = False
             try: 
                 caller=inspect.stack()[1][3]
             except: 
@@ -553,8 +558,16 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 self.dest_by_priority=True
             for dest in self.destinations:
                 try: 
-                    self.server.send(self.payload,dest, isBinary=True)
-                    print dest
+                    if self.server.send(self.payload,dest, isBinary=True):
+                        print "dest:"
+                        print dest
+                        print "Databomb Sent!"
+                        self.is_sent = True
+                    else:
+                        print "dest:"
+                        print dest
+                        print "Databomb Not Sent!"
+                        self.is_sent = False
                 except:
                     raise
 

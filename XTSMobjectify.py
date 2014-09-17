@@ -2277,6 +2277,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         pckg = simplejson.dumps({"IDLSocket_ResponseFunction":"execute_script",
                                  "script_body":msg,
                                  "on_main_server":on_main_server,
+                                 "time_to_execute":self.Time.PCDATA,
                                  "shotnumber":self.Parameter.Value.PCDATA,
                                  "terminator":"die"})
         while not server.send(pckg,self.destination,isBinary=False):

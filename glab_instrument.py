@@ -7,7 +7,8 @@ Created on Sun Aug 10 12:18:56 2014
 import DataBomb
 import uuid, time, numpy, pdb
 
-default_databomb_destination_priorities = ["active_parser","169.254.174.200:8084","169.254.174.200:8083","127.0.0.1:8084","127.0.0.1:8083"]
+#default_databomb_destination_priorities = ["active_parser","169.254.174.200:8084","169.254.174.200:8083","127.0.0.1:8084","127.0.0.1:8083"]
+default_databomb_destination_priorities = ["10.1.1.112","169.254.174.200:8084","169.254.174.200:8083","127.0.0.1:8084","127.0.0.1:8083"]
 
 class Glab_Instrument():
     """
