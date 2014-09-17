@@ -2251,7 +2251,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
             return instrument_head.ServerAddress[0].PCDATA
             
         if hasattr(self,'Remote'):
-            self.destination = self.Remote.PCDATA  #Have this handle multiple kinds. name, ip, instrument etc.
+            self.script_destination = self.Remote.PCDATA  #Have this handle multiple kinds. name, ip, instrument etc.
         else:
             # No Remote tag given, so look for the ServerAddress in the
             # metadata of the Instrument.
@@ -2261,26 +2261,24 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
             for cont,action in anticipated_contexts.items():
                 #self.__parent__.get_tag() == InstrumentCommand
                 if getattr(self,cont[0]).get_tag() == cont[1]:
-                    self.destination = action(self)
+                    self.script_destination = action(self)
         sn = xtsm_owner.getItemByFieldValue("Parameter","Name","shotnumber")
         self.insert(sn)
         self.Time[0].parse()
         #msg = self.write_xml()
         msg = self.ScriptBody.PCDATA
-        on_main_server = False
-        if hasattr(self,'OnMainServer'):
-            on_main_server = True
-            
-
+        self.data_destination = self.server.ip
         #shotnumber = self.parse().shotnumber.PCDATA Add this
         #Add times
         pckg = simplejson.dumps({"IDLSocket_ResponseFunction":"execute_script",
                                  "script_body":msg,
-                                 "on_main_server":on_main_server,
+                                 "destination_for_data":self.data_destination,
+                                 "on_main_server":True,
+                                 "instrument_name":self.__parent__.OnInstrument[0].PCDATA,
                                  "time_to_execute":self.Time.PCDATA,
                                  "shotnumber":self.Parameter.Value.PCDATA,
                                  "terminator":"die"})
-        while not server.send(pckg,self.destination,isBinary=False):
+        while not server.send(pckg,self.script_destination,isBinary=False):
             time.sleep(0.01)
             print self.destination
             pass

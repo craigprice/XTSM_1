@@ -8,7 +8,7 @@ import DataBomb
 import uuid, time, numpy, pdb
 
 #default_databomb_destination_priorities = ["active_parser","169.254.174.200:8084","169.254.174.200:8083","127.0.0.1:8084","127.0.0.1:8083"]
-default_databomb_destination_priorities = ["10.1.1.112","169.254.174.200:8084","169.254.174.200:8083","127.0.0.1:8084","127.0.0.1:8083"]
+default_databomb_destination_priorities = ["10.1.1.112:8084", "127.0.0.1:8084","127.0.0.1:8083"]
 
 class Glab_Instrument():
     """
@@ -51,6 +51,11 @@ class Glab_Instrument():
         """
         pass # not written yet            
         
+    def update_destination(self,destination):
+        #Make this robust
+        #self.server.DataBombDispatcher.
+        pass
+
     def serve_data(self, data):
         """
         routine to post data through the attached server using a databomb
@@ -107,7 +112,7 @@ class Glab_Instrument():
             print "Return True from example Poll"
             return True
         else: return False
-    _Xserver_poll._poll_period=3.#"15" seconds is being attached to the function as an element of the function-object
+    _Xserver_poll._poll_period=15.#"15" seconds is being attached to the function as an element of the function-object
     
     def _Xserver_callback(self):
         """

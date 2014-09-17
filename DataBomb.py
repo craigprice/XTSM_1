@@ -484,9 +484,6 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         """
         #print "class DataBombDispather, function dispatch"
         #for d in self.databombers: delete if bomber has sent
-        for d in self.databombers:
-            if d.is_sent:
-                del d
         if len(self.databombers)==0:
             return
         print "dispatching data"
@@ -494,7 +491,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         def all_c(o):
             for bomber in o.databombers.values():
                 bomber.dispatch()
-            o.databombers={}
+            #o.databombers={} need to delete the bombers more carefully CP
         def next_c(o):
             ind=min([(bomber.timestamp,bomber.uuid) for bomber in o.databombers])[1]
             o.databombers[ind].dispatch()
@@ -508,6 +505,12 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 #del self.databombers[criteria] need to delete the bomber
             except KeyError:
                 raise self.UnknownBomberError
+                
+        for d in self.databombers:
+            print "is sent?"
+            print d.is_sent
+            if d.is_sent:
+                del d
 
     class BadBomberError(Exception):
         pass
@@ -554,7 +557,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 self.destinations=[self.destinations]
             self.destinations = list(set(self.destinations + destinations_))    
             if not self.destinations[0]:
-                self.destinations=[self.data['destination_priorities'][0]]
+                #self.destinations=[self.data['destination_priorities'][0]]#Update this to send more
                 self.dest_by_priority=True
             for dest in self.destinations:
                 try: 

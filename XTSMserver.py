@@ -936,7 +936,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         
     def get_available_script_server(self):
         for key in self.script_servers.keys():
-            print "in use:", self.script_servers[key].in_use
+            #print "in use:", self.script_servers[key].in_use
             if self.script_servers[key].in_use == False:
                 return self.script_servers[key]
         global MAX_SCRIPT_SERVERS
@@ -1027,6 +1027,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             #self.connections[i].sendMessage(simplejson.dumps(announcement))
             self.connections[i].sendMessage(simplejson.dumps(announcement),isBinary=False)
         
+        
 class Queue():
     def __init__(self,server,Command=None,owner=None):
         self.server = server
@@ -1084,18 +1085,23 @@ class ScriptQueue(Queue):
     def popexecute(self):
         #print "class ScriptQueue, function popexecute"
         #print "script_servers:", self.server.clientManager.script_servers
-        print "script_queue =", self.queue
+        #print "script_queue =", self.queue
         ss = self.server.clientManager.get_available_script_server()#Need to call this in order to create script_servers. Returns None when no servers ready
-        print "return from get_avail... ss =", ss
+        #print "return from get_avail... ss =", ss
         if len(self.queue) == 0 or ss == None:
             return
-        if self.queue[0]['on_main_server'] == True:
+        if self.queue[0]['script_destination'] == self.server.ip and self.queue[0]['on_main_sever'] == True:
             #Add functionality for timing
             print "Executing on Main Server"
             code_locals = {}
             print "print queue[0]:"
             print self.queue[0]
             print "compile...."
+            #inst = glab_instrument(self.server)
+            #inst.name = self.queue[0]['name']
+            #if self.queue[0]['name'] == 'CCD':
+            ##    Roper_CCD.Princeton_CCD(self.queue[0])
+            #self.server.instruments.update({inst.id:inst})
             try:
                 code = compile(self.queue.pop()['script_body'], '<string>', 'exec')
             except:
@@ -1838,6 +1844,8 @@ class GlabPythonManager():
         self.dataContexts = {'default':DataContext('default',self)}
         self.server = self
         self.is_active_parser = False
+        self.ip = None
+        self.instruments = {}
                 
         # associate the CommandProtocol as a response method on that socket
         self.listener.protocol = CommandProtocol
@@ -1947,12 +1955,13 @@ class GlabPythonManager():
         """
         sends an identifying message on udp broadcast port
         """
+        self.ip = socket.gethostbyname(socket.gethostname())
         if not hasattr(self,"ping_data"):
             #need to include a list called ping_data - which is updated as needed. by "ping_data fnctions in objects of the server.
         #Nmaely this includes a list of instruments that are attached to the server.
             self.ping_data={"server_id":self.uuid,
                             "server_name":socket.gethostname(),
-                            "server_ip":socket.gethostbyname(socket.gethostname()),
+                            "server_ip":self.ip,
                             "server_port":str(wsport),
                             "server_uuid_node":uuid.getnode(),
                             "is_active_parser":self.is_active_parser,
