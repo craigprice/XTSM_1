@@ -2266,12 +2266,11 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         self.insert(sn)
         self.Time[0].parse()
         #msg = self.write_xml()
-        msg = self.ScriptBody.write_xml()
+        msg = self.ScriptBody.PCDATA
 
-        #pdb.set_trace()
         #shotnumber = self.parse().shotnumber.PCDATA Add this
         pckg = simplejson.dumps({"IDLSocket_ResponseFunction":"execute_script",
-                                 "script_xml":msg,
+                                 "script_body":msg,
                                  "shotnumber":self.Parameter.Value.PCDATA,
                                  "terminator":"die"})
         while not server.send(pckg,self.destination,isBinary=False):

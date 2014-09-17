@@ -274,19 +274,25 @@ class WSClientProtocol(WebSocketClientProtocol):
         print("WebSocket connection opened as client.")
         self.local_instance_id = uuid.uuid4()
         self.time_of_creation = time.time()
-        self._add_self_to_ConnectionManager()
         self.server = self.factory.clientManager.server
+        self._add_self_to_ConnectionManager()
+        print "After _add_self_to_ConnectionManager in Client Protocol class - onOpen"
 
-    def onMessage(self, payload_, isBinary):
+    def onMessage(self, payload, isBinary):
         if isBinary:
-            print("Binary message received: {0} bytes".format(len(payload)))
+            print "Binary message received: {0} bytes", payload
         else:
-            payload = simplejson.loads(payload_)
-            print("Text message received in Client ws protocol: {0}".format(payload.decode('utf8')))
+            print "Text message received in Client ws protocol:",payload
             
         type_of_client = ''
         if(hasattr(self.factory, 'peer_server_local_instance_id')):
             type_of_client = 'peer_server'
+            my_server_id = self.factory.peer_server_local_instance_id
+            server = self.factory.clientManager.peer_servers[my_server_id]
+            if isBinary:
+                server.receive_msgpack_payload(payload, self)
+            else:
+                server.receive_json_payload(payload, self)
         elif(hasattr(self.factory, 'script_server_local_instance_id')):
             type_of_client = 'script_server'
             my_server_id = self.factory.script_server_local_instance_id
@@ -356,8 +362,10 @@ class WSServerProtocol(WebSocketServerProtocol):
         print("WebSocket connection open as server.")
         self.local_instance_id = uuid.uuid1()
         self.time_of_creation = time.time()
-        self._add_self_to_ConnectionManager(self)
         self.server = self.factory.clientManager.server
+        print "After setting self.server in Server Protocol class - onOpen"
+        self._add_self_to_ConnectionManager()
+        print "After _add_self_to_ConnectionManager in Server Protocol class - onOpen"
         #self.transport.write("df",debug=False)
         #peer = self.transport.getPeer()
         #self.factory.isConnectionOpen = True
@@ -384,6 +392,24 @@ class WSServerProtocol(WebSocketServerProtocol):
         pass        
             
     def onMessage(self, payload, isBinary):
+        self.log_message()
+        if isBinary:
+            print "Binary message received: {0} bytes", payload
+        else:
+            print "Text message received in Client ws protocol:", payload
+            
+        type_of_client = ''
+        if(hasattr(self.factory, 'peer_server_local_instance_id')):
+            type_of_client = 'peer_server'
+            my_server_id = self.factory.peer_server_local_instance_id
+            server = self.factory.clientManager.peer_servers[my_server_id]
+            if isBinary:
+                server.receive_msgpack_payload(payload, self)
+            else:
+                server.receive_json_payload(payload, self)
+           
+
+    def log_message(self):
         headerItemsforCommand=['host','origin']
         self.request = {k: self.http_headers[k] for k in headerItemsforCommand if k in self.http_headers}
         self.ctime = time.time()        
@@ -393,21 +419,15 @@ class WSServerProtocol(WebSocketServerProtocol):
         # record where this request is coming from
         self.factory.clientManager.elaborateLog(self,self.request)
 
-        if isBinary:
-            self.onBinaryMessage(payload)
-        else:
-            self.onTextMessage(payload)
-        #pdb.set_trace()
-        ## echo back message verbatim
-        #self.sendMessage(payload, isBinary)
-
+    #Moved to function in GlabClient
+    """
     def onBinaryMessage(self,payload_):
         payload = msgpack.unpackb(payload_)
         print "---------Data Below!-------------"
         print payload
 
-    def giveit(self):
-        self.sendMessage("adsdasd")
+    #def giveit(self):
+    #    self.sendMessage("adsdasd")
 
     def onTextMessage(self,payload):
         print "------------"
@@ -438,7 +458,7 @@ class WSServerProtocol(WebSocketServerProtocol):
         #    self.commandQueue=CommandQueue(SC)
         except:
             self.sendMessage("{'server_console':'Failed to insert SocketCommand in Queue, reason unknown'}")
-
+    """    
     def onClose(self, wasClean, code, reason):
         print("WebSocket connection closed as Server: {0}".format(reason))
         self.factory.isConnectionOpen = False
@@ -702,6 +722,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             self.server_id = None
             self.name = None
             self.ping_payload = None
+            self.last_broadcast_time = 0
             #pdb.set_trace()
        
     class ScriptServer(GlabClient):
@@ -764,6 +785,14 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         """
         performs periodic maintenance on connection data with clients
         """
+        if not hasattr(self,'peer_servers'):
+            return
+        for key in self.peer_servers.keys():
+            print self.peer_servers[key].last_broadcast_time
+            if (time.time() - self.peer_servers[key].last_broadcast_time) > 30:
+                print "Trying to delete a server that is inactive:", self.peer_servers[key].name, self.peer_servers[key].server_id, self.peer_servers[key].last_broadcast_time
+                self.peer_servers[key].protocol.transport.loseConnection()
+                del self.peer_servers[key]
         return # temporary disable
         self.__periodic_maintenance__()
 #        for peer in self.client_roles:
@@ -798,6 +827,48 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         stat+='</Clients>'
         return stat
     
+                    
+    def catch_msgpack_payload(payload_, protocol):
+        try:
+            payload = msgpack.unpackb(payload_)
+        except:
+            pdb.set_trace()
+            raise
+        print "---------Data Below!-------------"
+        print payload
+    
+    def catch_json_payload(payload_, protocol):
+        # we will treat incoming websocket text using the same commandlibrary as HTTP        
+        # but expect incoming messages to be JSON data key-value pairs
+        try:
+            payload = simplejson.loads(payload_)
+        except simplejson.JSONDecodeError:
+            protocol.transport.write("The server is expecting JSON, not simple text")
+            print "The server is expecting JSON, not simple text"
+            protocol.transport.loseConnection()
+            return False
+        # if someone on this network has broadcast a shotnumber change, update the shotnumber in
+        # the server's data contexts under _running_shotnumber
+        #pdb.set_trace()        
+        print "payload:"
+        print payload
+        if hasattr(payload, "shotnumber"):
+            pdb.set_trace() # need to test the below
+            #for dc in self.parent.dataContexts:
+                #dc['_running_shotnumber']=payload['shotnumber']
+        payload.update({'request':protocol.request})
+        payload.update({'socket_type':"Websocket"})
+        SC = SocketCommand(params = payload,
+                           request = protocol.request,
+                           CommandLibrary = self.server.commandLibrary)
+        try:
+            #self.commandQueue.add(SC)
+            self.server.commandQueue.add(SC)
+        #except AttributeError:
+        #    self.commandQueue=CommandQueue(SC)
+        except:
+            protocol.sendMessage("{'server_console':'Failed to insert SocketCommand in Queue, reason unknown'}")
+            raise
 
     def add_peer_server(self, ping_payload):
         """
@@ -918,10 +989,9 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         print "in isKnownServer"
         print payload['server_id']
         for key in self.peer_servers:
-            print self.peer_servers[key].ip, payload['server_ip'], self.peer_servers[key].server_id, payload['server_id']
-            if self.peer_servers[key].server_id == payload['server_id']:
+            print self.peer_servers[key].ip, self.peer_servers[key].port, payload['server_ip'], payload['server_port'],self.peer_servers[key].server_id, payload['server_id']
+            if self.peer_servers[key].ip == payload['server_ip']:
                 self.peer_servers[key].server_id = payload['server_id']
-                self.peer_servers[key].name = payload['server_name']
                 self.peer_servers[key].last_broadcast_time = time.time()
                 self.peer_servers[key].server_time = payload['server_time']
                 self.peer_servers[key].ping_payload = payload
@@ -956,7 +1026,8 @@ class Queue():
     def add(self,Command):
         self.queue.append(Command)
     def popexecute(self):
-        if len(self.queue)>0:
+        if len(self.queue) > 0:
+            print "Exectuting top of Queue"
             self.queue.pop().execute(self.server.commandLibrary)
     def xstatus(self):
         stat="<Commands>"
@@ -1330,8 +1401,9 @@ class CommandLibrary():
         #pdb.set_trace()    
         print "class CommandLibrary, function execute_script"
         
-        script = 'output_from_script = "hi"'
-        self.server.script_queue.add(script)
+        #script = 'output_from_script = "hi"'
+        script_body = params['script_body']
+        self.server.script_queue.add(script_body)
         #if self.server.clientManager.send("Hi",'ws://localhost:8086'):
         #self.server.send(script,'ws://localhost:8086')
         #wsClientFactory = WebSocketClientFactory(address, debug = True)
