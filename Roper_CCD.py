@@ -67,7 +67,7 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         #sleep(3) # not clear this is necessary
         self.appdoc = win32com.client.Dispatch("WINX32.DocFile")
         print "New Winview Process Launched"
-        pdb.set_trace()
+        #pdb.set_trace()
         self.gather_experiment_parameters()
         self.set_param(self.defaults)
         self.params_pending = False

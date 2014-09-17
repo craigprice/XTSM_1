@@ -1090,7 +1090,7 @@ class ScriptQueue(Queue):
         #print "return from get_avail... ss =", ss
         if len(self.queue) == 0 or ss == None:
             return
-        if self.queue[0]['script_destination'] == self.server.ip and self.queue[0]['on_main_sever'] == True:
+        if self.queue[0]['on_main_server'] == True:
             #Add functionality for timing
             print "Executing on Main Server"
             code_locals = {}
@@ -1102,14 +1102,16 @@ class ScriptQueue(Queue):
             #if self.queue[0]['name'] == 'CCD':
             ##    Roper_CCD.Princeton_CCD(self.queue[0])
             #self.server.instruments.update({inst.id:inst})
-            try:
-                code = compile(self.queue.pop()['script_body'], '<string>', 'exec')
-            except:
-                print "compile unsuccessful"
-                raise
-            print "compile successful"
+            #try:
+            #    code = compile(self.queue.pop()['script_body'], '<string>', 'exec')
+            #except:
+            #    print "compile unsuccessful"
+            #    raise
+            #print "compile successful"
             print "executing"
-            exec code in globals(), locals()
+            with open(self.queue.pop()['script_body']) as f:
+                code = compile(f.read(), self.queue.pop()['script_body'], 'exec')
+                exec(code, globals(), locals())
             print "done executing"
             return
         else:
@@ -1860,7 +1862,7 @@ class GlabPythonManager():
         self.initdisplay()
 
         self.script_queue_command = task.LoopingCall(self.script_queue.popexecute)
-        self.script_queue_command.start(0.5)
+        self.script_queue_command.start(1)
 
         # setup the udp broadcast for peer discovery
         self.multicast = reactor.listenMulticast(udpbport, 

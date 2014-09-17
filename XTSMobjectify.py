@@ -2267,6 +2267,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         self.Time[0].parse()
         #msg = self.write_xml()
         msg = self.ScriptBody.PCDATA
+        self.server = server
         self.data_destination = self.server.ip
         #shotnumber = self.parse().shotnumber.PCDATA Add this
         #Add times
@@ -2280,7 +2281,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                                  "terminator":"die"})
         while not server.send(pckg,self.script_destination,isBinary=False):
             time.sleep(0.01)
-            print self.destination
+            print self.script_destination
             pass
 
 

@@ -490,7 +490,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
 
         def all_c(o):
             for bomber in o.databombers.values():
-                bomber.dispatch()
+                bomber.dispatch(['10.1.1.112'])#Fix this
             #o.databombers={} need to delete the bombers more carefully CP
         def next_c(o):
             ind=min([(bomber.timestamp,bomber.uuid) for bomber in o.databombers])[1]
@@ -507,10 +507,11 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 raise self.UnknownBomberError
                 
         for d in self.databombers:
-            print "is sent?"
-            print d.is_sent
-            if d.is_sent:
-                del d
+            pass
+            #print "is sent?"
+            #print d.is_sent
+            #if d.is_sent:
+            #    del d
 
     class BadBomberError(Exception):
         pass
