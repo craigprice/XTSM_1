@@ -78,6 +78,8 @@ class MulticastProtocol(DatagramProtocol):
     def datagramReceived(self, datagram_, address):
         """
         called when a udp broadcast is received
+        Add functionality for "catching the ping and pinging back to tell the
+        main server that I am still ready and not in_use
         """
         #print "Datagram received from "+ repr(address) 
         datagram = simplejson.loads(datagram_)

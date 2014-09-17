@@ -102,6 +102,7 @@ def tracefunc(frame, event, arg, indent=[0]):
 DEBUG_LINENO = 0      
 DEBUG_TRACE = False
 TRACE_IGNORE=["popexecute","getChildNodes","getItemByFieldValue"]
+MAX_SCRIPT_SERVERS = 1
       
 if DEBUG_TRACE: sys.settrace(tracefunc)
 
@@ -286,18 +287,15 @@ class WSClientProtocol(WebSocketClientProtocol):
             print "Text message received in Client ws protocol:",payload
             
         type_of_client = ''
-        if(hasattr(self.factory, 'peer_server_local_instance_id')):
+        if(hasattr(self.factory, 'peer_server')):
             type_of_client = 'peer_server'
-            my_server_id = self.factory.peer_server_local_instance_id
-            server = self.factory.clientManager.peer_servers[my_server_id]
+            server = self.factory.peer_server
             if isBinary:
                 server.catch_msgpack_payload(payload, self)
             else:
                 server.catch_json_payload(payload, self)
-        elif(hasattr(self.factory, 'script_server_local_instance_id')):
-            type_of_client = 'script_server'
-            my_server_id = self.factory.script_server_local_instance_id
-            server = self.factory.clientManager.script_servers[my_server_id]
+        elif(hasattr(self.factory, 'script_server')):
+            server = self.factory.script_server
             server.output_from_script = payload
             server.last_connection_time = None
             print "Script Finished. Payload:"
@@ -309,6 +307,7 @@ class WSClientProtocol(WebSocketClientProtocol):
                 server.in_use = False
         else:
             print "Not Implemented"
+            raise
             return False
 
     def log_message(self):
@@ -329,28 +328,24 @@ class WSClientProtocol(WebSocketClientProtocol):
     def _add_self_to_ConnectionManager(self):
         # First look in peer servers
         type_of_client = ''
-        if(hasattr(self.factory, 'peer_server_local_instance_id')):
-            type_of_client = 'peer_server'
-            my_server_id = self.factory.peer_server_local_instance_id
-            servers = self.factory.clientManager.peer_servers
-        elif(hasattr(self.factory, 'script_server_local_instance_id')):
-            type_of_client = 'script_server'
-            my_server_id = self.factory.script_server_local_instance_id
-            servers = self.factory.clientManager.script_servers
+        if(hasattr(self.factory, 'peer_server')):
+            server = self.factory.peer_server
+            self.factory.clientManager.peer_servers.update({server.local_instance_id:server})  
+        elif(hasattr(self.factory, 'script_server')):
+            server = self.factory.script_server
+            server.in_use = True
+            self.factory.clientManager.script_servers.update({server.local_instance_id:server})
+            self.sendMessage("output_from_script = 'Server Ready!'")
         else:
             print "Not Implemented"
             return False
             
         # Set the script_server_id's protocol
         # Set the protocol's connection to the peer server.
-        servers[my_server_id].protocol = self
-        servers[my_server_id].protocol_id = self.local_instance_id
-        servers[my_server_id].last_connection_time = time.time()
-        peer = self.transport.getPeer()
-        servers[my_server_id].ip = peer.host
-        servers[my_server_id].port = peer.port
-        if type_of_client == 'script_server':
-            servers[my_server_id].protocol.sendMessage("output_from_script = 'Server Ready!'")
+        server.protocol = self
+        server.last_connection_time = time.time()
+        server.ip = self.transport.getPeer().host
+        server.port = self.transport.getPeer().port
         self.factory.clientManager.connectLog(self) 
                     
         
@@ -674,7 +669,6 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         self.peer_servers = {}
         self.script_servers = {}
         self.TCP_connections = {}
-        self._open_new_script_server()
         # setup the websocket server services
         self.wsServerFactory = WebSocketServerFactory("ws://localhost:" + 
                                                 str(wsport),
@@ -902,18 +896,16 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             address = "ws://" + ping_payload['server_ip'] + ":" + ping_payload['server_port']
             print address
             wsClientFactory = WebSocketClientFactory(address, debug = True)
-            wsClientFactory.peer_server_local_instance_id = new_peer.local_instance_id
+            wsClientFactory.peer_server = new_peer
             wsClientFactory.protocol = WSClientProtocol
             wsClientFactory.clientManager = self
             connectWS(wsClientFactory)
-            self.connectLog(self) 
-            self.peer_servers.update({new_peer.local_instance_id:new_peer})    
-            return new_peer
+            self.connectLog(self)  
         else:
             raise
 
 
-    def add_script_server(self, new_port):
+    def add_script_server(self):
         """
         Adds a script server to the the Connection Manager for the main server.
         This is a barebones server whose only purpose is to execute little
@@ -921,25 +913,28 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         There should be no more than ~16 script servers
         """
         print "In class ClientManager, function, add_script_server()"
-        new_script_server = self.ScriptServer()
-        self.script_servers.update({new_script_server.local_instance_id:new_script_server})
+        new_port = 9000 + len(self.script_servers)
+        print "About to open"
+        script_server_path = os.path.abspath(script_server.__file__)
+        subprocess.Popen(['C:\\Python27\\python.exe',script_server_path]+['localhost',str(new_port)])
+        print "Done Opening"            
         # Connect to the new_script_server
         wsClientFactory = WebSocketClientFactory('ws://localhost:'+str(new_port), debug = True)
-        wsClientFactory.script_server_local_instance_id = new_script_server.local_instance_id
+        new_script_server = self.ScriptServer()
+        wsClientFactory.script_server = new_script_server
         wsClientFactory.protocol = WSClientProtocol
         wsClientFactory.clientManager = self
         connectWS(wsClientFactory)  
         self.connectLog(self)   
-        return new_script_server 
         
     def get_available_script_server(self):
         for key in self.script_servers.keys():
             print "in use:", self.script_servers[key].in_use
             if self.script_servers[key].in_use == False:
                 return self.script_servers[key]
-                
-        if len(self.script_servers) < 1:
-            self._open_new_script_server()
+        global MAX_SCRIPT_SERVERS
+        if len(self.script_servers) < MAX_SCRIPT_SERVERS:
+            self.add_script_server()
         else:
             #print "Too Many Script_Servers. Killing oldest and using its resources."
             pass
@@ -948,14 +943,6 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
 
     def use_script_server(self, script_sever):
         script_sever.in_use = True            
-            
-    def _open_new_script_server(self):
-            new_port = 9000 + len(self.script_servers)
-            print "About to open"
-            script_server_path = os.path.abspath(script_server.__file__)
-            subprocess.Popen(['C:\\Python27\\python.exe',script_server_path]+['localhost',str(new_port)])
-            print "Done Opening"            
-            self.add_script_server(new_port)
             
             
     def catch_ping(self, ping_payload):
@@ -1089,17 +1076,36 @@ class ScriptQueue(Queue):
         #print "class ScriptQueue, function popexecute"
         #print "script_servers:", self.server.clientManager.script_servers
         print "script_queue =", self.queue
-        if len(self.queue) == 0:
-            return
-        ss = self.server.clientManager.get_available_script_server()
+        ss = self.server.clientManager.get_available_script_server()#Need to call this in order to create script_servers. Returns None when no servers ready
         print "return from get_avail... ss =", ss
-        if ss != None:
+        if len(self.queue) == 0 or ss == None:
+            return
+        if self.queue[0]['on_main_server'] == True:
+            #Add functionality for timing
+            print "Executing on Main Server"
+            code_locals = {}
+            print "payload:"
+            print payload
+            print "compile...."
+            try:
+                code = compile(self.queue.pop()['script_body'], '<string>', 'exec')
+            except:
+                print "compile unsuccessful"
+                raise
+            print "compile successful"
+            print "executing"
+            exec code in code_locals
+            print "done executing"
+            return
+        else:
+            #add functionality for timing
             #self.queue.pop().execute(self.server.commandLibrary)    
             #Trying to connect to a server that is not responsive will restart that server and try to connect again.
             #self.server.clientManager.use_script_server(ss)
             print "got server"
-            self.server.send(self.queue.pop(), ss)
-            
+            self.server.send(self.queue.pop()['script_body'], ss)
+            return
+        return
 
 class CommandLibrary():
     """
@@ -1424,7 +1430,7 @@ class CommandLibrary():
         script_body = params['script_body']
         print "script_body:"
         print script_body
-        self.server.script_queue.add(script_body)
+        self.server.script_queue.add(params)
         #if self.server.clientManager.send("Hi",'ws://localhost:8086'):
         #self.server.send(script,'ws://localhost:8086')
         #wsClientFactory = WebSocketClientFactory(address, debug = True)
