@@ -432,9 +432,10 @@ class WSServerProtocol(WebSocketServerProtocol):
         data.update({'socket_type':"Websocket"})
         SC=SocketCommand(params=data, request=self.request, CommandLibrary=self.server.commandLibrary)
         try:
-            self.commandQueue.add(SC)
-        except AttributeError:
-            self.commandQueue=CommandQueue(SC)
+            #self.commandQueue.add(SC)
+            self.server.commandQueue.add(SC)
+        #except AttributeError:
+        #    self.commandQueue=CommandQueue(SC)
         except:
             self.sendMessage("{'server_console':'Failed to insert SocketCommand in Queue, reason unknown'}")
 
@@ -546,13 +547,18 @@ class CommandProtocol(protocol.Protocol):
         # insert request, if valid, into command queue (persistently resides in self.Factory)        
         SC=SocketCommand(self.params,self.request)
         try:
-            self.factory.commandQueue.add(SC)
+            self.factory.clientManager.server.commandQueue.add(SC)
+            #self.factory.commandQueue.add(SC)
         except AttributeError:
-            self.factory.commandQueue=CommandQueue(SC)
+            print 'Failed to insert SocketCommand in Queue, No Queue'
+            raise
+            #self.factory.commandQueue=CommandQueue(SC)
         except:
             self.transport.write(str('Failed to insert SocketCommand in Queue,',
                                      'reason unknown'))
+            print 'Failed to insert SocketCommand in Queue, reason unknown'
             self.transport.loseConnection()
+            raise
     # close the connection - should be closed by the command execution
     # self.transport.loseConnection()
     def connectionLost(self,reason):      
@@ -896,7 +902,8 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         for peer in self.peer_servers.keys():
             if self.peer_servers[peer].ip == address:
                 p = self.peer_servers[peer].protocol
-                print p.sendMessage(data,isBinary)
+                p.sendMessage(data,isBinary)
+                print "Sent!"
                 return True
         for ss in self.script_servers.keys():
             if self.script_servers[ss].ip == address:
