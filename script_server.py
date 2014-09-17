@@ -6,6 +6,7 @@ import simplejson
 import pdb
 from twisted.internet.protocol import DatagramProtocol
 import uuid
+import glab_instrument
 
 from twisted.internet import task
 

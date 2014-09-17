@@ -934,7 +934,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         
     def get_available_script_server(self):
         for key in self.script_servers.keys():
-            #print "in use:", self.script_servers[key].in_use
+            print "in use:", self.script_servers[key].in_use
             if self.script_servers[key].in_use == False:
                 return self.script_servers[key]
                 
@@ -1088,15 +1088,16 @@ class ScriptQueue(Queue):
     def popexecute(self):
         #print "class ScriptQueue, function popexecute"
         #print "script_servers:", self.server.clientManager.script_servers
-        ss = self.server.clientManager.get_available_script_server()
-        #print "return from get_avail... ss =", ss
-        #print "script_queue =", self.queue
-        if len(self.queue) > 0 and ss != None:
-            #self.queue.pop().execute(self.server.commandLibrary)    
-            #Trying to connect to a server that is not responsive will restart that server and try to connect again.
-            self.server.clientManager.use_script_server(ss)
-            print "got server"
-            self.server.send(self.queue.pop(), ss)
+        print "script_queue =", self.queue
+        if len(self.queue) > 0:
+            ss = self.server.clientManager.get_available_script_server()
+            print "return from get_avail... ss =", ss
+            if ss != None:
+                #self.queue.pop().execute(self.server.commandLibrary)    
+                #Trying to connect to a server that is not responsive will restart that server and try to connect again.
+                self.server.clientManager.use_script_server(ss)
+                print "got server"
+                self.server.send(self.queue.pop(), ss)
             
 
 class CommandLibrary():
@@ -1420,6 +1421,8 @@ class CommandLibrary():
         
         #script = 'output_from_script = "hi"'
         script_body = params['script_body']
+        print "script_body:"
+        print script_body
         self.server.script_queue.add(script_body)
         #if self.server.clientManager.send("Hi",'ws://localhost:8086'):
         #self.server.send(script,'ws://localhost:8086')
