@@ -674,7 +674,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         self.peer_servers = {}
         self.script_servers = {}
         self.TCP_connections = {}
-        
+        self._open_new_script_server()
         # setup the websocket server services
         self.wsServerFactory = WebSocketServerFactory("ws://localhost:" + 
                                                 str(wsport),
@@ -1089,15 +1089,16 @@ class ScriptQueue(Queue):
         #print "class ScriptQueue, function popexecute"
         #print "script_servers:", self.server.clientManager.script_servers
         print "script_queue =", self.queue
-        if len(self.queue) > 0:
-            ss = self.server.clientManager.get_available_script_server()
-            print "return from get_avail... ss =", ss
-            if ss != None:
-                #self.queue.pop().execute(self.server.commandLibrary)    
-                #Trying to connect to a server that is not responsive will restart that server and try to connect again.
-                self.server.clientManager.use_script_server(ss)
-                print "got server"
-                self.server.send(self.queue.pop(), ss)
+        if len(self.queue) == 0:
+            return
+        ss = self.server.clientManager.get_available_script_server()
+        print "return from get_avail... ss =", ss
+        if ss != None:
+            #self.queue.pop().execute(self.server.commandLibrary)    
+            #Trying to connect to a server that is not responsive will restart that server and try to connect again.
+            #self.server.clientManager.use_script_server(ss)
+            print "got server"
+            self.server.send(self.queue.pop(), ss)
             
 
 class CommandLibrary():
