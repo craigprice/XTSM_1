@@ -78,7 +78,7 @@ import file_locations
 import server_initializations
 import glab_instrument
 import script_server
-
+#from IPy import IP
 
 def tracefunc(frame, event, arg, indent=[0]):
       global DEBUG_LINENO, TRACE_IGNORE
@@ -275,6 +275,7 @@ class WSClientProtocol(WebSocketClientProtocol):
         self.local_instance_id = uuid.uuid4()
         self.time_of_creation = time.time()
         self._add_self_to_ConnectionManager()
+        self.server = self.factory.clientManager.server
 
     def onMessage(self, payload_, isBinary):
         if isBinary:
@@ -356,6 +357,7 @@ class WSServerProtocol(WebSocketServerProtocol):
         self.local_instance_id = uuid.uuid1()
         self.time_of_creation = time.time()
         self._add_self_to_ConnectionManager(self)
+        self.server = self.factory.clientManager.server
         #self.transport.write("df",debug=False)
         #peer = self.transport.getPeer()
         #self.factory.isConnectionOpen = True
@@ -428,7 +430,7 @@ class WSServerProtocol(WebSocketServerProtocol):
                 #dc['_running_shotnumber']=data['shotnumber']
         data.update({'request':self.request})
         data.update({'socket_type':"Websocket"})
-        SC=SocketCommand(params=data, request=self.request, CommandLibrary=self.clientManager.server.commandLibrary)
+        SC=SocketCommand(params=data, request=self.request, CommandLibrary=self.server.commandLibrary)
         try:
             self.commandQueue.add(SC)
         except AttributeError:
@@ -872,7 +874,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
     def send(self,data, address,isBinary=False):
         #address can be the following: shadow, analysis, ip, ip:port styrings and numbers, peer_server object, ''ws://localhost:8086''
         print "In class ClientManager, function, send()"
-        pdb.set_trace()
+        #pdb.set_trace()
         if address.__class__.__name__ == 'ScriptServer':
             print "--------------------"
             address.protocol.sendMessage(data,isBinary)
@@ -880,41 +882,27 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             return True
         if address == 'active_parser':
             print "--------------------"
+            pdb.set_trace()
             #address.protocol.sendMessage(data,isBinary)
             #print "Sent!"        
-            #return True
-        for client in self.peer_servers.keys():
-            #possible_matches = ["ws://"+str(self.peer_servers[client].ip)+":"+str(self.peer_servers[client].port)]
-            possible_matches = ["ws://localhost:8086"]
-
-            if possible_matches != address:
-                continue
-            #pdb.set_trace()
-            statusb4 = False
-            statusaf = False
-            print "before send", data_  
-            try:
-                print self.server.clientManager.peer_servers[client].connection_protocol.factory.isConnectiononOpen
-                print "Connnection is Open"
-                statusb4 = True
-            except AttributeError:
-                print "Connection is Closed"
-                statusb4 = False
-            p=self.peer_servers[client].connection_protocol
-            print p.sendMessage(data_,isBinary)
-            print "after send"           
-            try:
-                print self.server.clientManager.peer_servers[client].connection_protocol.factory.isConnectiononOpen
-                print "Connnection is Open"
-                statusaf = True
-            except AttributeError:
-                print "Connection is Closed"
-                statusaf = False
-            #time.sleep(10)
-            print "Status Before:", statusb4,"Status After:",statusaf
             return True
-            #if address == "ws://"+str(self.peer_servers[client].ip)+":"+str(self.peer_servers[client].port):
-            #    print self.peer_servers[client].protocol.sendMessage(data_,isBinary)
+        # Only thing left is assuming that the address is an ip address.
+        #try:
+        #    IP(address)
+        #except ValueError:
+        #    raise
+            #Invalid IP address - NB: "4" is a valid ip address, the notation is that it pads 0's
+        #address is a valid ip address now.
+        for peer in self.peer_servers.keys():
+            if self.peer_servers[peer].ip == address:
+                p = self.peer_servers[peer].protocol
+                print p.sendMessage(data,isBinary)
+                return True
+        for ss in self.script_servers.keys():
+            if self.script_servers[ss].ip == address:
+                p = self.script_servers[ss].protocol
+                print p.sendMessage(data,isBinary)
+                return True
         return False
         
     def isKnownServer(self,payload):
@@ -1221,7 +1209,7 @@ class CommandLibrary():
         containing the active_xtsm string and shotnumber, they are skipped.
         """
         # mark requestor as an XTSM compiler
-        
+        print "In class CommandLibrary, function compile_active_xtsm"
         #pdb.set_trace()
         self.server.clientManager.update_client_roles(params['request'],'active_XTSM_compiler')
         

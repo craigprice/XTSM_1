@@ -20,6 +20,7 @@ import hdf5_liveheap, tables
 import sheltered_script, live_content, glab_figure, softstring
 import XTSM_cwrappers
 import simplejson
+#from IPy import IP
 
 
 XO_IGNORE=['PCDATA']  # ignored elements on XML_write operations
@@ -2250,7 +2251,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
             return instrument_head.ServerAddress[0].PCDATA
             
         if hasattr(self,'Remote'):
-            self.destination = self.Remote.PCDATA  
+            self.destination = self.Remote.PCDATA  #Have this handle multiple kinds. name, ip, instrument etc.
         else:
             # No Remote tag given, so look for the ServerAddress in the
             # metadata of the Instrument.
@@ -2273,7 +2274,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                                  "script_xml":msg,
                                  "shotnumber":self.Parameter.Value.PCDATA,
                                  "terminator":"die"})
-        while not server.send(pckg,self.destination):
+        while not server.send(pckg,self.destination,isBinary=False):
             time.sleep(0.01)
             print self.destination
             pass
