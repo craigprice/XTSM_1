@@ -28,14 +28,24 @@ class MyServerProtocol(WebSocketServerProtocol):
          print("Text message received: {0}".format(payload.decode('utf8')))
          
          
-      time.sleep(1)
       print "This is inside the Script Server"
+      code_locals = {}
       #self.sendMessage("Done!", isBinary)
 
       # echo back message verbatim
+      print "payload:"
+      print payload
       print "compile...."
-      code = compile(payload, '<string>', 'exec')
-      code_locals = {}
+      #payload = "self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self,'create_example_pollcallback':True})})"
+      try:
+          code = compile(payload, '<string>', 'exec')
+      except:
+          print "compile unsuccessful"
+          code_locals.update({'output_from_script':'None','terminator':'die'})
+          data = simplejson.dumps(code_locals)
+          self.sendMessage(data, isBinary=False)
+          
+      print "compile successful"
       exec code in code_locals
       print payload
       print code_locals
