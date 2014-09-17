@@ -331,7 +331,8 @@ class WSClientProtocol(WebSocketClientProtocol):
         peer = self.transport.getPeer()
         servers[my_server_id].ip = peer.host
         servers[my_server_id].port = peer.port
-        servers[my_server_id].protocol.sendMessage("output_from_script = 'Server Ready!'")
+        if type_of_client == 'script_server':
+            servers[my_server_id].protocol.sendMessage("output_from_script = 'Server Ready!'")
         self.factory.clientManager.connectLog(self) 
                     
         
@@ -388,7 +389,7 @@ class WSServerProtocol(WebSocketServerProtocol):
         self.request.update({'timereceived':time.time()})
         self.request.update({'write':self.sendMessage})
         # record where this request is coming from
-        self.clientManager.elaborateLog(self,self.request)
+        self.factory.clientManager.elaborateLog(self,self.request)
 
         if isBinary:
             self.onBinaryMessage(payload)
@@ -408,14 +409,16 @@ class WSServerProtocol(WebSocketServerProtocol):
 
     def onTextMessage(self,payload):
         print "------------"
+        print payload
         # we will treat incoming websocket text using the same commandlibrary as HTTP        
         # but expect incoming messages to be JSON data key-value pairs
         try:
             data = simplejson.loads(payload)
-        except JSONDecodeError:
+        except simplejson.JSONDecodeError:
             self.transport.write("The server is expecting JSON, not simple text")
             print "The server is expecting JSON, not simple text"
             self.transport.loseConnection()
+            return False
         # if someone on this network has broadcast a shotnumber change, update the shotnumber in
         # the server's data contexts under _running_shotnumber
         #pdb.set_trace()        
