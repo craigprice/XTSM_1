@@ -249,7 +249,7 @@ class MulticastProtocol(DatagramProtocol):
         datagram = simplejson.loads(datagram_)
         if datagram.has_key("server_ping"): 
             #pdb.set_trace()
-            self.server.pong(datagram)
+            self.server.catch_ping(datagram)
     
 class HTTPRequest(BaseHTTPRequestHandler):
     """
@@ -1109,8 +1109,9 @@ class ScriptQueue(Queue):
             #    raise
             #print "compile successful"
             print "executing"
-            with open(self.queue.pop()['script_body']) as f:
-                code = compile(f.read(), self.queue.pop()['script_body'], 'exec')
+            script = self.queue.pop()['script_body']
+            with open(script) as f:
+                code = compile(f.read(), script, 'exec')
                 exec(code, globals(), locals())
             print "done executing"
             return
@@ -1225,7 +1226,7 @@ class CommandLibrary():
             params['request']['protocol'].transport.loseConnection()
 
     def ping_idl_from_socket(self,params):
-        params['request']['protocol'].transport.write('pong')
+        params['request']['protocol'].transport.write('catch_ping')
         params['request']['protocol'].transport.loseConnection()
 
     def get_server_status(self,params):
@@ -1979,7 +1980,7 @@ class GlabPythonManager():
             return False     
         
         
-    def pong(self,payload):
+    def catch_ping(self,payload):
         """
         recieves an identifying message on udp broadcast port from other
         servers, and establishes a list of all other servers
