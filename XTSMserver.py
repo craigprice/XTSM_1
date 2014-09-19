@@ -233,7 +233,7 @@ class MulticastProtocol(DatagramProtocol):
         """
         Join the multicast address
         """
-        self.transport.joinGroup("228.0.0.5")
+        self.transport.joinGroup("228.0.0.5", interface="10.1.1.124")#EDit this CP
 
     def send(self,message):
         """
@@ -282,7 +282,7 @@ class WSClientProtocol(WebSocketClientProtocol):
     def onMessage(self, payload, isBinary):
         self.log_message()
         if isBinary:
-            print "Binary message received: {0} bytes", payload
+            print "Binary message received: {0} bytes"#, payload
         else:
             print "Text message received in Client ws protocol:",payload
             
@@ -349,7 +349,7 @@ class WSClientProtocol(WebSocketClientProtocol):
         server.last_connection_time = time.time()
         server.ip = self.transport.getPeer().host
         server.port = self.transport.getPeer().port
-        self.factory.clientManager.connectLog(self) 
+        self.factory.clientManager.connectLog(self)
                     
         
 
@@ -403,7 +403,7 @@ class WSServerProtocol(WebSocketServerProtocol):
     def onMessage(self, payload, isBinary):
         self.log_message()
         if isBinary:
-            print "Binary message received: {0} bytes", payload
+            print "Binary message received: {0} bytes"#, payload
         else:
             print "Text message received in Client ws protocol:", payload
             
@@ -527,6 +527,7 @@ class CommandProtocol(protocol.Protocol):
             self.factory.openConnections={self.ConnectionUID:self}
         print datetime.now(), "Connected from", self.peer, "at"
         self.factory.clientManager.connectLog(self)
+        self.server = self.factory.clientManager.server
         self.alldata = ''
     
     def provide_console(self):
@@ -717,13 +718,26 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         
                    
         def catch_msgpack_payload(self, payload_, protocol):
+            #pdb.set_trace()
             try:
                 payload = msgpack.unpackb(payload_)
             except:
                 pdb.set_trace()
                 raise
-            print "---------Data Below!-------------"
-            print payload
+            SC = SocketCommand(params = payload,
+                               request = protocol.request,
+                               CommandLibrary = self.server.commandLibrary)
+            try:
+                #self.commandQueue.add(SC)
+                self.server.commandQueue.add(SC)
+                print "added socket command"
+            #except AttributeError:
+                #    self.commandQueue=CommandQueue(SC)
+            except:
+                protocol.sendMessage("{'server_console':'Failed to insert SocketCommand in Queue, reason unknown'}")
+                raise
+            
+            #print payload
     
         def catch_json_payload(self, payload_, protocol):
             # we will treat incoming websocket text using the same commandlibrary as HTTP        
@@ -964,16 +978,15 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         print "In class ClientManager, function, send()"
         #pdb.set_trace()
         if address.__class__.__name__ == 'ScriptServer':
-            print "--------------------"
             address.protocol.sendMessage(data,isBinary)
-            print "Sent!"        
+            print "Just Sent:", data
             return True
         if address == 'active_parser':
-            print "--------------------"
+            print "-----------act---------"
             for key in self.peer_servers:
                 if self.peer_servers[key].is_active_parser:
                     self.peer_servers[key].protocol.sendMessage(data,isBinary)
-                    print "Sent!"        
+                    print "Just Sent:", data   
                     return True
         # Only thing left is assuming that the address is an ip address.
         #try:
@@ -986,29 +999,30 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             if self.peer_servers[peer].ip == address:
                 p = self.peer_servers[peer].protocol
                 p.sendMessage(data,isBinary)
-                print "Sent!"
+                print "Just Sent:", data
                 return True
         for ss in self.script_servers.keys():
             if self.script_servers[ss].ip == address:
                 p = self.script_servers[ss].protocol
                 print p.sendMessage(data,isBinary)
+                print "Just Sent:", data
                 return True
         return False
         
     def isKnownServer(self,payload):
         #pdb.set_trace()
-        print self.peer_servers
-        print "in isKnownServer"
-        print payload['server_id']
+        #print self.peer_servers
+        #print "in isKnownServer"
+        #print payload['server_id']
         for key in self.peer_servers:
-            print self.peer_servers[key].ip, self.peer_servers[key].port, payload['server_ip'], payload['server_port'],self.peer_servers[key].server_id, payload['server_id']
+            #print self.peer_servers[key].ip, self.peer_servers[key].port, payload['server_ip'], payload['server_port'],self.peer_servers[key].server_id, payload['server_id']
             if self.peer_servers[key].ip == payload['server_ip']:
                 self.peer_servers[key].server_id = payload['server_id']
                 self.peer_servers[key].last_broadcast_time = time.time()
                 self.peer_servers[key].is_active_parser = bool(payload['is_active_parser'])
                 self.peer_servers[key].server_time = payload['server_time']
                 self.peer_servers[key].ping_payload = payload
-                print "Known Server"
+                #print "Known Server"
                 return True
         print "Unknown Server"
         return False
@@ -1017,7 +1031,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         print "class ClientManager, function announce_data_listener"
         announcement = {"IDLSocket_ResponseFunction":"announce_listener",
                         #"shotnumber":"",
-                        "ip_address":'10.1.1.112',
+                        "ip_address":'10.1.1.124',
                         "server_id":self.server.uuid,
                         "instrument_of_interest":"ccd_camera",
                         "terminator":"die"}
@@ -1140,15 +1154,15 @@ class CommandLibrary():
     def __determineContext__(self,params):
         try: 
             dcname = params['data_context']
-            if not params['request']['protocol'].factory.parent.dataContexts.has_key(dcname):
+            if not params['request']['protocol'].server.dataContexts.has_key(dcname):
                 raise KeyError
         except KeyError:
             # look for a default data context for this IP address, if none, create
             dcname = "default:"+params['request']['protocol'].peer.split(":")[0]
-            if not params['request']['protocol'].factory.parent.dataContexts.has_key(dcname):
+            if not params['request']['protocol'].server.dataContexts.has_key(dcname):
                 dc = DataContext(dcname, self.server)
-                params['request']['protocol'].factory.parent.dataContexts.update({dcname:dc})
-        return params['request']['protocol'].factory.parent.dataContexts[dcname]
+                params['request']['protocol'].server.dataContexts.update({dcname:dc})
+        return params['request']['protocol'].server.dataContexts[dcname]
     # below are methods available to external HTTP requests - such as those required
     # by experiment GUI and timing system to implement basic functions of timing system
     # all must accept a single dictionary argument params, containing arguments of HTTP request
@@ -1330,7 +1344,7 @@ class CommandLibrary():
         containing the active_xtsm string and shotnumber, they are skipped.
         """
         # mark requestor as an XTSM compiler
-        print "In class CommandLibrary, function compile_active_xtsm"
+        #print "In class CommandLibrary, function compile_active_xtsm"
         #pdb.set_trace()
         self.server.clientManager.update_client_roles(params['request'],'active_XTSM_compiler')
         
@@ -1498,6 +1512,7 @@ class CommandLibrary():
         the webserver to be stored to disk, associated with the generating XTSM,
         and for analyses to be initiated 
         """
+        print "dealing with data bomb that came back"
         dc=self.__determineContext__(params)
         if (not dc.dict.has_key('_bombstack')):
             dc.update({'_bombstack':DataBomb.DataBombList()})
@@ -1519,7 +1534,7 @@ class CommandLibrary():
         self.server.commandQueue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
         
         # mark requestor as a data generator
-        pdb.set_trace()
+        #pdb.set_trace()
 
     def stop_listening(self,params):
         """
@@ -1634,6 +1649,12 @@ class SocketCommand():
         """
         Executes this command from CommandLibrary's functions
         """
+        print "In class SocketCommand, function execute"
+        print "Params:"
+        #print self.params
+        if self.params.has_key("databomb"):
+            pass
+            #pdb.set_trace()
         p=self.params
         p.update({'request':self.request})
         
@@ -1992,7 +2013,7 @@ class GlabPythonManager():
             pass
             #print "ignoring own broadcast"
         else:
-            print "ping from a peer server. Giving payload to the Client Manager."
+            #print "ping from a peer server. Giving payload to the Client Manager."
             self.clientManager.catch_ping(payload)
             
         #try:

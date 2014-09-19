@@ -7,8 +7,7 @@ Created on Sun Aug 10 12:18:56 2014
 import DataBomb
 import uuid, time, numpy, pdb
 
-#default_databomb_destination_priorities = ["active_parser","169.254.174.200:8084","169.254.174.200:8083","127.0.0.1:8084","127.0.0.1:8083"]
-default_databomb_destination_priorities = ["10.1.1.112:8084", "127.0.0.1:8084","127.0.0.1:8083"]
+default_databomb_destination_priorities = ["active_parser","169.254.174.200:8084","169.254.174.200:8083","127.0.0.1:8084","127.0.0.1:8083"]
 
 class Glab_Instrument():
     """
@@ -18,8 +17,7 @@ class Glab_Instrument():
     """
     def __init__(self,params={}):
         self.generator_uid=str(uuid.uuid1())
-        try:
-            self.server=params['server']
+        try: self.server=params['server']
         except KeyError:
             print "WARNING:: Instrument " + str(self)+" created without associated server"
             self.server=None
@@ -51,11 +49,6 @@ class Glab_Instrument():
         """
         pass # not written yet            
         
-    def update_destination(self,destination):
-        #Make this robust
-        #self.server.DataBombDispatcher.
-        pass
-
     def serve_data(self, data):
         """
         routine to post data through the attached server using a databomb
@@ -64,37 +57,24 @@ class Glab_Instrument():
         by default this will append identifiers for the data [time, generator ids, etc...]
         any of which can be overwritten by items in incoming data
         """
-        print "class Glab_Instrument, function serve_data"
+        print "serving data"
         if not self.server: 
             return False
             
         # assemble the data payload
         if type(data)!=type({}): data={"data":data}
         # some default data-packaging parameters 
-        default_data = {"generator":str(self),
-                        "generator_instance":self.generator_uid,
-                        "time_served":time.time(), 
-                        "destination_priorities":default_databomb_destination_priorities}     
-        try: default_data.update({"server_instance":self.server.uuid,
-                                  "server_machine":self.server.hostid})
-        except:
-            raise
-            pass
+        default_data = {"generator":str(self), "generator_instance":self.generator_uid,"time_served":time.time(), "destination_priorities":default_databomb_destination_priorities}     
+        try: default_data.update({"server_instance":self.server.uuid,"server_machine":self.server.hostid})
+        except: pass
         # attempt to get the active shot-number and rep_number from the server
-        try:
-            default_data.update({"shotnumber":self.server.dataContexts['default']['_running_shotnumber']})  
-        except:
-            #raise
-            pass     
-        try: 
-            default_data.update({"repnumber":self.server.dataContexts['default']['_running_repnumber']})  
-        except:
-            #raise
-            pass  
+        try: default_data.update({"shotnumber":self.server.dataContexts['default']['_running_shotnumber']})  
+        except: pass     
+        try: default_data.update({"repnumber":self.server.dataContexts['default']['_running_repnumber']})  
+        except: pass  
         default_data.update(data)
-        data = default_data
+        data=default_data
         # construct the data-bomb and instruct server to send it
-        #Change this to be part of a data context.
         if not hasattr(self.server,"DataBombDispatcher"):
             self.server.DataBombDispatcher=DataBomb.DataBombDispatcher(params={"server":self.server})
         self.last_served_dispatchid=self.server.DataBombDispatcher.add(data)
@@ -109,10 +89,9 @@ class Glab_Instrument():
         if not hasattr(self,"_poll_example_it"): self._poll_example_it = 0
         self._poll_example_it = (self._poll_example_it+1)%2 
         if self._poll_example_it==0:
-            print "Return True from example Poll"
             return True
         else: return False
-    _Xserver_poll._poll_period=15.#"15" seconds is being attached to the function as an element of the function-object
+    _Xserver_poll._poll_period=15.
     
     def _Xserver_callback(self):
         """

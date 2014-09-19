@@ -84,6 +84,8 @@ class MulticastProtocol(DatagramProtocol):
         #print "Datagram received from "+ repr(address) 
         datagram = simplejson.loads(datagram_)
         port = address[1]
+        if not datagram.has_key("server_ping"): 
+            return
         if datagram['server_uuid_node'] == uuid.getnode() and port == 8085 and datagram.has_key("server_ping"): 
             #pdb.set_trace()
             global last_connection_time

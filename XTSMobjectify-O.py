@@ -19,9 +19,6 @@ import time
 import hdf5_liveheap, tables
 import sheltered_script, live_content, glab_figure, softstring
 import XTSM_cwrappers
-import simplejson
-#from IPy import IP
-
 
 XO_IGNORE=['PCDATA']  # ignored elements on XML_write operations
 
@@ -2182,9 +2179,6 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         generates listeners for each of the dependencies found in the script
         not already in the element's scope.
         """
-        if hasattr(self,'active') == False:
-            print 'Script is not "active"'
-            return
         if not self.active: return
         for dep in self.dependencies:
             dep.registerListener({"method":self.registerData, "dependent":dep})
@@ -2235,59 +2229,6 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         """
         self.syn_tree=ast.parse(saxutils.unescape(self.ScriptBody.PCDATA))
 
-    def dispatch(self,server):
-        """
-        Searches for "Remote" tag and sends that to that server it figures out
-        it needs to go to.
-        If Remote does not contain a valid address (e.g. ip address,
-        host name, etc...), then the script object looks into its xml context
-        (e.g. am i a child of an instrument, etc... and finds what the
-        host the instrument is on, etc...)
-        """
-        
-        xtsm_owner = self.getOwnerXTSM()
-        def destination_from_instrument(script):
-            #This gets the instrument object's metadata
-            instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
-                                                             "Name",
-                                                             script.__parent__.OnInstrument[0].PCDATA)
-            return instrument_head.ServerAddress[0].PCDATA
-            
-        if hasattr(self,'Remote'):
-            self.script_destination = self.Remote.PCDATA  #Have this handle multiple kinds. name, ip, instrument etc.
-        else:
-            # No Remote tag given, so look for the ServerAddress in the
-            # metadata of the Instrument.
-            # determine context of script node.
-            # These are details of how to identify the destination
-            anticipated_contexts = {("__parent__","InstrumentCommand"): destination_from_instrument }  # {"relation":"tag_type"}
-            for cont,action in anticipated_contexts.items():
-                #self.__parent__.get_tag() == InstrumentCommand
-                if getattr(self,cont[0]).get_tag() == cont[1]:
-                    self.script_destination = action(self)
-        sn = xtsm_owner.getItemByFieldValue("Parameter","Name","shotnumber")
-        self.insert(sn)
-        self.Time[0].parse()
-        #msg = self.write_xml()
-        msg = self.ScriptBody.PCDATA
-        self.server = server
-        self.data_destination = self.server.ip
-        #shotnumber = self.parse().shotnumber.PCDATA Add this
-        #Add times
-        pckg = simplejson.dumps({"IDLSocket_ResponseFunction":"execute_script",
-                                 "script_body":msg,
-                                 "destination_for_data":self.data_destination,
-                                 "on_main_server":True,
-                                 "instrument_name":self.__parent__.OnInstrument[0].PCDATA,
-                                 "time_to_execute":self.Time.PCDATA,
-                                 "shotnumber":self.Parameter.Value.PCDATA,
-                                 "terminator":"die"})
-        if not server.send(pckg,self.script_destination,isBinary=False):
-            print self.script_destination, "Did not receive this message:"
-            print pckg
-            pass
-
-
     class ScriptVisitor(ast.NodeVisitor):
         """
         helper-class to allow walking the syntax tree to find assignments
@@ -2305,54 +2246,6 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                 else: 
                     self.assignments.update({targ.id:[targ.lineno]})
                 self.visit(node.value)
-
-class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
-    """
-    A class for instructing instrumnets that are attached to servers and taking in data.
-    """
-    def __init__(self):
-        XTSM_core.__init__(self)
-        
-    def __generate_listener__(self):#This is called by installListeners - which is called in Server, compile active xtsm
-        """
-        Returns listener creation data - this will be automatically called
-        recursively down the tree by installListeners in XSTM_core class.
-        """
-        if hasattr(self,'PullData'):
-            if (not self.scoped): self.buildScope()
-            data={}
-            data.update({"generator": self})
-            xtsm_owner = self.getOwnerXTSM()
-            cm=self.getOwnerXTSM().head[0].ChannelMap[0]
-            [tg,tgi]=self.OnChannel[0].getTimingGroupIndex()
-            # chanobj=cm.getChannel(self.OnChannel.PCDATA) # might need this later
-            tgobj=cm.getItemByFieldValue("TimingGroupData","GroupNumber",str(int(tg)))
-            def destination_from_instrument(self):
-                #This gets the instrument object's metadata
-                instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
-                                                             "Name",
-                                                             self.OnInstrument[0].PCDATA)
-                return instrument_head.ServerAddress[0].PCDATA
-            gen = destination_from_instrument()
-            self.__listener_criteria__ = {"shotnumber":int(self.scope["shotnumber"]),
-                                   "sender":tgobj.Name.PCDATA}
-            self.__listener_criteria__.update({'data_generator':gen,
-                                        'number_in_data_sequence':0})
-            data.update({"listen_for":self.__listener_criteria__ })
-            data.update({"method": "link"})
-            data.update({"onlink":self.onlink})
-            self.data_link = None
-            return data
-        
-    def onlink(self,listener):
-        """
-        Callback method provided to datalistener; called after data is linked-in
-        """
-        # who is self here? - the owner of the callback provided 
-        # - e.g. the Sample element in XTSM onlink, not the listener it is later attached to
-        for link in listener.datalinks:
-            for elm in link:
-                self.insert(DataLink({"link":link[elm]}))#Change t oDataLInk
 
 class ScriptOutput(gnosis.xml.objectify._XO_,XTSM_core):
     """
