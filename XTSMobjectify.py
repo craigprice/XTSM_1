@@ -2321,21 +2321,23 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         if hasattr(self,'PullData'):
             if (not self.scoped): self.buildScope()
             data={}
+            #pdb.set_trace()
             data.update({"generator": self})
             xtsm_owner = self.getOwnerXTSM()
-            cm=self.getOwnerXTSM().head[0].ChannelMap[0]
-            [tg,tgi]=self.OnChannel[0].getTimingGroupIndex()
+            #cm=self.getOwnerXTSM().head[0].ChannelMap[0]
+            #[tg,tgi]=self.OnChannel[0].getTimingGroupIndex()
             # chanobj=cm.getChannel(self.OnChannel.PCDATA) # might need this later
-            tgobj=cm.getItemByFieldValue("TimingGroupData","GroupNumber",str(int(tg)))
-            def destination_from_instrument(self):
-                #This gets the instrument object's metadata
-                instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
-                                                             "Name",
+            #tgobj=cm.getItemByFieldValue("TimingGroupData","GroupNumber",str(int(tg)))
+            #This gets the instrument object's metadata
+            #pdb.set_trace()
+            instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
+                                                             "OnInstrument",
                                                              self.OnInstrument[0].PCDATA)
-                return instrument_head.ServerAddress[0].PCDATA
-            gen = destination_from_instrument()
+            gen =  instrument_head.ServerIPAddress[0].PCDATA #CCD right now
+            print gen
             self.__listener_criteria__ = {"shotnumber":int(self.scope["shotnumber"]),
-                                   "sender":tgobj.Name.PCDATA}
+                                          "sender":gen}
+                                   #"sender":tgobj.Name.PCDATA}
             self.__listener_criteria__.update({'data_generator':gen,
                                         'number_in_data_sequence':0})
             data.update({"listen_for":self.__listener_criteria__ })
@@ -2350,9 +2352,12 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         """
         # who is self here? - the owner of the callback provided 
         # - e.g. the Sample element in XTSM onlink, not the listener it is later attached to
+        print "Class InstrumentCommand, function onlink"
+        print "data links in listeners:"
+        print listener.datalinks
         for link in listener.datalinks:
             for elm in link:
-                self.insert(DataLink({"link":link[elm]}))#Change t oDataLInk
+                self.insert(DataLink(reference_string=link[elm]))#Change t oDataLInk, argument for initialization is <URL for a file>.msgp[idstring][element]
 
 class ScriptOutput(gnosis.xml.objectify._XO_,XTSM_core):
     """
@@ -2951,12 +2956,14 @@ class XTSM_Object(object):
         Returns the state of the XTSM object - if it still has active listeners
         will return True, otherwise False - NEEDS TO BE COMPLETED
         """
+        print "This function needs to be completed - isActive"
         return False
         
     def deactivate(self,params={}):
         """
         Forces deactivation of listeners to allow cleanup - NEEDS TO BE COMPLETED
         """
+        print "This function needs to be completed - deactivate"
         if params.has_key("message"): self.XTSM.addattribute("server_note",params["message"])
 
 

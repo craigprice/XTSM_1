@@ -239,6 +239,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
             this deployment should trigger them
             """
             print "in class DataBomb, function deploy_fragments"
+            #pdb.set_trace()
             if not hasattr(listenerManagers,'__iter__'): listenerManagers=[listenerManagers]
             for fragment in [a for a in self.data.keys() if not self.notify_data.has_key(a)]:
                 for listenerManager in listenerManagers:
@@ -419,6 +420,7 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             the link should take the form of a string forming a resource locator;
             intended for linking to files (hdf5 via liveheaps, or raw data from bomb file dumps)
             """
+            print "class DataListenerManager, function linkdata"
             self.datalinks.append(datalinks)
             self.eventcount-=1            
             if hasattr(self,'onlink'): self.onlink(self)
