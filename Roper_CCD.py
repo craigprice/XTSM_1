@@ -199,7 +199,7 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         """
         callback initiated by server when experiment is completed
         """
-        print "server callback"
+        print "class Roper_CCD, function _server_callback_expcompleted_"
         if self.query_running(): raise self.CallBackWhileRunningError
         framedata=self.get_frame(frame_num=1) # get the second frame; the first is clearing shot
         if self.params_pending: self.set_param(self.pending_params)        

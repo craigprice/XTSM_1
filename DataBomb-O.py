@@ -30,7 +30,6 @@ keyed by the MAC address of the host computer.  to add an entry for a new
 computer, find the MAC address using import uuid / print uuid.getnode()
 """
 
-#This class contains all the Databombs that have been received
 class DataBombList(xstatus_ready.xstatus_ready):
     """
     A class to define a list of dataBombs, and organize their deployment
@@ -40,13 +39,10 @@ class DataBombList(xstatus_ready.xstatus_ready):
     """
     def __init__(self,params={}):
         defaultparams={ }
-        for key in params.keys(): 
-            defaultparams.update({key:params[key]})
-        for key in defaultparams.keys():
-            setattr(self,key,defaultparams[key])   
+        for key in params.keys(): defaultparams.update({key:params[key]})
+        for key in defaultparams.keys(): setattr(self,key,defaultparams[key])   
         self.databombs={}
-        self.stream=InfiniteFileStream.FileStream(params={'file_root_selector':'raw_buffer_folders'})
-        #self.stream=self.FileStream(params={'file_root_selector':'raw_buffer_folders'})
+        self.stream=self.FileStream(params={'file_root_selector':'raw_buffer_folders'})
 
     def add(self,bomb):
         """
@@ -68,7 +64,6 @@ class DataBombList(xstatus_ready.xstatus_ready):
             'next' - deploys one based on a First-In-First-Out (FIFO) model
             uuid - deploys by the unique identifier assigned to the bomb on add
         """
-        print "In class DataBombList, function deploy"
         if not hasattr(self,'dataListenerManagers'): self.dataListenerManagers=[]
         def all_c(o):
             for bomb in o.databombs:
@@ -176,9 +171,6 @@ class DataBombList(xstatus_ready.xstatus_ready):
         as a means of (vertical) raw data storage.
         """
         def __init__(self,messagepack):
-            print "in class Databomb, function __init__"
-            if not isinstance(messagepack, str):
-                pdb.set_trace()
             self.messagepack=messagepack
             self.timestamp=time.time()
             self.uuid='DB'+uuid.uuid1().__str__()
@@ -192,7 +184,6 @@ class DataBombList(xstatus_ready.xstatus_ready):
                 repnumber: an integer representing the repetition number
                 onunpack: a string of python commands to execute on unpack
             """
-            print "in class DataBomb, function unpack"
             self.data=msgpack.unpackb(self.messagepack)
             notify_data_elms=['sender','shotnumber','repnumber']
             self.notify_data={}
@@ -220,15 +211,12 @@ class DataBombList(xstatus_ready.xstatus_ready):
             entire object should be unpackable using messagepack unpackb routine
             twice - first to extract 'data' element, then to unpack data
             """
-            print "In class DataBomb, function stream_to_disk"
             idheader = msgpack.packb('id')+msgpack.packb(str(self.uuid))
             timeheader = msgpack.packb('timestamp')+msgpack.packb(str(self.timestamp))
             dataheader = '\xdb' + struct.pack('>L',len(self.messagepack))
             if not hasattr(self,'raw_links'): self.raw_links=[]
             self.raw_links.append(stream.write('\x83' + idheader + timeheader + dataheader, preventFrag=True)+"["+self.uuid+"]")
-            print "before write"
             stream.write(self.messagepack)
-            print "end of class DataBomb, function stream_to_disk"
             
         def deploy_fragments(self,listenerManagers):
             """
@@ -238,8 +226,6 @@ class DataBombList(xstatus_ready.xstatus_ready):
             already have been installed in a manager by the XTSM elements, and
             this deployment should trigger them
             """
-            print "in class DataBomb, function deploy_fragments"
-            #pdb.set_trace()
             if not hasattr(listenerManagers,'__iter__'): listenerManagers=[listenerManagers]
             for fragment in [a for a in self.data.keys() if not self.notify_data.has_key(a)]:
                 for listenerManager in listenerManagers:
@@ -252,23 +238,16 @@ class DataBombList(xstatus_ready.xstatus_ready):
             """
             streams data to disk, unpacks and deploys fragments
             """
-            print "in class DataBomb, function deploy"
             self.stream_to_disk(stream)
             self.unpack()
             self.deploy_fragments(listenerManagers)
         
-
 class DataListenerManager(xstatus_ready.xstatus_ready):
     """
-    A class to manage data listeners.
-    This is held within a DataContext (DataContext is a dictionary) held by the server.
-    It holds a list of all the listeners that are looking to receive databombs. 
-    This also holds informatoin on what to do with the listener - within "spawn".
-    Also needs to delete the listeners when databombs were received.
+    A class to manage data listeners
     """
     def __init__(self):
         self.listeners={}
-        self.instruments={}
         
     def spawn(self,params={}):
         """
@@ -284,21 +263,12 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
         onattach - callback method after data has been attached to listener
         onclose - callback after item is destroyed 
         """
-        print "class DataListenerManager, function spawn"
-        defaultparams={'listen_for':{'sender':'',
-                                     'shotnumber':-1,
-                                     'repnumber': None},
-                       'timecreated':time.time(),
-                       'generator': None,
-                       'timeout':360 }
-        if params == None:
-            params = defaultparams
-        for key in params:
-            defaultparams.update({key:params[key]})
-        newguy = self.DataListener(defaultparams)        
+        defaultparams={'listen_for':{'sender':'','shotnumber':-1,'repnumber': None}
+                        , 'timecreated':time.time(), 'generator': None
+                        , 'timeout':360 }
+        for key in params.keys(): defaultparams.update({key:params[key]})
+        newguy=self.DataListener(defaultparams)        
         self.listeners.update({newguy.id:newguy})
-        
-        #This needs to send the soon to be esnding servers  
     
     def notify_data_present(self, generator_info, data, datalinks):
         """
@@ -337,16 +307,13 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             """
             constructor for class
             """
-            self.sender = None
-            self.server = None
             self.id='DL'+str(uuid.uuid1())
             defaultparams={'listen_for':{'sender':'','shotnumber':-1,'repnumber': None}
                             , 'timecreated':time.time(), 'generator': None
                             , 'timeout':360, 'eventcount':1 }        
-            for key in params.keys():
-                defaultparams.update({key:params[key]})
+            for key in params.keys(): defaultparams.update({key:params[key]})
             self.datalinks=[]
-            self.expirationtime = time.time() + defaultparams['timeout']
+            self.expirationtime=time.time()+defaultparams['timeout']
             for key in defaultparams.keys():
                 setattr(self,key,defaultparams[key])   
     
@@ -355,26 +322,6 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             NOTE:  listener must be killed by its owner manager - this is prone to cause memory leak
             """
             if hasattr(self,'onclose'): self.onclose(self)
-
-        def announce_interest(self,address):
-            """
-            announce to network servers that this element is interested in its data
-            Note: add to The databomb dispatcher functionality that will save
-            all databombs to disk that haven't been sent.
-            A good way of doing this is perhaps within the destrtuctor.
-            It chewcks a flag it it was dispatched - this way it might save even
-            on a crash.
-            """
-            print "class DataListener, function announce_interest"
-            p = {'listener_id':self.id,
-                 'instrument_id':None,
-                 'instrument_type':'camera',
-                 'connection_id':None,
-                 'ip_address':address,
-                 'port':None,
-                 #'shotnumber':None,
-                 'data_type':'image'}
-            self.server.announce_data_listener(params=p)
         
         def query_interest(self, generator_id):
             """
@@ -420,7 +367,6 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             the link should take the form of a string forming a resource locator;
             intended for linking to files (hdf5 via liveheaps, or raw data from bomb file dumps)
             """
-            print "class DataListenerManager, function linkdata"
             self.datalinks.append(datalinks)
             self.eventcount-=1            
             if hasattr(self,'onlink'): self.onlink(self)
@@ -443,15 +389,9 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
     handle exceptions and handshaking such that data is (ideally) never lost
     """
     def __init__(self,params={}):
-        print "class DataBombDispatcher function __init__"
         defaultparams={ }
-        self.instruments_with_destinations = {}
-        self.all_requests = {}
-        #This sets all the params to be member variables of DataBombDispatcher
-        for key in params.keys():
-            defaultparams.update({key:params[key]})
-        for key in defaultparams.keys():
-            setattr(self,key,defaultparams[key])   
+        for key in params.keys(): defaultparams.update({key:params[key]})
+        for key in defaultparams.keys(): setattr(self,key,defaultparams[key])   
         self.databombers={}
         if not hasattr(self, "server"): 
             print "WARNING:: DatabombDispatcher created with no attached server"
@@ -462,34 +402,16 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         """
         adds a bomber to the list - the bomber input is expected to be a dictionary.
         Returns unique identifier assigned to bomb
-        """         
-        print "class DataBombDispatcher, function add" 
+        """
         if bomber.__class__!=self.DataBomber: 
             try: 
                 bomber=self.DataBomber(bomber)
-                bomber.server = self.server
+                bomber.server=self.server
             except: 
                 raise self.BadBomberError
                 return
         self.databombers.update({bomber.uuid:bomber})
         return bomber.uuid
-    
-    
-
-    def link_to_instrument(self,params):
-        #from params find instruments
-    #Then add the ip address to the instruments_with_destinations
-    #
-        print "class DataBombDispatcher, function link_to_instrument"  
-        for key in params.keys():
-            setattr(self,key,params[key]) 
-        pdb.set_trace()
-        self.destinations = [params['ip_address']]
-        self.instruments_with_destinations.update(params)
-        self.all_requests.update(params)
-        
-    def delink_to_instrument(self,params):
-        pass
     
     def dispatch(self,criteria="all"):
         """
@@ -498,42 +420,25 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             'next' - deploys one based on a First-In-First-Out (FIFO) model
             uuid - deploys by the unique identifier assigned to the bomb on add
         """
-        #print "class DataBombDispather, function dispatch"
-        #for d in self.databombers: delete if bomber has sent
-        if len(self.databombers)==0:
-            return
-        print "class DataBombDispatcher, function dispatch"
-        print "Length of self.databombers:", len(self.databombers)
-        for key in self.databombers.keys():
-            if self.databombers[key].is_sent:
-                del self.databombers[key]
-        #This code is confusing. I am just going to send all databombs and then delete them
-        """
+        if len(self.databombers)==0: return
+        print "dispatching data"
+
         def all_c(o):
             for bomber in o.databombers.values():
-                print "telling bomber to dispatch"
-                bomber.dispatch(['10.1.1.124'])#Fix this
-            #o.databombers={} need to delete the bombers more carefully CP
+                bomber.dispatch()
+            o.databombers={}
         def next_c(o):
             ind=min([(bomber.timestamp,bomber.uuid) for bomber in o.databombers])[1]
             o.databombers[ind].dispatch()
             del o.databombers[ind]
         ops={ 'all': all_c, 'next':next_c }
 
-        try:
-            ops[criteria](self)
+        try: ops[criteria](self)
         except KeyError: 
             try: 
                 self.databombers[criteria].dispatch()
-                #del self.databombers[criteria] need to delete the bomber
-            except KeyError:
-                raise self.UnknownBomberError
-        """
-        for bomber in self.databombers:
-            print "telling bomber to dispatch"
-            self.databombers[bomber].dispatch(['10.1.1.124'])#Fix this
-        
-
+                del self.databombers[criteria]
+            except KeyError: raise self.UnknownBomberError
 
     class BadBomberError(Exception):
         pass
@@ -546,66 +451,34 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             """
             constructs an outgoing payload from a dictionary of data
             """
-            print "class DataBomber, __init__"
             self.uuid='DBR'+uuid.uuid1().__str__()
             self.server=server
-            self.is_sent = False
-            try: 
-                caller=inspect.stack()[1][3]
-            except: 
-                caller="Unknown"
+            try: caller=inspect.stack()[1][3]
+            except: caller="Unknown"
             default_data={"generator":caller}
             default_data.update(data)
             data=default_data
-            data.update({"packed_time":time.time(),
-            "packed_by":str(uuid.getnode())+"_DataBomber_init"})           
+            data.update({"packed_time":time.time(),"packed_by":str(uuid.getnode())+"_DataBomber_init"})           
             self.data=data            
             # packs data into a msgpack format (binary key-value pairs)
-            self.packed_data=msgpack.packb(data)
+            self.payload=msgpack.packb(data)
             self.destinations=destinations
             
-        def dispatch(self,destinations_=None):
-            print "DataBomber, dispatch"
+        def dispatch(self,destinations=None):
             """
-            sends the payload to the specified destination(s) 
-            (as well as any provided at initialization)
+            sends the payload to the specified destination(s) (as well as any provided at initialization)
             , provided as an ip address string, e.g. "10.1.1.101:8083"
             """
             if not self.server: 
                 print "WARNING:: databomber dispatched without an attached server - dispatch ignored"
                 return
-            if type(destinations_) != type([]):
-                destinations_=[destinations_]
-            if type(self.destinations) != type([]):
-                self.destinations=[self.destinations]
-            self.destinations = list(set(self.destinations + destinations_))    
+            if type(destinations)!=type([]): destinations=[destinations]
+            if type(self.destinations)!=type([]): self.destinations=[self.destinations]
+            self.destinations = list(set(self.destinations + destinations))    
             if not self.destinations[0]:
-                #self.destinations=[self.data['destination_priorities'][0]]#Update this to send more
+                self.destinations=[self.data['destination_priorities'][0]]
                 self.dest_by_priority=True
-            flag = False
-            for dest in self.destinations:
-                if dest != None:
-                    flag = True
-            if not flag:
-                self.destinations.append("10.1.1.124")
-            self.destinations = [x for x in self.destinations if x is not None]
-            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','databomb':self.packed_data})
-            for dest in self.destinations:
-                if dest == None:
-                    print "No destination"
-                    continue
-                try: 
-                    if self.server.send(packed_message,dest, isBinary=True):
-                        print "dest:"
-                        print dest
-                        print "Databomb Sent!"
-                        self.is_sent = True
-                    else:
-                        print "dest:"
-                        print dest
-                        print "Databomb Not Sent!"
-                except:
-                    raise
-
-
+            for dest in destinations:
+                try: self.server.send(dest,self.data)
+                except:  pass # here we need to handle comm errors
                 
