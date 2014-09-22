@@ -22,11 +22,15 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
     a single call to write will be segmented into multiple files
     """
     def __init__(self, params={}):
+        print "class FileStream, func __init__()"
         today=datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
         defaultparams={ 'timecreated':time.time()
                         , 'chunksize': DEFAULT_CHUNKSIZE, 'byteswritten' : 0}
-        try: defaultparams.update({'location_root':file_locations.file_locations[params['file_root_selector']][uuid.getnode()]+'/'+today+'/'})
-        except KeyError: raise self.UnknownDestinationError
+        try:
+            defaultparams.update({'location_root':file_locations.file_locations[params['file_root_selector']][uuid.getnode()]+'/'+today+'/'})
+        except KeyError: 
+            print "error"
+            raise self.UnknownDestinationError
         for key in params.keys(): defaultparams.update({key:params[key]})
         for key in defaultparams.keys(): setattr(self,key,defaultparams[key])   
         self.location=self.location_root+str(uuid.uuid1())+'.msgp'

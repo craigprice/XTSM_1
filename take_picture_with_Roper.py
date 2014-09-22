@@ -1,4 +1,5 @@
-
+self.server.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self.server,'create_example_pollcallback':True})})
+"""
 import Roper_CCD
 isInitialized = False
 #pdb.set_trace()
@@ -13,4 +14,4 @@ if not isInitialized:
     self.server.dataContexts['default'].dict['Roper_CCD'].set_autoframing()
     self.server.dataContexts['default'].dict['Roper_CCD'].start_acquisition()
 print "Done with Script"
-
+"""

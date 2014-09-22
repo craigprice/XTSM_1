@@ -45,6 +45,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
         for key in defaultparams.keys():
             setattr(self,key,defaultparams[key])   
         self.databombs={}
+        self.dataListenerManagers = DataListenerManager()
         self.stream=InfiniteFileStream.FileStream(params={'file_root_selector':'raw_buffer_folders'})
         #self.stream=self.FileStream(params={'file_root_selector':'raw_buffer_folders'})
 
@@ -239,14 +240,17 @@ class DataBombList(xstatus_ready.xstatus_ready):
             this deployment should trigger them
             """
             print "in class DataBomb, function deploy_fragments"
+            #print "Listeners:", 
             #pdb.set_trace()
             if not hasattr(listenerManagers,'__iter__'): listenerManagers=[listenerManagers]
             for fragment in [a for a in self.data.keys() if not self.notify_data.has_key(a)]:
                 for listenerManager in listenerManagers:
                     self.notify_data.update({"fragmentName":fragment})                    
                     listenerManager.notify_data_present(self.notify_data,{fragment:self.data[fragment]},{fragment:[f+"["+fragment+"]" for f in self.raw_links]})
-            try: del self.notify_data["fragmentName"]
-            except KeyError: pass
+            try: 
+                del self.notify_data["fragmentName"]
+            except KeyError:
+                pass
             
         def deploy(self,stream,listenerManagers):
             """
@@ -531,7 +535,8 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         """
         for bomber in self.databombers:
             print "telling bomber to dispatch"
-            self.databombers[bomber].dispatch(['10.1.1.124'])#Fix this
+            #self.databombers[bomber].dispatch(['10.1.1.124'])#Fix this
+            self.databombers[bomber].dispatch(['10.1.1.112'])#Fix this
         
 
 
@@ -587,7 +592,8 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 if dest != None:
                     flag = True
             if not flag:
-                self.destinations.append("10.1.1.124")
+                self.destinations.append("10.1.1.112")
+                #self.destinations.append("10.1.1.124")
             self.destinations = [x for x in self.destinations if x is not None]
             packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','databomb':self.packed_data})
             for dest in self.destinations:

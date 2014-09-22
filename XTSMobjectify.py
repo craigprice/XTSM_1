@@ -124,8 +124,12 @@ class XTSM_core(object):
         """
         Returns all XTSM children of the node as a list
         """
-        if (type(self._seq).__name__=='NoneType'): return []
-        return [a for a in self._seq if type(a)!=type(u'')]
+        #print "self:", self
+        if (type(self._seq).__name__=='NoneType'):
+            return []
+        child_nodes = [a for a in self._seq if type(a)!=type(u'')]
+        #print "child_nodes:", child_nodes
+        return child_nodes
         
     def getDescendentsByType(self,targetType):
         """
@@ -496,9 +500,14 @@ class XTSM_core(object):
         to the provided manager for all elements which have a 
         __generate_listener__() method defined
         """
+        print "In class XTSM_core, func installListeners"
+        print "self:", self
         if hasattr(self,"__generate_listener__"):
             listenerManager.spawn(self.__generate_listener__())
-        for child in self.getChildNodes():
+        child_nodes = self.getChildNodes()
+        if str(child_nodes).find("InstrumentCommand") > 0:
+            print "child_nodes:" , child_nodes
+        for child in child_nodes:
             child.installListeners(listenerManager)
                     
         
@@ -2312,12 +2321,15 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
     """
     def __init__(self):
         XTSM_core.__init__(self)
+        print "class InstrumentCommand, func __init__"
         
     def __generate_listener__(self):#This is called by installListeners - which is called in Server, compile active xtsm
         """
         Returns listener creation data - this will be automatically called
         recursively down the tree by installListeners in XSTM_core class.
         """
+        print "in class InstrumentCommand, function __generate_listener__"
+        pdb.set_trace()
         if hasattr(self,'PullData'):
             if (not self.scoped): self.buildScope()
             data={}
@@ -2948,6 +2960,7 @@ class XTSM_Object(object):
         scans down the XTSM tree, creating dataListeners for all elements
         which should generate them.
         """
+        print "class XTSM_object, function install Listeners"
         self.XTSM.head.installListeners(dataListenerManager)
         self.XTSM.getActiveSequence().installListeners(dataListenerManager)
 
