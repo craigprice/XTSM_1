@@ -1401,7 +1401,6 @@ class CommandLibrary():
                                  " Shotnumber= " + str(sn) + '"}')
             XTSMobjectify.preparse(xtsm_object)
             t0 = time.time()
-            #pdb.set_trace()
             parserOutput = xtsm_object.parse(sn)
             tp = time.time()
             XTSMobjectify.postparse(parserOutput)            
