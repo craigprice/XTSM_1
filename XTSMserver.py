@@ -63,6 +63,7 @@ from enthought.traits.api import Str as TraitedStr
 
 from twisted.internet import stdio
 from twisted.protocols import basic
+from twisted.internet import error
 
 import simplejson
 import socket
@@ -233,7 +234,7 @@ class MulticastProtocol(DatagramProtocol):
         """
         Join the multicast address
         """
-        self.transport.joinGroup("228.0.0.5", interface="10.1.1.124")#EDit this CP
+        self.transport.joinGroup("228.0.0.5")#, interface="10.1.1.124")#EDit this CP
 
     def send(self,message):
         """
@@ -999,7 +1000,15 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             if self.peer_servers[peer].ip == address:
                 p = self.peer_servers[peer].protocol
                 p.sendMessage(data,isBinary)
-                print "Just Sent:", data
+                if not isBinary:
+                    print "Just Sent:", data
+                else:
+                    print "Just Sent (binary):"
+                    d = msgpack.unpackb(data)
+                    if 'databomb' in d:
+                        print "-A lot of databomb data here-"
+                    else:
+                        print d
                 return True
         for ss in self.script_servers.keys():
             if self.script_servers[ss].ip == address:
@@ -1007,6 +1016,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
                 print p.sendMessage(data,isBinary)
                 print "Just Sent:", data
                 return True
+        print "Not Sent!"
         return False
         
     def isKnownServer(self,payload):
@@ -1029,6 +1039,8 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         
     def announce_data_listener(self,params):
         print "class ClientManager, function announce_data_listener"
+        pdb.set_trace()
+        return
         announcement = {"IDLSocket_ResponseFunction":"announce_listener",
                         #"shotnumber":"",
                         "ip_address":'10.1.1.124',
@@ -1149,11 +1161,14 @@ class CommandLibrary():
     params>request>protocol>loseConnection()
     """
     def __init__(self, server):
+        print "class CommandLibrary, func __init__"
         self.server = server
         
     def __determineContext__(self,params):
+        print "class CommandLibrary, func __determineContext__"
         try: 
             dcname = params['data_context']
+            print "dcname:", dcname
             if not params['request']['protocol'].server.dataContexts.has_key(dcname):
                 raise KeyError
         except KeyError:
@@ -1350,7 +1365,8 @@ class CommandLibrary():
         
         dc=self.__determineContext__(params)
         parent_dc = ''
-        if dc.dict.has_key('_exp_sync'): parent_dc=dc
+        if dc.dict.has_key('_exp_sync'): 
+            parent_dc=dc
         # next lines look for the first defined data context that has
         # a pxi_data_context element matching 'default:ip address' of pxi system 
         else:
@@ -1385,6 +1401,7 @@ class CommandLibrary():
                                  " Shotnumber= " + str(sn) + '"}')
             XTSMobjectify.preparse(xtsm_object)
             t0 = time.time()
+            #pdb.set_trace()
             parserOutput = xtsm_object.parse(sn)
             tp = time.time()
             XTSMobjectify.postparse(parserOutput)            
@@ -1404,18 +1421,24 @@ class CommandLibrary():
                 setattr(dc['_bombstack'],
                         'dataListenerManagers',
                         DataBomb.DataListenerManager())            
-
+            #pdb.set_trace()
             if (not dc.dict.has_key('_analysis_stream')):
                 dc.update({'_analysis_stream':InfiniteFileStream.FileStream(params={'file_root_selector':'analysis_stream'})})
             xtsm_object.XTSM._analysis_stream = dc['_analysis_stream']
+            #pdb.set_trace()
             xtsm_object.installListeners(dc['_bombstack'].dataListenerManagers)#This calls _generate_listeners_ and passes in the DLM instance.
             #InstallListeners passes the return of __generate_listeners__ to spawn in DLM class
             # InstrumentCommands
             print "here"
             #pdb.set_trace()
-            commands = xtsm_object.XTSM.getDescendentsByType("InstrumentCommand")
+            
+            #Dispatch all scripts, - Scripts in InstrumentCommand is in a subset of all Scripts - so, dispatch all Scripts first
+            commands = xtsm_object.XTSM.getDescendentsByType("InstrumentCommand")#Need to dispatch all scripts. Change This CP
             for c in commands:
                 c.Script.dispatch(self.server)
+                #Also need to change the passing in of a script body to actually have those lines of code.
+                #Then in the GUI we can make a text box so the code is visible,
+                #And - if there gets to be lots of code, it can be put into the "Roper_CCD" class as a function to call.
 
             ## Testing CP
             #for key in self.dataContexts:
@@ -1513,7 +1536,10 @@ class CommandLibrary():
         and for analyses to be initiated 
         """
         print "dealing with data bomb that came back"
+        #print self.server.dataContexts['default:127.0.0.1'].dict['_bombstack'].dataListenerManagers.listeners #This is the context that has the listeners
+        #pdb.set_trace()
         dc=self.__determineContext__(params)
+        print dc.dict['_bombstack'].dataListenerManagers.listeners#Should have listeners installed
         if (not dc.dict.has_key('_bombstack')):
             dc.update({'_bombstack':DataBomb.DataBombList()})
         # data listeners should be attached under the bombstack!!
@@ -1852,7 +1878,11 @@ class GlabPythonManager():
         global wsport        
         self.reactor = reactor
         self.task = task
-        reactor.listenTCP(port, self.listener)
+        try:
+            reactor.listenTCP(port, self.listener)
+        except error.CannotListenError:
+            time.sleep(10)
+            reactor.listenTCP(port, self.listener)
         #reactor.addSystemEventTrigger('before','shutdown',server_shutdown)
         def hello():
             print ('Listening on ports ' + str(port) +' (standard HTTP),',

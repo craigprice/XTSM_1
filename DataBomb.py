@@ -45,6 +45,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
         for key in defaultparams.keys():
             setattr(self,key,defaultparams[key])   
         self.databombs={}
+        self.dataListenerManagers = DataListenerManager()
         self.stream=InfiniteFileStream.FileStream(params={'file_root_selector':'raw_buffer_folders'})
         #self.stream=self.FileStream(params={'file_root_selector':'raw_buffer_folders'})
 
@@ -177,7 +178,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
         """
         def __init__(self,messagepack):
             print "in class Databomb, function __init__"
-            if not isinstance(messagepack, str):
+            if not isinstance(messagepack, str):#Expecting a messagepacked byte string
                 pdb.set_trace()
             self.messagepack=messagepack
             self.timestamp=time.time()
@@ -193,12 +194,15 @@ class DataBombList(xstatus_ready.xstatus_ready):
                 onunpack: a string of python commands to execute on unpack
             """
             print "in class DataBomb, function unpack"
+            pdb.set_trace()
             self.data=msgpack.unpackb(self.messagepack)
-            notify_data_elms=['sender','shotnumber','repnumber']
+            notify_data_elms=['sender','shotnumber','repnumber','server_machine','server_IP_address']
             self.notify_data={}
             for elm in notify_data_elms:        
-                try: self.notify_data.update({elm:self.data[elm]})
-                except KeyError: pass
+                try: 
+                    self.notify_data.update({elm:self.data[elm]})
+                except KeyError:
+                    pass
             try: 
                 self.unpack_instructions=self.data['onunpack']
                 try: 
@@ -239,14 +243,17 @@ class DataBombList(xstatus_ready.xstatus_ready):
             this deployment should trigger them
             """
             print "in class DataBomb, function deploy_fragments"
+            #print "Listeners:", 
             #pdb.set_trace()
             if not hasattr(listenerManagers,'__iter__'): listenerManagers=[listenerManagers]
             for fragment in [a for a in self.data.keys() if not self.notify_data.has_key(a)]:
                 for listenerManager in listenerManagers:
                     self.notify_data.update({"fragmentName":fragment})                    
                     listenerManager.notify_data_present(self.notify_data,{fragment:self.data[fragment]},{fragment:[f+"["+fragment+"]" for f in self.raw_links]})
-            try: del self.notify_data["fragmentName"]
-            except KeyError: pass
+            try: 
+                del self.notify_data["fragmentName"]
+            except KeyError:
+                pass
             
         def deploy(self,stream,listenerManagers):
             """
@@ -287,6 +294,8 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
         print "class DataListenerManager, function spawn"
         defaultparams={'listen_for':{'sender':'',
                                      'shotnumber':-1,
+                                     'server_machine':'',
+                                     'server_IP_address':'',
                                      'repnumber': None},
                        'timecreated':time.time(),
                        'generator': None,
@@ -307,8 +316,14 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
         listeners will try to match generator_info (a dictionary) and express interest
         if they do, data will be linked or attached as they request
         """
+        print "in class DataListenerManager, function notify_data_present"
+        print "generator_info", generator_info
+        print "data", data
+        print "datalinks", datalinks
         for listener in self.listeners.values():
             if listener.query_interest(generator_info):
+                print "a listener is interested in the data"
+                pdb.set_trace()
                 (listener.getMethod())(data,datalinks)
 
     def flush(self):
@@ -348,7 +363,8 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             self.datalinks=[]
             self.expirationtime = time.time() + defaultparams['timeout']
             for key in defaultparams.keys():
-                setattr(self,key,defaultparams[key])   
+                setattr(self,str(key),defaultparams[key])   
+            #pdb.set_trace()
     
         def __del__(self):
             """
@@ -531,7 +547,8 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         """
         for bomber in self.databombers:
             print "telling bomber to dispatch"
-            self.databombers[bomber].dispatch(['10.1.1.124'])#Fix this
+            #self.databombers[bomber].dispatch(['10.1.1.124'])#Fix this
+            self.databombers[bomber].dispatch(['10.1.1.112'])#Fix this
         
 
 
@@ -555,6 +572,8 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             except: 
                 caller="Unknown"
             default_data={"generator":caller}
+            #data.update({"shotnumber":shotnumber}) Add this
+            data.update({"server_IP_address":'10.1.1.178'})
             default_data.update(data)
             data=default_data
             data.update({"packed_time":time.time(),
@@ -587,9 +606,10 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 if dest != None:
                     flag = True
             if not flag:
-                self.destinations.append("10.1.1.124")
+                self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
+                #self.destinations.append("10.1.1.124")
             self.destinations = [x for x in self.destinations if x is not None]
-            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','databomb':self.packed_data})
+            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'default:127.0.0.1','databomb':self.packed_data})
             for dest in self.destinations:
                 if dest == None:
                     print "No destination"

@@ -124,8 +124,10 @@ class XTSM_core(object):
         """
         Returns all XTSM children of the node as a list
         """
-        if (type(self._seq).__name__=='NoneType'): return []
-        return [a for a in self._seq if type(a)!=type(u'')]
+        if (type(self._seq).__name__=='NoneType'):
+            return []
+        child_nodes = [a for a in self._seq if type(a)!=type(u'')]
+        return child_nodes
         
     def getDescendentsByType(self,targetType):
         """
@@ -496,9 +498,11 @@ class XTSM_core(object):
         to the provided manager for all elements which have a 
         __generate_listener__() method defined
         """
+        #print "In class XTSM_core, func installListeners"       
         if hasattr(self,"__generate_listener__"):
             listenerManager.spawn(self.__generate_listener__())
-        for child in self.getChildNodes():
+        child_nodes = self.getChildNodes()
+        for idx, child in enumerate(child_nodes):
             child.installListeners(listenerManager)
                     
         
@@ -2312,12 +2316,15 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
     """
     def __init__(self):
         XTSM_core.__init__(self)
+        print "class InstrumentCommand, func __init__"
         
     def __generate_listener__(self):#This is called by installListeners - which is called in Server, compile active xtsm
         """
         Returns listener creation data - this will be automatically called
         recursively down the tree by installListeners in XSTM_core class.
         """
+        print "in class InstrumentCommand, function __generate_listener__"
+        #pdb.set_trace()
         if hasattr(self,'PullData'):
             if (not self.scoped): self.buildScope()
             data={}
@@ -2339,6 +2346,7 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
                                           "sender":gen}
                                    #"sender":tgobj.Name.PCDATA}
             self.__listener_criteria__.update({'data_generator':gen,
+                                     'server_IP_address':instrument_head.ServerIPAddress[0].PCDATA,
                                         'number_in_data_sequence':0})
             data.update({"listen_for":self.__listener_criteria__ })
             data.update({"method": "link"})
@@ -2355,6 +2363,7 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         print "Class InstrumentCommand, function onlink"
         print "data links in listeners:"
         print listener.datalinks
+        pdb.set_trace()
         for link in listener.datalinks:
             for elm in link:
                 self.insert(DataLink(reference_string=link[elm]))#Change t oDataLInk, argument for initialization is <URL for a file>.msgp[idstring][element]
@@ -2948,7 +2957,8 @@ class XTSM_Object(object):
         scans down the XTSM tree, creating dataListeners for all elements
         which should generate them.
         """
-        self.XTSM.head.installListeners(dataListenerManager)
+        print "class XTSM_object, function install Listeners"
+        self.XTSM.head.installListeners(dataListenerManager)#Runs the "install Listeners function in XTSM_core class
         self.XTSM.getActiveSequence().installListeners(dataListenerManager)
 
     def isActive(self):
