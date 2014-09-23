@@ -326,7 +326,7 @@ class WSClientProtocol(WebSocketClientProtocol):
         print "Still need to delete Server instance"
         self.factory.isConnectionOpen = False
         self.transport.loseConnection()
-        del self.server
+        #del self.server
         #Does this work?? 
         
     def _add_self_to_ConnectionManager(self):
@@ -2143,7 +2143,7 @@ class GlabPythonManager():
         self.display.updateHTML(splash+self.xstatus("html"))
         #tried to redirect stdout to tkinter console, not working:
         #sys.stdout = self.StdoutRedirector( self.display.statuswindow )
-    def attach_poll_callback(self,poll,callback,poll_time):
+    def attach_poll_callback(self,poll,callback,poll_time, onTimeFromNow=False):
         """
         attaches a poll-and-callback event mechanism to the main event-loop
         - used by the Glab_instrument class for data read-outs
@@ -2157,11 +2157,17 @@ class GlabPythonManager():
         def pollcallback():
             if poll(): callback()
             else: return
-        thistask=task.LoopingCall(pollcallback)
-        if not hasattr(self, "pollcallbacks"): self.pollcallbacks=[]        
-        self.pollcallbacks.append(thistask)
-        thistask.start(poll_time)
-        return thistask
+        if onTimeFromNow != None:
+            #pdb.set_trace()
+            reactor.callLater(onTimeFromNow, pollcallback)
+            return
+        else:
+            thistask = task.LoopingCall(pollcallback)
+            thistask.start(poll_time)
+            if not hasattr(self, "pollcallbacks"):
+                self.pollcallbacks=[]        
+            self.pollcallbacks.append(thistask)
+            return thistask
         
     class HtmlPanel(wx.Panel):
         """
