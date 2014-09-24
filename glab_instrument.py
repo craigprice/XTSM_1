@@ -36,7 +36,13 @@ class Glab_Instrument():
                 callback=poll.replace("poll","callback")
                 if callback not in server_callbacks:
                     print "WARNING:: Instrument provides poll mechanism without a callback; it is ignored"
-                self.server_tasks.append(self.server.attach_poll_callback(getattr(self,poll),getattr(self,callback),getattr(self,poll)._poll_period))
+                my_period = getattr(self,poll)._poll_period
+                my_task = self.server.attach_poll_callback(getattr(self,poll),
+                                                           getattr(self,callback),
+                                                            my_period,
+                                                            onTimeFromNow=0.1)
+                if my_task != None:
+                    self.server_tasks.append(my_task)
     def __del__(self):
         # this won't be sufficient to prevent memory leaks stemming from server callbacks -
         # their linkage to the server will prevent an instrument from being
@@ -106,18 +112,23 @@ class Glab_Instrument():
         """
         # this triggers every-other time it is polled
         print "generic instrument polled"
-        if not hasattr(self,"_poll_example_it"): self._poll_example_it = 0
-        self._poll_example_it = (self._poll_example_it+1)%2 
-        if self._poll_example_it==0:
+        if not hasattr(self,"_poll_example_it"):
+            self._poll_example_it = 0
+        self._poll_example_it = self._poll_example_it + 1 
+        if (self._poll_example_it+1)%2==0:
             print "Return True from example Poll"
             return True
-        else: return False
-    _Xserver_poll._poll_period=15.#"15" seconds is being attached to the function as an element of the function-object
+        else:
+            return False
+    _Xserver_poll._poll_period = 1.#"15" seconds is being attached to the function as an element of the function-object
     
     def _Xserver_callback(self):
         """
         An example poll-callback routine
         """
+        #if self._poll_example_it > 1:
+        #    return
         print "generic instrument callback called"
         # generate some random data and return it using the serve data mechanism
-        self.serve_data(numpy.random.rand(100,100))
+        self.serve_data(numpy.random.rand(10,10).tolist())
+        

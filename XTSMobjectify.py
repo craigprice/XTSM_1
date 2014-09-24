@@ -376,6 +376,14 @@ class XTSM_core(object):
         as needing notifications of a change on this element
         will have their callback method called
         """
+        """
+        CP - pertaining to problems updating the GUI after receiving a databomb and inserting a DataLink
+        isActive represents if there is any elements that are still waiting on data to come back.
+        Check to see if DataLinks are active...
+        try .write_xml() on the actual Node that I inserted.
+        is the data listener there?
+        """
+        #pdb.set_trace()
         try: 
             for listener in self._registeredListeners:  
                 params = self._registeredListeners[listener]
@@ -383,7 +391,8 @@ class XTSM_core(object):
                 params.update({"changed_element":self})
                 params.update({"root_changed_element":elm})
                 self._registeredListeners[listener]['method'](params)  # calls the callback associated in the dictionary
-        except AttributeError: pass
+        except AttributeError:
+            pass
         if self.__parent__:
             return self.__parent__.onChange(elm)
         else:
@@ -2363,7 +2372,7 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         print "Class InstrumentCommand, function onlink"
         print "data links in listeners:"
         print listener.datalinks
-        pdb.set_trace()
+        #pdb.set_trace()
         for link in listener.datalinks:
             for elm in link:
                 self.insert(DataLink(reference_string=link[elm]))#Change t oDataLInk, argument for initialization is <URL for a file>.msgp[idstring][element]
