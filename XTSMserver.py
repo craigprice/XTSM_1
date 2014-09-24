@@ -326,7 +326,7 @@ class WSClientProtocol(WebSocketClientProtocol):
         print("WebSocket connection closed as Client: {0}".format(reason))
         print "Still need to delete Server instance"
         self.factory.isConnectionOpen = False
-        #self.transport.loseConnection()
+        self.transport.loseConnection()
         #del self.server
         #Does this work?? 
         
