@@ -2363,7 +2363,7 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         print "Class InstrumentCommand, function onlink"
         print "data links in listeners:"
         print listener.datalinks
-        pdb.set_trace()
+        #pdb.set_trace()
         for link in listener.datalinks:
             for elm in link:
                 self.insert(DataLink(reference_string=link[elm]))#Change t oDataLInk, argument for initialization is <URL for a file>.msgp[idstring][element]
