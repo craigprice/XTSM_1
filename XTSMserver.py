@@ -1660,7 +1660,6 @@ class CommandLibrary():
         if params['request']['protocol'].transport.getPeer().port != wsport:
             params['request']['protocol'].transport.loseConnection()
             
-            
         # next line adds a deployment command to the command queue
         self.server.commandQueue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
         
