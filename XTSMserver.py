@@ -31,6 +31,7 @@ import io
 import os
 import platform #Access to underlying platform’s identifying data
 from datetime import datetime
+from datetime import date   
 import pdb
 import __main__ as main
 import colorama
@@ -79,6 +80,9 @@ import file_locations
 import server_initializations
 import glab_instrument
 import script_server
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt 
 #from IPy import IP
 
 def tracefunc(frame, event, arg, indent=[0]):
@@ -179,7 +183,9 @@ class Experiment_Sync_Group(HasTraits):
             checks if any elements are currently archivable, and archives them
             if any have not yet been archived, and are active
             but exceed the archive_timeout, they are forced deactive and archived.  
+            
             """
+            pdb.set_trace() #Check to see if "self has elm" in it.
             for elm in self:
                 if not self[elm].isActive(): 
                     self._archive_elm(elm)
@@ -281,10 +287,12 @@ class WSClientProtocol(WebSocketClientProtocol):
         print "After _add_self_to_ConnectionManager in Client Protocol class - onOpen"
 
     def onMessage(self, payload, isBinary):
+        print "class WSClientProtocol, func onMessage"
         self.log_message()
         if isBinary:
             print "Binary message received: {0} bytes"#, payload
         else:
+            payload = payload.decode('utf8')
             print "Text message received in Client ws protocol:",payload
             
         type_of_client = ''
@@ -309,7 +317,9 @@ class WSClientProtocol(WebSocketClientProtocol):
         else:
             print "Not Implemented"
             raise
+            print "class WSClientProtocol, func onMessage - End"
             return False
+        print "class WSClientProtocol, func onMessage - End"
 
     def log_message(self):
         headerItemsforCommand=['host','origin']
@@ -324,9 +334,12 @@ class WSClientProtocol(WebSocketClientProtocol):
     def onClose(self, wasClean, code, reason):
         print("WebSocket connection closed as Client: {0}".format(reason))
         print "Still need to delete Server instance"
+        #import traceback
+        #traceback.print_stack()
+        #pdb.set_trace()
         self.factory.isConnectionOpen = False
         self.transport.loseConnection()
-        del self.server
+        #del self.server
         #Does this work?? 
         
     def _add_self_to_ConnectionManager(self):
@@ -402,10 +415,12 @@ class WSServerProtocol(WebSocketServerProtocol):
         pass        
             
     def onMessage(self, payload, isBinary):
+        print "class WSServerProtocol, func onMessage"
         self.log_message()
         if isBinary:
             print "Binary message received: {0} bytes"#, payload
         else:
+            payload = payload.decode('utf8')
             print "Text message received in Client ws protocol:", payload
             
         type_of_client = ''
@@ -418,6 +433,7 @@ class WSServerProtocol(WebSocketServerProtocol):
             else:
                 server.catch_json_payload(payload, self)
            
+        print "class WSServerProtocol, func onMessage - End"
 
     def log_message(self):
         headerItemsforCommand=['host','origin']
@@ -473,8 +489,8 @@ class WSServerProtocol(WebSocketServerProtocol):
         print("WebSocket connection closed as Server: {0}".format(reason))
         self.factory.isConnectionOpen = False
         #Should remove peer_server
-        self.transport.loseConnection()
-        del self.server
+        #self.transport.loseConnection()
+        #del self.server
         #Does this work?? 
 
     def _add_self_to_ConnectionManager(self):
@@ -537,6 +553,9 @@ class CommandProtocol(protocol.Protocol):
         """
         #self.transport.write("this is a running XTSM server\n\r\n\r")
         #pdb.set_trace()
+        """
+        This may crash a websocket server if sent to port 8085 because it's not json
+        """
         self.transport.write("<XML>"+self.factory.parent.xstatus()+"</XML>")
         self.transport.loseConnection()
     
@@ -589,8 +608,8 @@ class CommandProtocol(protocol.Protocol):
             raise
             #self.factory.commandQueue=CommandQueue(SC)
         except:
-            self.transport.write(str('Failed to insert SocketCommand in Queue,',
-                                     'reason unknown'))
+            msg = {'Not_Command_text_message':'Failed to insert SocketCommand in Queue, reason unknown','terminator':'die'}
+            self.transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
             print 'Failed to insert SocketCommand in Queue, reason unknown'
             self.transport.loseConnection()
             raise
@@ -680,15 +699,16 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         # setup the websocket server services
         self.wsServerFactory = WebSocketServerFactory("ws://localhost:" + 
                                                 str(wsport),
-                                                debug=False)
+                                                debug=True)
         self.wsServerFactory.setProtocolOptions(failByDrop=False)
         #self.wsServerFactory.parent = self
         self.wsServerFactory.protocol = WSServerProtocol
         self.wsServerFactory.clientManager = self
+        listenWS(self.wsServerFactory)
         #self.wsfactory.protocol.commandQueue = self.commandQueue
         #self.wsfactory.protocol.clientManager = self.clientManager
         # listen on standard TCP port
-        self.laud = self.server.reactor.listenTCP(wsport, self.wsServerFactory)
+        #self.laud = self.server.reactor.listenTCP(port, self.wsServerFactory)
                
     
     class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
@@ -720,16 +740,20 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
                    
         def catch_msgpack_payload(self, payload_, protocol):
             #pdb.set_trace()
+            print "class GlabClient, func catch_msgpack_payload"
             try:
                 payload = msgpack.unpackb(payload_)
             except:
                 pdb.set_trace()
                 raise
+            
+                        
             SC = SocketCommand(params = payload,
                                request = protocol.request,
                                CommandLibrary = self.server.commandLibrary)
             try:
                 #self.commandQueue.add(SC)
+                #pdb.set_trace()
                 self.server.commandQueue.add(SC)
                 print "added socket command"
             #except AttributeError:
@@ -738,6 +762,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
                 protocol.sendMessage("{'server_console':'Failed to insert SocketCommand in Queue, reason unknown'}")
                 raise
             
+            print "class GlabClient, func catch_msgpack_payload - End"
             #print payload
     
         def catch_json_payload(self, payload_, protocol):
@@ -746,15 +771,22 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             try:
                 payload = simplejson.loads(payload_)
             except simplejson.JSONDecodeError:
-                protocol.transport.write("The server is expecting JSON, not simple text")
+                msg = {'Not_Command_text_message':"The server is expecting JSON, not simple text",'terminator':'die'}
+                protocol.transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
                 print "The server is expecting JSON, not simple text"
                 protocol.transport.loseConnection()
                 return False
             # if someone on this network has broadcast a shotnumber change, update the shotnumber in
             # the server's data contexts under _running_shotnumber
-            #pdb.set_trace()        
+            #pdb.set_trace()  
+            if 'Not_Command_text_message' in payload:
+                print payload['Not_Command_text_message']
+                return
+                
             print "payload:"
             print payload
+
+            
             if hasattr(payload, "shotnumber"):
                 pdb.set_trace() # need to test the below
                 #for dc in self.parent.dataContexts:
@@ -918,6 +950,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             address = "ws://" + ping_payload['server_ip'] + ":" + ping_payload['server_port']
             print address
             wsClientFactory = WebSocketClientFactory(address, debug = True)
+            wsClientFactory.setProtocolOptions(failByDrop=False)
             wsClientFactory.peer_server = new_peer
             wsClientFactory.protocol = WSClientProtocol
             wsClientFactory.clientManager = self
@@ -1000,6 +1033,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
             if self.peer_servers[peer].ip == address:
                 p = self.peer_servers[peer].protocol
                 p.sendMessage(data,isBinary)
+                #p.sendMessage(simplejson.dumps({'Not_Command_text_message':'hi','terminator':'die'}, ensure_ascii = False).encode('utf8'))
                 if not isBinary:
                     print "Just Sent:", data
                 else:
@@ -1064,11 +1098,20 @@ class Queue():
         if owner!=None: 
             self.owner=owner
     def add(self,Command):
+        print "class Queue, function add"
+        #pdb.set_trace()
+        if isinstance(  Command , ServerCommand):
+            print "This is a ServerCommand"
+            pass
+            #pdb.set_trace()
         self.queue.append(Command)
+        print "class Queue, function add - End"
     def popexecute(self):
+        #print "class Queue, function popexecute"
         if len(self.queue) > 0:
-            print "Exectuting top of Queue"
+            print "Executing top of Queue"
             self.queue.pop().execute(self.server.commandLibrary)
+            print "Executing top of Queue - End"
     def xstatus(self):
         stat="<Commands>"
         if hasattr(self,'queue'):
@@ -1101,12 +1144,12 @@ class CommandQueue(Queue):
     known commands with which to respond.
     """
     def __init__(self,server,Command=None,owner=None):
-        Queue.__init__(self,server)
+        Queue.__init__(self,server,Command=None,owner=None)
             
             
 class ScriptQueue(Queue):
     def __init__(self,server,Command=None,owner=None):
-        Queue.__init__(self,server)
+        Queue.__init__(self,server,Command=None,owner=None)
         
     def popexecute(self):
         #print "class ScriptQueue, function popexecute"
@@ -1168,7 +1211,7 @@ class CommandLibrary():
         print "class CommandLibrary, func __determineContext__"
         try: 
             dcname = params['data_context']
-            print "dcname:", dcname
+            #print "dcname:", dcname
             if not params['request']['protocol'].server.dataContexts.has_key(dcname):
                 raise KeyError
         except KeyError:
@@ -1189,6 +1232,10 @@ class CommandLibrary():
         """
         if params.has_key('IDLSPEEDTEST'):
             srtime = time.time()
+            """
+            These write functions may crash any websocket connections that it
+            tries to write into since it may not be json
+            """
             params['request']['protocol'].transport.write(params['IDLSPEEDTEST'])
             ertime = time.time()
             params['request']['protocol'].transport.write(str(srtime-params['request']['ctime'])+','+str(ertime-srtime)+','+str(params['request']['timereceived']-params['request']['ctime'])+',0,0,0')      
@@ -1244,6 +1291,10 @@ class CommandLibrary():
         """
         gets a variable by name from the caller's data context
         """
+        """
+        These write functions may crash any websocket connections that it
+        tries to write into since it may not be json
+        """
         try:
             varname=params['variablename']
             dc=self.__determineContext__(params)
@@ -1255,16 +1306,28 @@ class CommandLibrary():
             params['request']['protocol'].transport.loseConnection()
 
     def ping_idl_from_socket(self,params):
+        """
+        These write functions may crash any websocket connections that it
+        tries to write into since it may not be json
+        """
         params['request']['protocol'].transport.write('catch_ping')
         params['request']['protocol'].transport.loseConnection()
 
     def get_server_status(self,params):
+        """
+        These write functions may crash any websocket connections that it
+        tries to write into since it may not be json
+        """
         params['request']['protocol'].transport.write(params['request']['protocol'].factory.parent.xstatus())
         params['request']['protocol'].transport.loseConnection()
 
     def get_data_contexts(self,params):
         """
         Gets all data contexts from the server and sends the key under which each is stored.
+        """
+        """
+        These write functions may crash any websocket connections that it
+        tries to write into since it may not be json
         """
         for dc in params['request']['protocol'].factory.parent.dataContexts:
             params['request']['protocol'].transport.write(str(dc) + ',')
@@ -1275,6 +1338,10 @@ class CommandLibrary():
         Executes an arbitrary python command through the socket, and returns the console
         output
         """
+        """
+        These write functions may crash any websocket connections that it
+        tries to write into since it may not be json
+        """
         dc=self.__determineContext__(params).dict
         # setup a buffer to capture response, temporarily grab stdio
         params['request']['protocol'].transport.write('<Python<           '+params['command']+'\n\r')        
@@ -1282,6 +1349,10 @@ class CommandLibrary():
         sys.stdout = rbuffer
         try: exec(params['command'],dc)
         except:
+            """
+            These write functions may crash any websocket connections that it
+            tries to write into since it may not be json
+            """
             params['request']['protocol'].transport.write('>Python>   ERROR\n\r')
             params['request']['protocol'].transport.loseConnection()
             return
@@ -1318,6 +1389,10 @@ class CommandLibrary():
             ax=params['active_xtsm']
         ax=XTSM_Transforms.strip_to_active(ax)
         exp_sync.active_xtsm=ax
+        """
+        These write functions may crash any websocket connections that it
+        tries to write into since it may not be json
+        """
         params['request']['protocol'].transport.write('Active XTSM updated at ' + time.strftime("%H:%M:%S") + '.' )
         params['request']['protocol'].transport.loseConnection()
 
@@ -1343,8 +1418,12 @@ class CommandLibrary():
 
         try: params['request']['write'](reqxtsm)
         except KeyError: 
-             params['request']['protocol'].transport.write(reqxtsm)
-             params['request']['protocol'].transport.loseConnection()
+            """
+            These write functions may crash any websocket connections that it
+            tries to write into since it may not be json
+            """
+            params['request']['protocol'].transport.write(reqxtsm)
+            params['request']['protocol'].transport.loseConnection()
 
     def compile_active_xtsm(self, params):
         """
@@ -1453,6 +1532,10 @@ class CommandLibrary():
 
             # send back the timingstrings
             timingstringOutput = str(bytearray(parserOutput.package_timingstrings()))
+            """
+            These write functions may crash any websocket connections that it
+            tries to write into since it may not be json
+            """
             params['request']['protocol'].transport.write(timingstringOutput)
             dc.get('_exp_sync').shotnumber = sn + 1
             params['request']['protocol'].transport.loseConnection()
@@ -1524,6 +1607,10 @@ class CommandLibrary():
         
         parsed_xtsm=xtsm_object.XTSM.write_xml()
         dc.update({'_testparsed_xtsm':parsed_xtsm})
+        """
+        These write functions may crash any websocket connections that it
+        tries to write into since it may not be json
+        """
         params['request']['protocol'].transport.write(str(parsed_xtsm))
         params['request']['protocol'].transport.loseConnection()
 
@@ -1534,11 +1621,13 @@ class CommandLibrary():
         the webserver to be stored to disk, associated with the generating XTSM,
         and for analyses to be initiated 
         """
+        
         print "dealing with data bomb that came back"
         #print self.server.dataContexts['default:127.0.0.1'].dict['_bombstack'].dataListenerManagers.listeners #This is the context that has the listeners
         #pdb.set_trace()
+        
         dc=self.__determineContext__(params)
-        print dc.dict['_bombstack'].dataListenerManagers.listeners#Should have listeners installed
+        #print dc.dict['_bombstack'].dataListenerManagers.listeners#Should have listeners installed
         if (not dc.dict.has_key('_bombstack')):
             dc.update({'_bombstack':DataBomb.DataBombList()})
         # data listeners should be attached under the bombstack!!
@@ -1548,15 +1637,29 @@ class CommandLibrary():
                     'dataListenerManagers',
                     DataBomb.DataListenerManager())
 
+        
         dbombnum=dc['_bombstack'].add(DataBomb.DataBombList.DataBomb(params['databomb']))
-        params['request']['protocol'].transport.write('databomb ' +
-                                                      dbombnum +
-                                                      ' updated at ' +
-                                                      time.strftime("%H:%M:%S") +
-                                                      '.')
-        params['request']['protocol'].transport.loseConnection()
+        msg = {'Not_Command_text_message':'databomb ' + dbombnum + ' updated at ' + time.strftime("%H:%M:%S") + '.','terminator':'die'}
+        #msg = {'Not_Command_text_message':'hi','terminator':'die'}        
+        
+        #This closes the ws connection - I don't know why - CP       
+        #params['request']['protocol'].transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
+        if str(params['request']['protocol'].transport.getPeer().port) != str(wsport):
+            params['request']['protocol'].transport.loseConnection()
+            
         # next line adds a deployment command to the command queue
         self.server.commandQueue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
+        
+        fig = plt.figure(figsize=(10, 10))  
+        plt.imshow(msgpack.unpackb(params['databomb'])['data'], cmap = mpl.cm.Greys_r)   
+        plt.show(block=False)
+        path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()
+        file_name = 'databomb_' + dbombnum + '_at_time_' + str(time.time())
+        plt.title(path+'/'+file_name, fontsize=10)
+        plt.savefig(path+'/'+file_name+'.svg')
+        plt.savefig(path+'/'+file_name+'.png')
+        
+        
         
         # mark requestor as a data generator
         #pdb.set_trace()
@@ -1568,12 +1671,20 @@ class CommandLibrary():
         print "Closing Python Manager"
         broadcastMessage = "Python Manager Shutting Down on Request."
         self.server.broadcast('{"server_console":'+broadcastMessage+'}')
+        msg = {'Not_Command_text_message':"Closing Python Manager - Goodbye.",'terminator':'die'}
+        try:
+            params['request']['write'](simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
+        except KeyError: 
+             params['request']['protocol'].transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
+             params['request']['protocol'].transport.loseConnection()
+        """
         msg = "Closing Python Manager - Goodbye."
         try:
             params['request']['write'](msg)
         except KeyError: 
              params['request']['protocol'].transport.write(msg)
              params['request']['protocol'].transport.loseConnection()
+        """
         self.server.stop()
 
     def request_content(self,params):
@@ -1628,11 +1739,14 @@ class ServerCommand():
         These objects are separated from the SocketCommand library to provide
         secure functions which cannot be called from sockets.
         """
+        print "In class ServerCommand, func __init__"
         self.command=command
         self.args=args
         
     def execute(self, Library=None):
-        try: self.command(*self.args)
+        print "In class ServerCommand, func execute"
+        try: 
+            self.command(*self.args)
         except Exception as e:
             print e
             pdb.set_trace()
@@ -1646,13 +1760,15 @@ class SocketCommand():
         to a name in the CommandLibrary.  If CommandLibrary is supplied, verifies
         command's existence and tags property 'functional' true
         """
+        self.command = params
         if not params.has_key('IDLSocket_ResponseFunction'):
             self.functional=False
             if request != None:
+                msg = {'Not_Command_text_message':'No command included in request.','terminator':'die'}
                 if request.has_key("write"):
-                    request["write"]('No command included in request.')
+                    request["write"](simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
                 else:                
-                    request.protocol.transport.write('No command included in request.')
+                    request.protocol.transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
                     request.protocol.transport.loseConnection()
             return None
         self.params = params
@@ -1663,11 +1779,12 @@ class SocketCommand():
             self.functional=True
             return None
         else:
+            msg = {'Not_Command_text_message':'No command included in request.','terminator':'die'}
             if request.has_key("write"):
-                request["write"]('No command included in request.')
+                request["write"](simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
             else:                
-                request.protocol.transport.write('No command included in request.')
-                request.protocol.transport.loseConnection()            
+                request.protocol.transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
+                request.protocol.transport.loseConnection()  
         return None
         
     def execute(self,CommandLibrary):
@@ -1676,10 +1793,13 @@ class SocketCommand():
         """
         print "In class SocketCommand, function execute"
         print "Params:"
-        #print self.params
         if self.params.has_key("databomb"):
+            print "---A databomb's data---"
             pass
             #pdb.set_trace()
+        else:
+            pass
+            #print self.params
         p=self.params
         p.update({'request':self.request})
         
@@ -1689,7 +1809,9 @@ class SocketCommand():
         except AttributeError:
             print ('Missing Socket_ResponseFunction:',
                    self.params['IDLSocket_ResponseFunction'])
+        print "Calling this ResponseFunction:",self.params['IDLSocket_ResponseFunction']
         ThisResponseFunction(p)
+        print "In class SocketCommand, function execute - End."
 
         
 class GlabServerFactory(protocol.Factory):
@@ -1909,7 +2031,8 @@ class GlabPythonManager():
         
         # create a periodic command queue execution
         self.queueCommand = task.LoopingCall(self.commandQueue.popexecute)
-        self.queueCommand.start(0.03)
+        #self.queueCommand.start(0.03)
+        self.queueCommand.start(0.5)
         self.initdisplay()
 
         self.script_queue_command = task.LoopingCall(self.script_queue.popexecute)
@@ -2143,7 +2266,7 @@ class GlabPythonManager():
         self.display.updateHTML(splash+self.xstatus("html"))
         #tried to redirect stdout to tkinter console, not working:
         #sys.stdout = self.StdoutRedirector( self.display.statuswindow )
-    def attach_poll_callback(self,poll,callback,poll_time):
+    def attach_poll_callback(self,poll,callback,poll_time, onTimeFromNow=False):
         """
         attaches a poll-and-callback event mechanism to the main event-loop
         - used by the Glab_instrument class for data read-outs

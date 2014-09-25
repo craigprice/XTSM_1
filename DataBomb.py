@@ -23,12 +23,14 @@ from xml.sax import saxutils
 import xstatus_ready
 import file_locations
 import InfiniteFileStream
+import simplejson
 
 """
 raw_buffer_folders should contain an entry for the raw data destination folder
 keyed by the MAC address of the host computer.  to add an entry for a new
 computer, find the MAC address using import uuid / print uuid.getnode()
 """
+
 
 #This class contains all the Databombs that have been received
 class DataBombList(xstatus_ready.xstatus_ready):
@@ -182,6 +184,8 @@ class DataBombList(xstatus_ready.xstatus_ready):
                 pdb.set_trace()
             self.messagepack=messagepack
             self.timestamp=time.time()
+            self.raw_links = []
+            self.notify_data={}
             self.uuid='DB'+uuid.uuid1().__str__()
             
         def unpack(self):
@@ -194,10 +198,9 @@ class DataBombList(xstatus_ready.xstatus_ready):
                 onunpack: a string of python commands to execute on unpack
             """
             print "in class DataBomb, function unpack"
-            pdb.set_trace()
+            #pdb.set_trace()
             self.data=msgpack.unpackb(self.messagepack)
             notify_data_elms=['sender','shotnumber','repnumber','server_machine','server_IP_address']
-            self.notify_data={}
             for elm in notify_data_elms:        
                 try: 
                     self.notify_data.update({elm:self.data[elm]})
@@ -213,8 +216,10 @@ class DataBombList(xstatus_ready.xstatus_ready):
                         del self.data['__builtins__']
                     sys.stdout = sys.__stdout__ 
                     self.data.update({"onunpack_response":rbuffer.getvalue()})
-                except: self.data.update({"onunpack_error":True})
-            except KeyError: pass
+                except:
+                    self.data.update({"onunpack_error":True})
+            except KeyError:
+                pass
             
         def stream_to_disk(self,stream):
             """
@@ -225,14 +230,16 @@ class DataBombList(xstatus_ready.xstatus_ready):
             twice - first to extract 'data' element, then to unpack data
             """
             print "In class DataBomb, function stream_to_disk"
-            idheader = msgpack.packb('id')+msgpack.packb(str(self.uuid))
-            timeheader = msgpack.packb('timestamp')+msgpack.packb(str(self.timestamp))
+            idheader = msgpack.packb('id') + msgpack.packb(str(self.uuid))
+            timeheader = msgpack.packb('timestamp') + msgpack.packb(str(self.timestamp))
             dataheader = '\xdb' + struct.pack('>L',len(self.messagepack))
-            if not hasattr(self,'raw_links'): self.raw_links=[]
-            self.raw_links.append(stream.write('\x83' + idheader + timeheader + dataheader, preventFrag=True)+"["+self.uuid+"]")
-            print "before write"
+            if not hasattr(self,'raw_links'):
+                self.raw_links=[]
+            head_path = '\x83' + idheader + timeheader + dataheader
+            trailing_id = "["+self.uuid+"]"
+            self.raw_links.append(stream.write(head_path, preventFrag=True) + trailing_id)
+            print "Path:", self.raw_links
             stream.write(self.messagepack)
-            print "end of class DataBomb, function stream_to_disk"
             
         def deploy_fragments(self,listenerManagers):
             """
@@ -316,14 +323,14 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
         listeners will try to match generator_info (a dictionary) and express interest
         if they do, data will be linked or attached as they request
         """
-        print "in class DataListenerManager, function notify_data_present"
-        print "generator_info", generator_info
-        print "data", data
-        print "datalinks", datalinks
+        #print "in class DataListenerManager, function notify_data_present"
+        #print "generator_info", generator_info
+        #print "data", "--Bunch of Data--"
+        #print "datalinks", datalinks
         for listener in self.listeners.values():
             if listener.query_interest(generator_info):
-                print "a listener is interested in the data"
-                pdb.set_trace()
+                #print "a listener is interested in the data"
+                #pdb.set_trace()
                 (listener.getMethod())(data,datalinks)
 
     def flush(self):
@@ -402,16 +409,36 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
              - matches are based on a soft comparison; if a string can be converted to a number
              it will be before comparison is made.  
             """
+            for key_listening_for in self.listen_for.keys():
+                if not (key_listening_for in generator_id):
+                    continue
+                if self.listen_for[key_listening_for] == generator_id[key_listening_for]:
+                    return True
+                #try:
+                #    listening = float(self.listen_for[key_listening_for])
+                #    given = float(generator_id[key_listening_for])
+                #    if listening == given:#Not necessary?
+                #        return True
+                #except AttributeError:#Error Thrown when cannot convert string to float
+                #    pass
+            return False
             
+            """
+            This is confusing
             for element in self.listen_for.keys():
                 try:  
                     if self.listen_for[element] != generator_id[element]: 
                         try: 
-                            if float(self.listen_for[element]) != float(generator_id[element]): return False
-                            else: continue                        
-                        except: return False
-                except KeyError: return False
+                            if float(self.listen_for[element]) != float(generator_id[element]):
+                                return False
+                            else:
+                                continue                        
+                        except:
+                            return False
+                except KeyError: 
+                    return False
             return True
+            """
     
         def query_dead(self):
             """
@@ -436,7 +463,7 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             the link should take the form of a string forming a resource locator;
             intended for linking to files (hdf5 via liveheaps, or raw data from bomb file dumps)
             """
-            print "class DataListenerManager, function linkdata"
+            #print "class DataListenerManager, function linkdata"
             self.datalinks.append(datalinks)
             self.eventcount-=1            
             if hasattr(self,'onlink'): self.onlink(self)
@@ -518,11 +545,12 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
         #for d in self.databombers: delete if bomber has sent
         if len(self.databombers)==0:
             return
-        print "class DataBombDispatcher, function dispatch"
-        print "Length of self.databombers:", len(self.databombers)
+        #print "class DataBombDispatcher, function dispatch"
+        #print "Length of self.databombers:", len(self.databombers)
         for key in self.databombers.keys():
             if self.databombers[key].is_sent:
-                del self.databombers[key]
+                pass
+                #del self.databombers[key]
         #This code is confusing. I am just going to send all databombs and then delete them
         """
         def all_c(o):
@@ -546,6 +574,8 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 raise self.UnknownBomberError
         """
         for bomber in self.databombers:
+            if self.databombers[bomber].is_sent == True:
+                continue
             print "telling bomber to dispatch"
             #self.databombers[bomber].dispatch(['10.1.1.124'])#Fix this
             self.databombers[bomber].dispatch(['10.1.1.112'])#Fix this
@@ -615,7 +645,9 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                     print "No destination"
                     continue
                 try: 
-                    if self.server.send(packed_message,dest, isBinary=True):
+                    flag = False
+                    flag = self.server.send(packed_message,dest, isBinary=True)
+                    if flag:
                         print "dest:"
                         print dest
                         print "Databomb Sent!"
