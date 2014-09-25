@@ -82,7 +82,11 @@ import glab_instrument
 import script_server
 
 import matplotlib as mpl
+<<<<<<< HEAD
 import matplotlib.pyplot as plt 
+=======
+import matplotlib.pyplot as plt
+>>>>>>> origin/master
 #from IPy import IP
 
 def tracefunc(frame, event, arg, indent=[0]):
@@ -783,6 +787,30 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
                 print payload['Not_Command_text_message']
                 return
                 
+<<<<<<< HEAD
+=======
+            #This is a hack to get sending databombs working without msg_pack CP
+            if 'IDLSocket_ResponseFunction' in payload:
+                if payload['IDLSocket_ResponseFunction'] == 'databomb':
+                    print payload
+                    payload['databomb'] = msgpack.packb(payload['databomb'])
+                    """
+                    The following was copied from catch_msg_pack:
+                    """
+                    SC = SocketCommand(params = payload,
+                               request = protocol.request,
+                               CommandLibrary = self.server.commandLibrary)
+                    try:
+                        self.server.commandQueue.add(SC)
+                        print "added socket command"
+                    except:
+                        protocol.sendMessage("{'server_console':'Failed to insert SocketCommand in Queue, reason unknown'}")
+                        raise
+                    print "class GlabClient, func catch_msgpack_payload - End"
+                    "End Copy from catch_msg_pack"
+                    return
+            
+>>>>>>> origin/master
             print "payload:"
             print payload
 
@@ -1101,7 +1129,10 @@ class Queue():
         print "class Queue, function add"
         #pdb.set_trace()
         if isinstance(  Command , ServerCommand):
+<<<<<<< HEAD
             print "This is a ServerCommand"
+=======
+>>>>>>> origin/master
             pass
             #pdb.set_trace()
         self.queue.append(Command)
@@ -1111,7 +1142,11 @@ class Queue():
         if len(self.queue) > 0:
             print "Executing top of Queue"
             self.queue.pop().execute(self.server.commandLibrary)
+<<<<<<< HEAD
             print "Executing top of Queue - End"
+=======
+            print "Exectuting top of Queue - End"
+>>>>>>> origin/master
     def xstatus(self):
         stat="<Commands>"
         if hasattr(self,'queue'):
@@ -1640,16 +1675,22 @@ class CommandLibrary():
         
         dbombnum=dc['_bombstack'].add(DataBomb.DataBombList.DataBomb(params['databomb']))
         msg = {'Not_Command_text_message':'databomb ' + dbombnum + ' updated at ' + time.strftime("%H:%M:%S") + '.','terminator':'die'}
+<<<<<<< HEAD
         #msg = {'Not_Command_text_message':'hi','terminator':'die'}        
         
         #This closes the ws connection - I don't know why - CP       
         #params['request']['protocol'].transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
         if str(params['request']['protocol'].transport.getPeer().port) != str(wsport):
+=======
+        params['request']['protocol'].transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
+        if params['request']['protocol'].transport.getPeer().port != wsport:
+>>>>>>> origin/master
             params['request']['protocol'].transport.loseConnection()
             
         # next line adds a deployment command to the command queue
         self.server.commandQueue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
         
+<<<<<<< HEAD
         fig = plt.figure(figsize=(10, 10))  
         plt.imshow(msgpack.unpackb(params['databomb'])['data'], cmap = mpl.cm.Greys_r)   
         plt.show(block=False)
@@ -1660,6 +1701,10 @@ class CommandLibrary():
         plt.savefig(path+'/'+file_name+'.png')
         
         
+=======
+        #plt.imshow(msgpack.unpackb(params['databomb'])['data'])
+        #plt.show(block=False)      
+>>>>>>> origin/master
         
         # mark requestor as a data generator
         #pdb.set_trace()
@@ -1784,7 +1829,11 @@ class SocketCommand():
                 request["write"](simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
             else:                
                 request.protocol.transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
+<<<<<<< HEAD
                 request.protocol.transport.loseConnection()  
+=======
+                request.protocol.transport.loseConnection()        
+>>>>>>> origin/master
         return None
         
     def execute(self,CommandLibrary):
@@ -2280,11 +2329,17 @@ class GlabPythonManager():
         def pollcallback():
             if poll(): callback()
             else: return
-        thistask=task.LoopingCall(pollcallback)
-        if not hasattr(self, "pollcallbacks"): self.pollcallbacks=[]        
-        self.pollcallbacks.append(thistask)
-        thistask.start(poll_time)
-        return thistask
+        if onTimeFromNow != None:
+            #pdb.set_trace()
+            reactor.callLater(onTimeFromNow, pollcallback)
+            return
+        else:
+            thistask = task.LoopingCall(pollcallback)
+            thistask.start(poll_time)
+            if not hasattr(self, "pollcallbacks"):
+                self.pollcallbacks=[]        
+            self.pollcallbacks.append(thistask)
+            return thistask
         
     class HtmlPanel(wx.Panel):
         """
