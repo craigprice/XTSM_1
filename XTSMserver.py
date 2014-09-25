@@ -1645,7 +1645,8 @@ class CommandLibrary():
         #This closes the ws connection - I don't know why - CP       
         #params['request']['protocol'].transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
         if str(params['request']['protocol'].transport.getPeer().port) != str(wsport):
-            params['request']['protocol'].transport.loseConnection()
+            pass
+            #params['request']['protocol'].transport.loseConnection()
             
         # next line adds a deployment command to the command queue
         self.server.commandQueue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))

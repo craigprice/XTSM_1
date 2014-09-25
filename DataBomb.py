@@ -639,16 +639,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
                 #self.destinations.append("10.1.1.124")
             self.destinations = [x for x in self.destinations if x is not None]
-            #Add msgPack functionality back in! CP
-            print "testing"
-            print self.packed_data.__class__
-            self.packed_data = msgpack.unpackb(self.packed_data)
-            print self.packed_data
-            self.packed_data = "".join(['4','4'])
-            self.packed_data = "hi"
-            packed_message = {"Not_Command_text_message":'databomb','data_context':'default:127.0.0.1','databomb':self.packed_data}
-            packed_message = simplejson.dumps(packed_message, ensure_ascii = False).encode('utf8')
-            #packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'default:127.0.0.1','databomb':self.packed_data})
+            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'default:127.0.0.1','databomb':self.packed_data})
             for dest in self.destinations:
                 if dest == None:
                     print "No destination"
