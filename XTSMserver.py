@@ -1659,8 +1659,6 @@ class CommandLibrary():
         plt.savefig(path+'/'+file_name+'.svg')
         plt.savefig(path+'/'+file_name+'.png')
         
-        
-        
         # mark requestor as a data generator
         #pdb.set_trace()
 
@@ -2280,11 +2278,17 @@ class GlabPythonManager():
         def pollcallback():
             if poll(): callback()
             else: return
-        thistask=task.LoopingCall(pollcallback)
-        if not hasattr(self, "pollcallbacks"): self.pollcallbacks=[]        
-        self.pollcallbacks.append(thistask)
-        thistask.start(poll_time)
-        return thistask
+        if onTimeFromNow != None:
+            #pdb.set_trace()
+            reactor.callLater(onTimeFromNow, pollcallback)
+            return
+        else:
+            thistask = task.LoopingCall(pollcallback)
+            thistask.start(poll_time)
+            if not hasattr(self, "pollcallbacks"):
+                self.pollcallbacks=[]        
+            self.pollcallbacks.append(thistask)
+            return thistask
         
     class HtmlPanel(wx.Panel):
         """
