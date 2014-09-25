@@ -81,8 +81,8 @@ import server_initializations
 import glab_instrument
 import script_server
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt 
+import matplotlib as mpl 
+import matplotlib.pyplot as plt
 #from IPy import IP
 
 def tracefunc(frame, event, arg, indent=[0]):
@@ -1659,8 +1659,6 @@ class CommandLibrary():
         plt.savefig(path+'/'+file_name+'.svg')
         plt.savefig(path+'/'+file_name+'.png')
         
-        
-        
         # mark requestor as a data generator
         #pdb.set_trace()
 
@@ -1784,7 +1782,7 @@ class SocketCommand():
                 request["write"](simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
             else:                
                 request.protocol.transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
-                request.protocol.transport.loseConnection()  
+                request.protocol.transport.loseConnection()   
         return None
         
     def execute(self,CommandLibrary):
@@ -2280,11 +2278,17 @@ class GlabPythonManager():
         def pollcallback():
             if poll(): callback()
             else: return
-        thistask=task.LoopingCall(pollcallback)
-        if not hasattr(self, "pollcallbacks"): self.pollcallbacks=[]        
-        self.pollcallbacks.append(thistask)
-        thistask.start(poll_time)
-        return thistask
+        if onTimeFromNow != None:
+            #pdb.set_trace()
+            reactor.callLater(onTimeFromNow, pollcallback)
+            return
+        else:
+            thistask = task.LoopingCall(pollcallback)
+            thistask.start(poll_time)
+            if not hasattr(self, "pollcallbacks"):
+                self.pollcallbacks=[]        
+            self.pollcallbacks.append(thistask)
+            return thistask
         
     class HtmlPanel(wx.Panel):
         """
