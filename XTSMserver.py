@@ -37,7 +37,9 @@ import __main__ as main
 import colorama
 colorama.init(strip=False)
 import textwrap
-import profile
+import pickle
+import roperdarknoise as rdn
+import numpy as np
 import pstats
 
 import msgpack
@@ -85,6 +87,7 @@ import script_server
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt 
+import hdf5_liveheap
 #from IPy import IP
 
 def tracefunc(frame, event, arg, indent=[0]):
@@ -187,7 +190,7 @@ class Experiment_Sync_Group(HasTraits):
             but exceed the archive_timeout, they are forced deactive and archived.  
             
             """
-            pdb.set_trace() #Check to see if "self has elm" in it.
+            #pdb.set_trace() #Check to see if "self has elm" in it.
             for elm in self:
                 if not self[elm].isActive(): 
                     self._archive_elm(elm)
@@ -242,7 +245,7 @@ class MulticastProtocol(DatagramProtocol):
         """
         Join the multicast address
         """
-        self.transport.joinGroup("228.0.0.5")#, interface="10.1.1.124")#EDit this CP
+        self.transport.joinGroup("228.0.0.5", interface="10.1.1.124")#EDit this CP
 
     def send(self,message):
         """
@@ -254,7 +257,7 @@ class MulticastProtocol(DatagramProtocol):
         """
         called when a udp broadcast is received
         """
-        print "Datagram received from "+ repr(address) 
+        #print "Datagram received from "+ repr(address) 
         datagram = simplejson.loads(datagram_)
         if datagram.has_key("server_ping"): 
             #pdb.set_trace()
@@ -286,16 +289,17 @@ class WSClientProtocol(WebSocketClientProtocol):
         self.time_of_creation = time.time()
         self.server = self.factory.clientManager.server
         self._add_self_to_ConnectionManager()
-        print "After _add_self_to_ConnectionManager in Client Protocol class - onOpen"
+        #print "After _add_self_to_ConnectionManager in Client Protocol class - onOpen"
 
     def onMessage(self, payload, isBinary):
-        print "class WSClientProtocol, func onMessage"
+        #print "class WSClientProtocol, func onMessage"
         self.log_message()
         if isBinary:
-            print "Binary message received: {0} bytes"#, payload
+            pass
+            #print "Binary message received: {0} bytes"#, payload
         else:
             payload = payload.decode('utf8')
-            print "Text message received in Client ws protocol:",payload
+            #print "Text message received in Client ws protocol:",payload
             
         type_of_client = ''
         if(hasattr(self.factory, 'peer_server')):
@@ -380,17 +384,19 @@ class WSServerProtocol(WebSocketServerProtocol):
     resident=True
     bidirectional=True
     def onConnect(self, request):
-        print("Client connecting. Message from server class. : {0}".format(request.peer))
+        pass
+        #print("Client connecting. Message from server class. : {0}".format(request.peer))
         #self.in_use = False
 
     def onOpen(self):
-        print("WebSocket connection open as server.")
+        pass
+        #print("WebSocket connection open as server.")
         self.local_instance_id = uuid.uuid1()
         self.time_of_creation = time.time()
         self.server = self.factory.clientManager.server
-        print "After setting self.server in Server Protocol class - onOpen"
+        #print "After setting self.server in Server Protocol class - onOpen"
         self._add_self_to_ConnectionManager()
-        print "After _add_self_to_ConnectionManager in Server Protocol class - onOpen"
+        #print "After _add_self_to_ConnectionManager in Server Protocol class - onOpen"
         #self.transport.write("df",debug=False)
         #peer = self.transport.getPeer()
         #self.factory.isConnectionOpen = True
@@ -420,7 +426,8 @@ class WSServerProtocol(WebSocketServerProtocol):
         print "class WSServerProtocol, func onMessage"
         self.log_message()
         if isBinary:
-            print "Binary message received: {0} bytes"#, payload
+            pass
+            #print "Binary message received: {0} bytes"#, payload
         else:
             payload = payload.decode('utf8')
             print "Text message received in Client ws protocol:", payload
@@ -488,7 +495,7 @@ class WSServerProtocol(WebSocketServerProtocol):
             self.sendMessage("{'server_console':'Failed to insert SocketCommand in Queue, reason unknown'}")
     """    
     def onClose(self, wasClean, code, reason):
-        print("WebSocket connection closed as Server: {0}".format(reason))
+        #print("WebSocket connection closed as Server: {0}".format(reason))
         self.factory.isConnectionOpen = False
         #Should remove peer_server
         #self.transport.loseConnection()
@@ -544,7 +551,7 @@ class CommandProtocol(protocol.Protocol):
             self.factory.openConnections.update({self.ConnectionUID:self})
         except AttributeError:
             self.factory.openConnections={self.ConnectionUID:self}
-        print datetime.now(), "Connected from", self.peer, "at"
+        #print datetime.now(), "Connected from", self.peer, "at"
         self.factory.clientManager.connectLog(self)
         self.server = self.factory.clientManager.server
         self.alldata = ''
@@ -605,7 +612,7 @@ class CommandProtocol(protocol.Protocol):
         try:
             self.factory.clientManager.server.commandQueue.add(SC)
             #self.factory.commandQueue.add(SC)
-        except AttributeError: 
+        except AttributeError:
             print 'Failed to insert SocketCommand in Queue, No Queue'
             raise
             #self.factory.commandQueue=CommandQueue(SC)
@@ -790,9 +797,9 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
 
             
             if hasattr(payload, "shotnumber"):
-                pdb.set_trace() # need to test the below
-                #for dc in self.parent.dataContexts:
-                    #dc['_running_shotnumber']=payload['shotnumber']
+                #pdb.set_trace() # need to test the below
+                for dc in self.parent.dataContexts:
+                    dc['_running_shotnumber']=payload['shotnumber']
             payload.update({'request':protocol.request})
             payload.update({'socket_type':"Websocket"})
             SC = SocketCommand(params = payload,
@@ -853,7 +860,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         """
         if protocol.resident:
             return protocol.peer
-        pdb.set_trace()
+        #pdb.set_trace()
         
     def connectLog(self,protocol):
         return # temporary disable
@@ -881,7 +888,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         
         """
         return
-        pdb.set_trace()
+        #pdb.set_trace() #commend out by JZ on 10/3/14
         if not self.client_roles.has_key(request['protocol'].peer):
             self.client_roles.update({request['protocol'].peer:{role:time.time()}})
         else:
@@ -1075,7 +1082,7 @@ class ClientManager(XTSM_Server_Objects.XTSM_Server_Object):
         
     def announce_data_listener(self,params):
         print "class ClientManager, function announce_data_listener"
-        pdb.set_trace()
+        #pdb.set_trace() #commend out by JZ on 10/3/14
         return
         announcement = {"IDLSocket_ResponseFunction":"announce_listener",
                         #"shotnumber":"",
@@ -1100,10 +1107,10 @@ class Queue():
         if owner!=None: 
             self.owner=owner
     def add(self,Command):
-        print "class Queue, function add"
+        #print "class Queue, function add"
         #pdb.set_trace()
         if isinstance(  Command , ServerCommand):
-            print "This is a ServerCommand"
+            #print "This is a ServerCommand"
             pass
             #pdb.set_trace()
         self.queue.append(Command)
@@ -1111,7 +1118,7 @@ class Queue():
     def popexecute(self):
         #print "class Queue, function popexecute"
         if len(self.queue) > 0:
-            print "Executing top of Queue"
+            #print "Executing top of Queue"
             self.queue.pop().execute(self.server.commandLibrary)
             print "Executing top of Queue - End"
     def xstatus(self):
@@ -1163,11 +1170,11 @@ class ScriptQueue(Queue):
             return
         if self.queue[0]['on_main_server'] == True:
             #Add functionality for timing
-            print "Executing on Main Server"
+            #print "Executing on Main Server"
             code_locals = {}
-            print "print queue[0]:"
-            print self.queue[0]
-            print "compile...."
+            #print "print queue[0]:"
+            #print self.queue[0]
+            #print "compile...."
             #inst = glab_instrument(self.server)
             #inst.name = self.queue[0]['name']
             #if self.queue[0]['name'] == 'CCD':
@@ -1191,7 +1198,7 @@ class ScriptQueue(Queue):
             #self.queue.pop().execute(self.server.commandLibrary)    
             #Trying to connect to a server that is not responsive will restart that server and try to connect again.
             #self.server.clientManager.use_script_server(ss)
-            print "got server"
+            #print "got server"
             self.server.send(self.queue.pop()['script_body'], ss)
             return
         return
@@ -1513,6 +1520,8 @@ class CommandLibrary():
             #pdb.set_trace()
             
             #Dispatch all scripts, - Scripts in InstrumentCommand is in a subset of all Scripts - so, dispatch all Scripts first
+            
+            #Need to find the InstrumentCommand for the current sequence 
             commands = xtsm_object.XTSM.getDescendentsByType("InstrumentCommand")#Need to dispatch all scripts. Change This CP
             for c in commands:
                 c.Script.dispatch(self.server)
@@ -1653,16 +1662,106 @@ class CommandLibrary():
         # next line adds a deployment command to the command queue
         self.server.commandQueue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
         
-        fig = plt.figure(figsize=(10, 10))  
-        plt.imshow(msgpack.unpackb(params['databomb'])['data'], cmap = mpl.cm.Greys_r)   
-        plt.show(block=False)
+        
+        raw_databomb = msgpack.unpackb(params['databomb'])
+        #hdf5_liveheap.glab_liveheap
+        #file_storage = hdf5_liveheap.glab_datastore()
+        #file_storage.
+                
+        
+        fig = plt.figure(figsize=(18, 12))  
+        ax = fig.add_subplot(221)
+        #pdb.set_trace()
+        raw_img_data = raw_databomb['data']
+        num_pics = len(raw_img_data)
+        corrected_image = [[]]
+        if num_pics != 0:
+            if num_pics == 1:
+                print "one frame"
+                corrected_image = np.subtract(np.asarray(raw_img_data[0],dtype=int), rdn.darkavg)
+            elif num_pics == 2:
+                print "two frames"
+                #corrected_image = np.subtract(np.asarray(raw_img_data[1],dtype=int),
+                #                              np.asarray(raw_img_data[0],dtype=int))
+                corrected_image= np.subtract(np.asarray(raw_img_data[1],dtype=int), rdn.darkavg)               
+            elif num_pics == 3:
+                print "three frames"
+                corrected_image = np.subtract(np.asarray(raw_img_data[1],dtype=int),
+                                              np.asarray(raw_img_data[2],dtype=int))
+               
+            else:
+                print "Not Supported"
+                raise
+        #min_scale = 65536
+        min_scale = -50
+        max_scale = 2000
+        bottom_left_coord = (260,165)
+        top_right_coord = (271,185)
+        region_of_interest = corrected_image[bottom_left_coord[0]:top_right_coord[0],
+                                             bottom_left_coord[1]:top_right_coord[1]]
+        #pdb.set_trace()
+        cax = ax.imshow(np.asarray(raw_img_data[1],dtype=int), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
+        cbar = fig.colorbar(cax)
+        
+        ax2 = fig.add_subplot(222)
+        cax2 = ax2.imshow(np.asarray(raw_img_data[2],dtype=int), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+
+        ax3 = fig.add_subplot(223)
+        cax3 = ax3.imshow(corrected_image, cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+
+        ax4 = fig.add_subplot(224)
+        cax4 = ax4.imshow(region_of_interest, cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+        num_atoms = region_of_interest.sum() * 303 * pow(10,-6)
+        
+        '''
+        numrows, numcols = corrected_image.shape
+        def format_coord(x, y):
+            col = int(x+0.5)
+            row = int(y+0.5)
+            if col>=0 and col<numcols and row>=0 and row<numrows:
+                z = corrected_image[row,col]
+                return 'x=%1.4f, y=%1.4f, z=%1.4f'%(x, y, z)
+            else:
+                return 'x=%1.4f, y=%1.4f'%(x, y)
+
+        ax.format_coord = format_coord 
+        ax2.format_coord = format_coord 
+        ax3.format_coord = format_coord 
+        
+
+        numrows, numcols = corrected_image.shape
+        ax4.format_coord = format_coord       
+        '''
+        
         path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()
-        file_name = 'databomb_' + dbombnum + '_at_time_' + str(time.time())
-        plt.title(path+'/'+file_name, fontsize=10)
-        plt.savefig(path+'/'+file_name+'.svg')
-        plt.savefig(path+'/'+file_name+'.png')
-        
-        
+        file_name = 'databomb_' + dbombnum + '_at_time_' + str(raw_databomb['packed_time'])
+        plt.title("SN="+str(raw_databomb['shotnumber'])+'\n_'+path+'\n/'+file_name+'\nNum_Atoms=total_counts*303*10^-6 = '+str(num_atoms)+' Counts = '+str(region_of_interest.sum()), fontsize=10)
+        plt.show(block=False)        
+        #subtracted image
+                
+        '''        
+        f = open(path+'/'+file_name+'.txt', 'w')
+        pickle.dump(corrected_image,f)
+        f.close()
+        #first raw image
+        f = open(path+'/'+file_name+'_raw_img1.txt', 'w')
+        pickle.dump(raw_img_data[0],f)
+        f.close()
+        #second raw image
+        f = open(path+'/'+file_name+'_raw_img2.txt', 'w')
+        pickle.dump(raw_img_data[1],f)
+        f.close()
+        #third raw image
+        f = open(path+'/'+file_name+'_raw_img3.txt', 'w')
+        pickle.dump(raw_img_data[2],f)
+        f.close()
+        '''        
+        #print "--> Data pickled to:", path+'/'+file_name+'.txt'
+        #plt.savefig(path+'/'+file_name+'.svg')
+        #plt.savefig(path+'/'+file_name+'.png')
+        print "==Shotnumber:", raw_databomb['shotnumber']
+        print "Path to saved picture/data:", str(path+'/'+file_name+'.txt')
+        #plt.close()
         
         # mark requestor as a data generator
         #pdb.set_trace()
@@ -1830,6 +1929,7 @@ class SocketCommand():
             ThisResponseFunction(p)
         print "In class SocketCommand, function execute - End."
         '''
+        print "In class SocketCommand, function execute - End."
 
         
 class GlabServerFactory(protocol.Factory):
@@ -2063,7 +2163,7 @@ class GlabPythonManager():
         self.multicast.protocol.server = self 
         self.server_pinger = task.LoopingCall(self.server_ping)
         self.server_ping_period = 5.0
-        #self.server_pinger.start(self.server_ping_period)
+        self.server_pinger.start(self.server_ping_period)
         
 
         #self.clientManager.announce_data_listener(self.data_listener_manager.listeners[i],'ccd_image','rb_analysis')
@@ -2176,7 +2276,6 @@ class GlabPythonManager():
         recieves an identifying message on udp broadcast port from other
         servers, and establishes a list of all other servers
         """
-        return
         #print "In GlabPythonManager, pong()"
         #pdb.set_trace()
         #self.peer_servers[payload['server_name']]
