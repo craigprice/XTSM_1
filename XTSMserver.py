@@ -37,6 +37,8 @@ import __main__ as main
 import colorama
 colorama.init(strip=False)
 import textwrap
+import profile
+import pstats
 
 import msgpack
 import msgpack_numpy
@@ -603,7 +605,7 @@ class CommandProtocol(protocol.Protocol):
         try:
             self.factory.clientManager.server.commandQueue.add(SC)
             #self.factory.commandQueue.add(SC)
-        except AttributeError:
+        except AttributeError: 
             print 'Failed to insert SocketCommand in Queue, No Queue'
             raise
             #self.factory.commandQueue=CommandQueue(SC)
@@ -1812,7 +1814,22 @@ class SocketCommand():
                    self.params['IDLSocket_ResponseFunction'])
         print "Calling this ResponseFunction:",self.params['IDLSocket_ResponseFunction']
         ThisResponseFunction(p)
+        '''
+        if self.params['IDLSocket_ResponseFunction'] == 'compile_active_xtsm':
+            filenames = []
+            for i in range(1):
+                name = 'c:\psu_data\profile_stats_%d.txt' % i
+                profile.runctx('getattr(CommandLibrary, self.params["IDLSocket_ResponseFunction"])(self.params)',globals(),locals(), filename=name)
+            stats = pstats.Stats('c:\psu_data\profile_stats_0.txt')
+            for i in range(0, 1):
+                stats.add('c:\psu_data\profile_stats_%d.txt' % i)
+            stats.sort_stats('cumulative')
+            stats.print_stats()
+            pass
+        else:
+            ThisResponseFunction(p)
         print "In class SocketCommand, function execute - End."
+        '''
 
         
 class GlabServerFactory(protocol.Factory):
@@ -2046,7 +2063,7 @@ class GlabPythonManager():
         self.multicast.protocol.server = self 
         self.server_pinger = task.LoopingCall(self.server_ping)
         self.server_ping_period = 5.0
-        self.server_pinger.start(self.server_ping_period)
+        #self.server_pinger.start(self.server_ping_period)
         
 
         #self.clientManager.announce_data_listener(self.data_listener_manager.listeners[i],'ccd_image','rb_analysis')
@@ -2159,6 +2176,7 @@ class GlabPythonManager():
         recieves an identifying message on udp broadcast port from other
         servers, and establishes a list of all other servers
         """
+        return
         #print "In GlabPythonManager, pong()"
         #pdb.set_trace()
         #self.peer_servers[payload['server_name']]

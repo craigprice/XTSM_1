@@ -20,6 +20,9 @@ import hdf5_liveheap, tables
 import sheltered_script, live_content, glab_figure, softstring
 import XTSM_cwrappers
 import simplejson
+import collections 
+import profile
+import pstats
 #from IPy import IP
 
 
@@ -129,16 +132,67 @@ class XTSM_core(object):
         child_nodes = [a for a in self._seq if type(a)!=type(u'')]
         return child_nodes
         
-    def getDescendentsByType(self,targetType):
+    def getDescendentsByTypeRecursively(self,targetType):
         """
         Returns a list of all descendents of given type
+        Original implementation by Nate
         """
+        
         res=[]
         for child in self.getChildNodes():
+            #print self, self.getChildNodes()
             if hasattr(child,'getDescendentsByType'):
                 res.extend(child.getDescendentsByType(targetType)) 
-        if hasattr(self,targetType): res.extend(getattr(self,targetType))
+        if hasattr(self,targetType): 
+            res.extend(getattr(self,targetType))
+                    
+        #print res
         return res
+    
+    def getDescendentsByType(self, target_type):
+        """
+        Returns a list of all descendents of given type.
+        """
+        #res = self.getDescendentsByTypeRecursively(target_type)
+        res2 = self.getDescendentsByTypeIteratively(target_type)
+        '''
+        if collections.Counter(res) != collections.Counter(res2):
+            print target_type
+            print 'getDescendentsByTypeRecursively:', res
+            print 'getDescendentsByTypeIteratively:', res2
+            pdb.set_trace()        
+        '''
+        return res2
+    
+    def getDescendentsByTypeIteratively(self, target_type):
+        """
+        Returns a list of all descendents of given type.
+        Implemented without recursion.
+        Implemented by CP 2017/09/30
+        """
+        def iterativeChildren(top_nodes,target_type):
+            """
+            Helper function to iterate through the child nodes.
+            """
+            #pdb.set_trace()
+            results = []
+            nodes = top_nodes
+            while True:
+                if not nodes:
+                    break
+                for i, node in enumerate(nodes[:]):
+                #iterates over a copy of the nodes list
+                    if hasattr(node, 'get_tag'):
+                        if(node.get_tag() == target_type ):#or hasattr(node,target_type)
+                            results.extend(node)
+                    if hasattr(node, 'getChildNodes'):
+                        newNodes = node.getChildNodes()
+                        nodes.extend(newNodes)
+                    nodes.remove(node)
+            return results
+            
+        decendents = iterativeChildren(self.getChildNodes(),target_type)
+        return decendents   
     
     def getItemByFieldValue(self,itemType,itemField,itemFieldValue,multiple=False):
         """
@@ -1553,14 +1607,25 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
     def parse(self):
         """
         top-level algorithm for parsing a sequence;
-        equivalent to XTSM_parse in IDL code
+        equivalent to XTSM_parse in IDL code.
         """
-
+        
         # replicate subsequences with iterations specified (also strip any previously generated replications)
         for subseq in self.getDescendentsByType("SubSequence"):
             subseq.dereplicate()        
         for subseq in self.getDescendentsByType("SubSequence"):
             subseq.replicate()
+            '''
+            filenames = []
+            for i in range(1):
+                name = 'c:\psu_data\profile_stats_replicate_%d.txt' % i
+                profile.runctx('subseq.replicate()',globals(),locals(), filename=name)
+            stats = pstats.Stats('c:\psu_data\profile_stats_replicate_0.txt')
+            for i in range(0, 1):
+                stats.add('c:\psu_data\profile_stats_replicate_%d.txt' % i)
+            stats.sort_stats('cumulative')
+            stats.print_stats()
+            '''
         # get the channelmap node from the XTSM object.
         cMap=self.getOwnerXTSM().getDescendentsByType("ChannelMap")[0]
       
@@ -1772,35 +1837,43 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
         for each iteration.  
         """
         self.dereplicate()  # remove any previously generated replications
-        if not hasattr(self,"Iterate"): return
+        if not hasattr(self,"Iterate"):
+            return
         progenitor_name = self.Name[0].PCDATA
-        progenitor_time=self.StartTime[0].parse()
+        progenitor_time = self.StartTime[0].parse()
         # create a container subsequence for the iterations of the progenitor subsequence
-        container_subsequence=SubSequence()
-        namer=copy.deepcopy(self.Name[0])
-        namer.set_value("_iterations_of_"+progenitor_name, REWRITE_NDG=True)
-        container_subsequence.insert(namer,pos="LAST")
-        st=copy.deepcopy(self.StartTime[0])
+        container_subsequence = SubSequence()
+        namer = copy.deepcopy(self.Name[0])
+        namer.set_value("_iterations_of_" + progenitor_name, REWRITE_NDG=True)
+        container_subsequence.insert(namer, pos="LAST")
+        st = copy.deepcopy(self.StartTime[0])
         st.set_value(u"0", REWRITE_NDG=True)
         container_subsequence.insert(st)
         # create the iterated subsequences
+        pdb.set_trace()
         for iters in self.Iterate:
-            try: per=iters.Period[0].parse()
-            except: iters.addAttribute("parser_error","Cannot Determine Iteration Period - is Period Element Declared?")
-            iters_num=int(iters.Repetitions[0].parse())
+            try:
+                per=iters.Period[0].parse()
+            except:
+                msg = "Cannot Determine Iteration Period - is Period Element Declared?"
+                iters.addAttribute("parser_error", msg)
+            iters_num = int(iters.Repetitions[0].parse())
             for it in range(iters_num):
-                newsubseq=copy.deepcopy(self)  # create a copy of the current subsequence
+                newsubseq = copy.deepcopy(self)  # create a copy of the current subsequence
                 newsubseq.remove_all("Iterate")  # prevent an endless replication loop (wouldn't happen anyway based on calling sequence)
                 #newsubseq.remove_all("Name") 
                 #newsubseq.insert(Name("_iter_"+str(it)+"_"+progenitor_name))
-                if hasattr(newsubseq,"Name"): newsubseq.Name[0].set_value("_iter_"+str(it)+"_"+progenitor_name, REWRITE_NDG=True)
-                if hasattr(newsubseq,"StartTime"): newsubseq.StartTime[0].set_value(str(progenitor_time+float(1.+it)*per), REWRITE_NDG=True)  # set successive starttimes
+                if hasattr(newsubseq,"Name"):
+                    newsubseq.Name[0].set_value("_iter_"+str(it)+"_"+progenitor_name, REWRITE_NDG=True)
+                if hasattr(newsubseq,"StartTime"):
+                    newsubseq.StartTime[0].set_value(str(progenitor_time+float(1.+it)*per), REWRITE_NDG=True)  # set successive starttimes
                 else: 
-                    self.addAttribute("parser_error","Iterations Ignored - Progenitor Subsequence Missing a Start Time")
+                    msg = "Iterations Ignored - Progenitor Subsequence Missing a Start Time"
+                    self.addAttribute("parser_error", msg)
                     return
-                container_subsequence.insert(newsubseq,pos="LAST")
+                container_subsequence.insert(newsubseq, pos="LAST")
         # attach the container subsequence to the parent of the progenator
-        self.insert(container_subsequence,pos="LAST")
+        self.insert(container_subsequence, pos="LAST")
 
     def dereplicate(self):
         """
@@ -1907,7 +1980,8 @@ class ChannelMap(gnosis.xml.objectify._XO_,XTSM_core):
         one of level 2 clocks one of level 1...etc
         results are stored in the object as attribute tGroupClockLevels,
         which is a dictionary of (timingGroup# : timingGroupLevel) pairs
-        """
+        """         
+        
         tgroups=self.getDescendentsByType('TimingGroupData')
         tGroupClockLevels=numpy.zeros(len(tgroups),numpy.byte)
         bumpcount=1

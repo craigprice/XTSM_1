@@ -8,6 +8,7 @@ Created on Tue Mar 25 22:01:55 2014
 import httplib, mimetypes, numpy, time, pdb
 import msgpack, msgpack_numpy
 msgpack_numpy.patch()
+import profile
 
 def send_compile_request(shotnumber=22):
     post_multipart("127.0.0.1:8083",'127.0.0.1:8083'
