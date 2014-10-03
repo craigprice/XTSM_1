@@ -10,7 +10,7 @@ import xstatus_ready
 import file_locations
 import XTSM_Server_Objects
 
-DEFAULT_CHUNKSIZE=100000000
+DEFAULT_CHUNKSIZE=100*1000*1000
 
 class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Object):
     """
@@ -23,22 +23,27 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
     """
     def __init__(self, params={}):
         print "class FileStream, func __init__()"
-        today=datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
-        defaultparams={ 'timecreated':time.time()
-                        , 'chunksize': DEFAULT_CHUNKSIZE, 'byteswritten' : 0}
+        today = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
+        defaultparams = { 'timecreated':time.time(),
+                       'chunksize': DEFAULT_CHUNKSIZE,
+                       'byteswritten' : 0}
         try:
-            defaultparams.update({'location_root':file_locations.file_locations[params['file_root_selector']][uuid.getnode()]+'/'+today+'/'})
+            location_root = file_locations.file_locations[params['file_root_selector']][uuid.getnode()]
+            defaultparams.update({'location_root':location_root+'/'+today+'/'})
         except KeyError: 
             print "error"
             raise self.UnknownDestinationError
-        for key in params.keys(): defaultparams.update({key:params[key]})
-        for key in defaultparams.keys(): setattr(self,key,defaultparams[key])   
-        self.location=self.location_root+str(uuid.uuid1())+'.msgp'
-        try: self.stream=io.open(self.location,'ab')
-        except IOError: 
+        for key in params.keys():
+            defaultparams.update({key:params[key]})
+        for key in defaultparams.keys():
+            setattr(self, key, defaultparams[key])   
+        self.location = self.location_root + str(uuid.uuid1()) + '.msgp'
+        try: 
+            self.stream = io.open(self.location, 'ab')
+        except IOError: #Folder doesn't exist, then we make the day's folder.
             os.makedirs(self.location_root)
-            self.stream=io.open(self.location,'ab')
-        self.filehistory=[self.location]
+            self.stream = io.open(self.location, 'ab')
+        self.filehistory = [self.location]
 
     class UnknownDestinationError(Exception):
         pass
@@ -56,9 +61,14 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         outputs a log of recently written files
         """
         logstream=io.open(self.location_root+'DBFS_LOG.txt','a')
-        timeheader=datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + " through "+datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-        logstream.write(unicode("\nThis is a log of file writes from the DataBomb module:\nThis module has written the files below from the time period\n"
-                                + timeheader + "\n" + '\n'.join(self.filehistory)))
+        time_format = '%Y-%m-%d %H:%M:%S'
+        time1 = datetime.datetime.fromtimestamp(time.time()).strftime(time_format)
+        time2 = datetime.datetime.fromtimestamp(time.time()).strftime(time_format)
+        timeheader= time1 + " through "+ time2
+        msg = "\nThis is a log of file writes from the DataBomb module:\n"
+        msg = msg + "This module has written the files below from the time period\n"
+        msg = msg + timeheader + '\n\n'.join(self.filehistory)
+        logstream.write(unicode(msg))
         logstream.close()
         
     def write(self,bytestream, preventFrag=False):
@@ -69,9 +79,9 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         
         returns the file location of the chunk written.
         """
-        self.byteswritten+=len(bytestream)
+        self.byteswritten += len(bytestream)
         self.stream.write(bytestream)
-        loc=self.location
+        loc = self.location
         if ((self.byteswritten > self.chunksize) and (not preventFrag)): 
             self.chunkon()
         return loc

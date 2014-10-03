@@ -48,7 +48,8 @@ class DataBombList(xstatus_ready.xstatus_ready):
             setattr(self,key,defaultparams[key])   
         self.databombs={}
         self.dataListenerManagers = DataListenerManager()
-        self.stream=InfiniteFileStream.FileStream(params={'file_root_selector':'raw_buffer_folders'})
+        params = {'file_root_selector':'raw_buffer_folders'}
+        self.stream = InfiniteFileStream.FileStream(params)
         #self.stream=self.FileStream(params={'file_root_selector':'raw_buffer_folders'})
 
     def add(self,bomb):
@@ -229,6 +230,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
             entire object should be unpackable using messagepack unpackb routine
             twice - first to extract 'data' element, then to unpack data
             """
+            #pdb.set_trace()
             print "In class DataBomb, function stream_to_disk"
             idheader = msgpack.packb('id') + msgpack.packb(str(self.uuid))
             timeheader = msgpack.packb('timestamp') + msgpack.packb(str(self.timestamp))
@@ -241,6 +243,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
             print "Path:", self.raw_links
             stream.write(self.messagepack)
             
+            
         def deploy_fragments(self,listenerManagers):
             """
             sends individual data elements to destination in XTSM generators;
@@ -252,11 +255,14 @@ class DataBombList(xstatus_ready.xstatus_ready):
             print "in class DataBomb, function deploy_fragments"
             #print "Listeners:", 
             #pdb.set_trace()
-            if not hasattr(listenerManagers,'__iter__'): listenerManagers=[listenerManagers]
+            if not hasattr(listenerManagers,'__iter__'):
+                listenerManagers=[listenerManagers]
             for fragment in [a for a in self.data.keys() if not self.notify_data.has_key(a)]:
                 for listenerManager in listenerManagers:
-                    self.notify_data.update({"fragmentName":fragment})                    
-                    listenerManager.notify_data_present(self.notify_data,{fragment:self.data[fragment]},{fragment:[f+"["+fragment+"]" for f in self.raw_links]})
+                    self.notify_data.update({"fragmentName":fragment})   
+                    frag_1 = {fragment:self.data[fragment]}
+                    frag_2 = {fragment:[f+"["+fragment+"]" for f in self.raw_links]}
+                    listenerManager.notify_data_present(self.notify_data,frag_1,frag_2)
             try: 
                 del self.notify_data["fragmentName"]
             except KeyError:
@@ -577,8 +583,8 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             if self.databombers[bomber].is_sent == True:
                 continue
             print "telling bomber to dispatch"
-            #self.databombers[bomber].dispatch(['10.1.1.124'])#Fix this
-            self.databombers[bomber].dispatch(['10.1.1.112'])#Fix this
+            self.databombers[bomber].dispatch(['10.1.1.124'])#Fix this
+            #self.databombers[bomber].dispatch(['10.1.1.112'])#Fix this
         
 
 
@@ -636,8 +642,8 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 if dest != None:
                     flag = True
             if not flag:
-                self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
-                #self.destinations.append("10.1.1.124")
+                #self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
+                self.destinations.append("10.1.1.124")
             self.destinations = [x for x in self.destinations if x is not None]
             packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'default:127.0.0.1','databomb':self.packed_data})
             for dest in self.destinations:

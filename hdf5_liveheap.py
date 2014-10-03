@@ -32,12 +32,19 @@ class glab_datastore():
         constructor for datastore - should open or create an hdf5 file on disk
         to attach to - filepath should provide the path
         """
-        self.options={"filepath":"c:\\wamp\\vortex\\Python Interpreter\\glds"+str(uuid.uuid4())+".h5", 
+        #path = "c:\\wamp\\vortex\\Python Interpreter\\glds"
+        path = "c:\\wamp\\www\\data_storage"
+        self.options={"filepath":path + '\\' + str(uuid.uuid4()) + ".h5", 
                  "title":"Untitled" }
         self.options.update(options)
         self.id=str(uuid.uuid4())
-        self.h5=tables.open_file(self.options["filepath"],mode="a",title=self.options["title"], driver="H5FD_SEC2", NODE_CACHE_SLOTS=0)
-        pdb.set_trace()
+        file_name = self.options["filepath"]
+        self.h5=tables.open_file(file_name,
+                                 mode="a",
+                                 title=self.options["title"],
+                                 driver="H5FD_SEC2",
+                                 NODE_CACHE_SLOTS=0)
+        #pdb.set_trace()
         try:
             self.fileaccessgroup=self.h5.get_node("/","fa")    
             self.fatable=self.h5.get_node("/fa","access")    
@@ -105,7 +112,7 @@ class glab_datastore():
             self.__record_action__("issued handle for "+str(element_id))
             return t
         # first create a numpy structured array as a descriptor for the table elements
-        eparts=element_id.rsplit("/",1)
+        eparts = element_id.rsplit("/",1)
         des = numpy.empty(1,dtype=[
                 ("shotnumber",numpy.int64),
                 ("repnumber",numpy.int64),
@@ -114,10 +121,13 @@ class glab_datastore():
         # now try to create or open the table, else looking for first unused name of type
         for ind in xrange(-1,1000):
             try: 
-                h=self.h5.getNode(element_id+("_"+str(ind))*(ind>0))
-                if h.dtype==des.dtype: exit_this(h)
+                h = self.h5.getNode(element_id+("_"+str(ind))*(ind>0))
+                if h.dtype==des.dtype:
+                    exit_this(h)
             except tables.exceptions.NoSuchNodeError: 
-                h=self.h5.create_table("/"+eparts[0],eparts[1]+("_"+str(ind))*(ind>0),description=des.dtype)
+                where = "/"+eparts[0]
+                name = eparts[1]+("_"+str(ind))*(ind>0)
+                h = self.h5.create_table(where, name, description=des.dtype)
                 return exit_this(h)
 
     def load_from_filestore(self,directory,tablename="Untitled",limit=None,dtype=numpy.float32):
@@ -273,11 +283,14 @@ class glab_liveheap():
         default_options.update(options)
         # if no stack size given, set RAM size to 10MByte
         if default_options["sizeof"]==None:
-            try: default_options.update({"sizeof":int((1e+7)/
-                (default_options["typecode"].itemsize*reduce(
-                operator.mul,default_options["element_structure"])))})
-            except TypeError: default_options.update({"sizeof":int((1e+7)/
-                default_options["typecode"].itemsize)})
+            try:
+                item_size = default_options["typecode"].itemsize
+                ele_struc = default_options["element_structure"]
+                size = int((1e+7)/(item_size*reduce(operator.mul,ele_struc)))
+                default_options.update({"sizeof":size})
+            except TypeError:
+                size = int((1e+7)/default_options["typecode"].itemsize)
+                default_options.update({"sizeof":size})
         # transfer to attributes of self
         for option in default_options.keys():
             setattr(self,option,default_options.get(option))
