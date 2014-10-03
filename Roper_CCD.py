@@ -43,26 +43,48 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
     #EXP_TIMING_MODE = 3 for External Sync
     #EXP_TIMING_MODE = 1 for Freerun
     defaults={"EXP_TIMING_MODE":3,"EXP_EXPOSURETIME":10.0, "EXP_ACCUMS":2}
+
     class MultipleWinviewInstancesError(Exception):
         pass
     def __init__(self, params={} ):
         """
         constructor;  launches winview application, sets default parameters
         """
+        #EXP_TIMING_MODE = 3 for External Sync
+        #EXP_TIMING_MODE = 1 for Freerun
+        #defaults={"EXP_TIMING_MODE":3,"EXP_EXPOSURETIME":10.0, "EXP_ACCUMS":2}
+        #EXP_ANALOG_GAIN sets the ADC gain for Low(1), Medium(2), or High(3).
+        # Gain: Low (2 election/Count), Medium(4 electrions/count), High(8 electrons/Count)        
+        self.defaults={"EXP_TIMING_MODE":3,
+                       "EXP_EXPOSURE":0.1, 
+                       "EXP_ACCUMS":1, 
+                       "EXP_SEQUENTS":3,
+                       "EXP_ANALOG_GAIN":1}        
+        
         # first check if winview is already running; kill it if so
         self.data_destination=None
+        self.begin_acq_time = None
+        self.end_acq_time = None
         for p in params:
             setattr(self,p,params[p])
         plist=psutil.get_pid_list()
         for p in plist:
-            try: 
-                if (psutil.Process(p).name()==u"Winview.exe"):
-                    try:
-                        print "Attempting to kill a WinView Process..."
-                        pkill("Winview.exe")
-                        sleep(1) # necessary to free resources before relaunch?
-                    except: raise self.MultipleWinviewInstancesError
-            except: pass
+
+            name = ''
+            try:
+                name = psutil.Process(p).name()
+
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                continue
+            if (name == u"Winview.exe"):
+                try:
+                    print "Attempting to kill a WinView Process..."
+                    pkill("Winview.exe")
+                    sleep(1) # necessary to free resources before relaunch?
+                except:
+                    raise
+                    raise self.MultipleWinviewInstancesError
+
         self.app = win32com.client.Dispatch("WINX32.ExpSetup")
         #sleep(3) # not clear this is necessary
         self.appdoc = win32com.client.Dispatch("WINX32.DocFile")
@@ -74,7 +96,7 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         self.pending_params={}
         self.start_acquisition()
         self.autoframe = False
-        glab_instrument.Glab_Instrument.__init__(self,params)
+        glab_instrument.Glab_Instrument.__init__(self,params) #Currently this must be at the end of the init
         
     def start_acquisition(self,block=False):
         """
@@ -109,16 +131,34 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         """
         gets an acquired frame by number
         """
+        #pdb.set_trace()
         frame_size=(512,512)
         frame_data=win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_ARRAY | pythoncom.VT_UI2, numpy.empty(frame_size))
-        #pdb.set_trace()
-        frame_data=self.appdoc.GetFrame(frame_num,frame_data)
+
+        #frame_data2=win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_ARRAY | pythoncom.VT_UI2, numpy.empty(frame_size))
+
+        frame_data=self.appdoc.GetFrame(1,frame_data)
+        #frame_data2=self.appdoc.GetFrame(2,frame_data2)
         #pdb.set_trace()
         if hasattr(self,"display"):
             display = (display or self.display)
         if display:
             plt.imshow(frame_data, cmap='gray')
             plt.show()
+        return numpy.array(frame_data, dtype=numpy.uint16)
+                
+    def get_all_frames(self):
+        """
+        gets an the number of frames as specified in self.defaults['EXP_SEQUENTS']
+        """
+        #pdb.set_trace()
+        frame_size=(512,512)
+        frame_data = []
+        variant_type = (pythoncom.VT_BYREF | pythoncom.VT_ARRAY | pythoncom.VT_UI2)
+        for i in xrange(self.defaults['EXP_SEQUENTS']):
+            frame_data.append(win32com.client.VARIANT(variant_type, numpy.empty(frame_size)))
+            frame_data[i]=self.appdoc.GetFrame(i+1,frame_data[i])
+            
         return numpy.array(frame_data, dtype=numpy.uint16)
         
     def __del__(self):
@@ -133,14 +173,18 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         """
         reads all parameters from com components
         """
-        ps=[r for r in win32com.client.constants.__dicts__[0].keys() if len(r.split("EXP_"))>1]
-        self.app_param={}        
-        for p in ps:
-            self.app_param.update({p:self.app.GetParam(win32com.client.constants.__dicts__[0][p])})
-        ps=[r for r in win32com.client.constants.__dicts__[0].keys() if len(r.split("DM_"))>1]
-        self.appdoc_param={}        
-        for p in ps:
-            self.appdoc_param.update({p:self.app.GetParam(win32com.client.constants.__dicts__[0][p])})
+        consts = win32com.client.constants.__dicts__[0]
+        exp_params = [r for r in consts.keys() if len(r.split("EXP_")) > 1]
+        dm_params = [r for r in consts.keys() if len(r.split("DM_")) > 1]
+        self.app_param = {}   
+        self.appdoc_param = {}       
+        for p in exp_params:
+            self.app_param.update({p:self.app.GetParam(consts[p])})
+
+        for p in dm_params:
+            #self.appdoc_param.update({p:self.app.GetParam(consts[p])}) bug? call appdoc? CP
+
+            self.appdoc_param.update({p:self.app.GetParam(consts[p])})
 
     def set_param(self,set_dict):
         """
@@ -150,7 +194,7 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         which will be set once the experiment stops running through the server callback
         method for the experiment completed event
         """
-        if self.query_running:
+        if self.query_running():
             self.params_pending = True
             self.pending_params = set_dict
             return "Pending"
@@ -183,30 +227,44 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         #print "class Princeton_CCD function _server_poll_expcompleted_"   
         try:
             last_state = self.polled_running
-        except AttributeError,UnboundLocalError:
+        except (AttributeError,UnboundLocalError):
             self.polled_running = False
             last_state = False
         self.polled_running = self.query_running()
+        if (not bool(last_state) and bool(self.polled_running)):
+            self.begin_acq_time = time.time()
+        #print self.query_running(), last_state
         #if ((last_state == True) and (self.polled_running == False)): CP
         if (bool(last_state) and not bool(self.polled_running)):
-            self.last_exp_time = time.time()
+            self.end_acq_time = time.time()
             return True
         else:
             return False
-    _server_poll_expcompleted_._poll_period=0.05 # time in seconds between pollings for completion
+    _server_poll_expcompleted_._poll_period = 0.05 # time in seconds between pollings for completion
 
     def _server_callback_expcompleted_(self):
         """
         callback initiated by server when experiment is completed
         """
         print "class Roper_CCD, function _server_callback_expcompleted_"
-        if self.query_running(): raise self.CallBackWhileRunningError
-        framedata=self.get_frame(frame_num=1) # get the second frame; the first is clearing shot
-        if self.params_pending: self.set_param(self.pending_params)        
+        if self.query_running():
+            raise self.CallBackWhileRunningError
+        '''
+        # get the second frame; the first is clearing shot.
+        Does this even get the second frame?
+        Or is it getting the first, and the clearing frame is
+        automatically erased?
+        '''
+        #framedata = self.get_frame(frame_num=1) CP
+        framedata = self.get_all_frames() 
+        if self.params_pending:
+            self.set_param(self.pending_params)        
         if self.autoframe: 
             self.start_acquisition()
             #pdb.set_trace()
         self.serve_data(framedata)
+        #framedata2 = self.get_frame(frame_num=2)
+        #self.serve_data(framedata2)
         
 
 '''

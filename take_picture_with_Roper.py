@@ -4,14 +4,20 @@ import Roper_CCD
 isInitialized = False
 #pdb.set_trace()
 for key in self.server.dataContexts['default'].dict:
-    print "Checking if Initialized", self.server.dataContexts['default'].dict
+    #print "Checking if Initialized", self.server.dataContexts['default'].dict
     if key == 'Roper_CCD':
         isInitialized = True
-print "df"
+#print "df"
 if not isInitialized:
     print "Not initialized"
     self.server.dataContexts['default'].update({'Roper_CCD':Roper_CCD.Princeton_CCD(params={'server':self.server})})
-    self.server.dataContexts['default'].dict['Roper_CCD'].set_autoframing()
-    self.server.dataContexts['default'].dict['Roper_CCD'].start_acquisition()
-print "Done with Script"
+    #self.server.dataContexts['default'].dict['Roper_CCD'].set_autoframing()
 
+   # self.server.dataContexts['default'].dict['Roper_CCD'].set_param()
+self.server.dataContexts['default'].dict['Roper_CCD'].set_param({"EXP_TIMING_MODE":3,
+                       "EXP_EXPOSURE":0.1, 
+                       "EXP_ACCUMS":1, 
+                       "EXP_SEQUENTS":3,
+                       "EXP_ANALOG_GAIN":3})    
+self.server.dataContexts['default'].dict['Roper_CCD'].start_acquisition()
+#print "Done with Script"

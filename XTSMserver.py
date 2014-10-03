@@ -259,6 +259,11 @@ class MulticastProtocol(DatagramProtocol):
         """
         #print "Datagram received from "+ repr(address) 
         datagram = simplejson.loads(datagram_)
+        #print datagram
+        if 'shotnumber_started' in datagram.keys():
+            self.server.shotnumber = datagram['shotnumber_started']
+            print "Shot started:", datagram['shotnumber_started']
+            local_time = datagram['time']#Make this so that it synchronizes the clocks
         if datagram.has_key("server_ping"): 
             #pdb.set_trace()
             self.server.catch_ping(datagram)
@@ -2139,6 +2144,7 @@ class GlabPythonManager():
         self.is_active_parser = False
         self.ip = None
         self.instruments = {}
+        self.shotnumber = None
                 
         # associate the CommandProtocol as a response method on that socket
         self.listener.protocol = CommandProtocol

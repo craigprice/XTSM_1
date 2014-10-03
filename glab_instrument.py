@@ -62,7 +62,7 @@ class Glab_Instrument():
         #self.server.DataBombDispatcher.
         pass
 
-    def serve_data(self, data):
+    def serve_data(self, data, params={}):
         """
         routine to post data through the attached server using a databomb
         data is provided by the incoming argument data (ideally a dictionary)
@@ -80,7 +80,11 @@ class Glab_Instrument():
         default_data = {"generator":str(self),
                         "generator_instance":self.generator_uid,
                         "time_served":time.time(), 
-                        "destination_priorities":default_databomb_destination_priorities}     
+                        'begin_acq_time':self.begin_acq_time,
+                        'end_acq_time':self.end_acq_time,
+                        "destination_priorities":default_databomb_destination_priorities} 
+        default_data.update(params)    
+        default_data.update({'shotnumber':self.server.shotnumber})
         try: default_data.update({"server_instance":self.server.uuid,
                                   "server_machine":self.server.hostid})
         except:
@@ -120,7 +124,7 @@ class Glab_Instrument():
             return True
         else:
             return False
-    _Xserver_poll._poll_period = 1.#"15" seconds is being attached to the function as an element of the function-object
+    _Xserver_poll._poll_period = 10.#"15" seconds is being attached to the function as an element of the function-object
     
     def _Xserver_callback(self):
         """
