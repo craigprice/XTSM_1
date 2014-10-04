@@ -9,6 +9,7 @@ import time, datetime, uuid, io, os
 import xstatus_ready
 import file_locations
 import XTSM_Server_Objects
+import msgpack
 
 DEFAULT_CHUNKSIZE=100*1000*1000
 
@@ -43,6 +44,7 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         except IOError: #Folder doesn't exist, then we make the day's folder.
             os.makedirs(self.location_root)
             self.stream = io.open(self.location, 'ab')
+            self.write(msgpack.packb('}'))
         self.filehistory = [self.location]
 
     class UnknownDestinationError(Exception):
@@ -71,7 +73,7 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         logstream.write(unicode(msg))
         logstream.close()
         
-    def write(self,bytestream, preventFrag=False):
+    def write(self,bytestream, keep_stream_open=False):
         """
         writes bytes to the io stream - if the total bytes written by this
         and previous calls since last chunk started exceeds chunksize, 
@@ -81,20 +83,23 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         """
         self.byteswritten += len(bytestream)
         self.stream.write(bytestream)
-        loc = self.location
-        if ((self.byteswritten > self.chunksize) and (not preventFrag)): 
+        if (self.byteswritten > self.chunksize) and (not keep_stream_open): 
             self.chunkon()
-        return loc
+            self.byteswritten += len(bytestream)
+            self.stream.write(bytestream)
+        return self.location
         
     def chunkon(self):
         """
         this method creates a file for the next chunk of data
         """
+        self.stream.write(msgpack.packb('{'))
         self.stream.close()
-        self.location=self.location_root+str(uuid.uuid1())+'.msgp'            
-        self.stream=io.open(self.location,'ab')
+        self.location = self.location_root + str(uuid.uuid1()) + '.msgp'            
+        self.stream = io.open(self.location,'ab')
+        self.write(msgpack.packb('}'))
         self.filehistory.append(self.location)
-        self.byteswritten=0
+        self.byteswritten = 0
         
     def __flush__(self):
         self.stream.flush()

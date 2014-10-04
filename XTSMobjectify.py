@@ -1850,7 +1850,7 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
         st.set_value(u"0", REWRITE_NDG=True)
         container_subsequence.insert(st)
         # create the iterated subsequences
-        pdb.set_trace()
+        #pdb.set_trace()
         for iters in self.Iterate:
             try:
                 per=iters.Period[0].parse()

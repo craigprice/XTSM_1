@@ -232,16 +232,22 @@ class DataBombList(xstatus_ready.xstatus_ready):
             """
             #pdb.set_trace()
             print "In class DataBomb, function stream_to_disk"
-            idheader = msgpack.packb('id') + msgpack.packb(str(self.uuid))
-            timeheader = msgpack.packb('timestamp') + msgpack.packb(str(self.timestamp))
-            dataheader = '\xdb' + struct.pack('>L',len(self.messagepack))
-            if not hasattr(self,'raw_links'):
-                self.raw_links=[]
-            head_path = '\x83' + idheader + timeheader + dataheader
-            trailing_id = "["+self.uuid+"]"
-            self.raw_links.append(stream.write(head_path, preventFrag=True) + trailing_id)
+            #The databomb is written into the file stream in backwards order
+            #in order to have the header read out first.
+            stream.write(msgpack.packb('},', keep_stream_open=False))
+            stream.write(self.messagepack, keep_stream_open=True)
+            header = '{id:' + str(self.uuid) + ','
+            header = header + 'time_packed:' + str(time.time()) + ','
+            header = header + 'len_of_data:' + str(len(self.messagepack)) + ','
+            header = header + 'data:' 
+            stream.write(header, keep_stream_open=True)
+            #idheader = msgpack.packb('id' + str(self.uuid))
+            #timeheader = msgpack.packb('time_packed_' + str(time.time())
+            #dataheader = '\xdb' + struct.pack('>L',len(self.messagepack)))
+            #head_path = '\x83' + idheader + timeheader + dataheader
+            trailing_id = "[" + str(self.uuid) + "]"
+            self.raw_links.append(stream.location + trailing_id)
             print "Path:", self.raw_links
-            stream.write(self.messagepack)
             
             
         def deploy_fragments(self,listenerManagers):
