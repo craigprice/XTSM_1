@@ -52,6 +52,12 @@ class DataBombList(xstatus_ready.xstatus_ready):
         self.stream = InfiniteFileStream.FileStream(params)
         #self.stream=self.FileStream(params={'file_root_selector':'raw_buffer_folders'})
 
+    def __flush__(self):
+        self.stream.__flush__()
+        
+    def _close(self):
+        self.stream.__del__()
+
     def add(self,bomb):
         """
         adds a bomb to the list - the bomb input is expected to be of the 
@@ -234,7 +240,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
             print "In class DataBomb, function stream_to_disk"
             #The databomb is written into the file stream in backwards order
             #in order to have the header read out first.
-            stream.write(msgpack.packb('},', keep_stream_open=False))
+            stream.write(msgpack.packb('},'), keep_stream_open=False)
             stream.write(self.messagepack, keep_stream_open=True)
             header = '{id:' + str(self.uuid) + ','
             header = header + 'time_packed:' + str(time.time()) + ','

@@ -85,7 +85,7 @@ class Glab_Instrument():
                         "destination_priorities":default_databomb_destination_priorities} 
         default_data.update(params)    
         default_data.update({'shotnumber':self.server.shotnumber})
-        try: default_data.update({"server_instance":self.server.uuid,
+        try: default_data.update({"server_instance":self.server.id,
                                   "server_machine":self.server.hostid})
         except:
             raise

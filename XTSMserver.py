@@ -306,7 +306,7 @@ class WSClientProtocol(WebSocketClientProtocol):
         #print "class WSClientProtocol, func onMessage"
         self.log_message()
         self.connection.last_message_time = time.time()
-        self.connection.on_message(payload, isBinary)
+        self.connection.on_message(payload, isBinary, self)
 
 
     def log_message(self):
@@ -386,27 +386,10 @@ class WSServerProtocol(WebSocketServerProtocol):
         pass        
             
     def onMessage(self, payload, isBinary):
-        print "class WSServerProtocol, func onMessage"
         self.connection.last_connection_time = time.time()
         self.log_message()
-        if isBinary:
-            pass
-            #print "Binary message received: {0} bytes"#, payload
-        else:
-            payload = payload.decode('utf8')
-            print "Text message received in Client ws protocol:", payload
-            
-        type_of_client = ''
-        if(hasattr(self.factory, 'peer_server_local_instance_id')):
-            type_of_client = 'peer_server'
-            my_server_id = self.factory.peer_server_local_instance_id
-            server = self.factory.connection_manager.peer_servers[my_server_id]
-            if isBinary:
-                server.catch_msgpack_payload(payload, self)
-            else:
-                server.catch_json_payload(payload, self)
-           
-        print "class WSServerProtocol, func onMessage - End"
+        self.connection.last_message_time = time.time()
+        self.connection.on_message(payload, isBinary, self)
 
     def log_message(self):
         headerItemsforCommand=['host','origin']
@@ -604,7 +587,8 @@ class DataContext(XTSM_Server_Objects.XTSM_Server_Object):
         d = DataBomb.DataListenerManager()
         self.dict.update({'data_listener_manager':d}) 
 
-
+    def _close(self):
+        self.dict['_bombstack']._close()
  
     def update(self,data):
         """
@@ -1076,18 +1060,11 @@ class PeerServer(GlabClient):
        connectWS(wsClientFactory)
         
 
-    def on_message(self, payload, isBinary):
+    def on_message(self, payload, isBinary, protocol):
         if isBinary:
-            pass
-            #print "Binary message received: {0} bytes"#, payload
+            self.catch_msgpack_payload(payload, protocol)
         else:
-            payload = payload.decode('utf8')
-            #print "Text message received in Client ws protocol:",payload
-            
-            if isBinary:
-                self.catch_msgpack_payload(payload, self)
-            else:
-                self.catch_json_payload(payload, self)
+            self.catch_json_payload(payload, protocol)
         
     def on_open(self):
         self.is_open_connection = True
@@ -1123,7 +1100,7 @@ class ScriptServer(GlabClient):
         self.last_broadcast_time = time.time()
         pass
     
-    def on_message(self, payload, isBinary):
+    def on_message(self, payload, isBinary, protocol):
         if isBinary:
             pass
             #print "Binary message received: {0} bytes"#, payload
@@ -2295,15 +2272,19 @@ class GlabPythonManager():
         for key in self.connection_manager.script_servers.keys():
             self.connection_manager.script_servers[key].protocol.sendClose()
         self.flush_all()
+        self.close_all()
         #self.laud.loseConnection()
         print self.connection_manager.is_connections_closed()
-        reactor.callLater(0.01, reactor.stop)
         reactor.stop()
         print "Done"
                 
     def flush_all(self):
         for dc in self.dataContexts:
             self.dataContexts[dc].__flush__()
+
+    def close_all(self):
+        for dc in self.dataContexts:
+            self.dataContexts[dc]._close()
 
     def server_ping(self):
         """

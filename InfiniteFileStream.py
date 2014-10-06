@@ -55,6 +55,8 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         This will assure file stream is closed when object is destroyed,
         and will output a log file 
         """
+        print "deleting nicely"
+        self.stream.write(msgpack.packb('{'))
         self.stream.close()
         self.output_log()
 
@@ -97,7 +99,7 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         self.stream.close()
         self.location = self.location_root + str(uuid.uuid1()) + '.msgp'            
         self.stream = io.open(self.location,'ab')
-        self.write(msgpack.packb('}'))
+        self.stream.write(msgpack.packb('}'))
         self.filehistory.append(self.location)
         self.byteswritten = 0
         
