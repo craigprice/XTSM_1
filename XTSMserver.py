@@ -938,6 +938,7 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
         pass
     
     def close(self):
+       print "Shutting down connection:", self.protocol.connection.ip
        self.protocol.transport.loseConnection()
        self.is_open_connection = False
 
@@ -2282,7 +2283,7 @@ class GlabPythonManager():
             self.connection_manager.script_servers[key].close()
         reactor.stop()        
         self.flush_all()
-        self.laud.loseConnection()        
+        #self.laud.loseConnection()        
         print "Done"
 
     def flush_all(self):

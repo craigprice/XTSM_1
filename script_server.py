@@ -7,6 +7,7 @@ import pdb
 from twisted.internet.protocol import DatagramProtocol
 import uuid
 import glab_instrument
+import twisted.internet.error
 
 from twisted.internet import task
 
@@ -132,7 +133,9 @@ if __name__ == '__main__':
    check = task.LoopingCall(check_for_main_server)
    call_period = 1#sec
    check.start(call_period)
-
-   reactor.listenTCP(int(sys.argv[2]), factory)
+   try:
+       reactor.listenTCP(int(sys.argv[2]), factory)
+   except twisted.internet.error.CannotListenError:
+       server_shutdown()
    #reactor.callLater(60*30, reactor.stop)
    reactor.run()
