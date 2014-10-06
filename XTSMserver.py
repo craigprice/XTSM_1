@@ -321,6 +321,7 @@ class WSClientProtocol(WebSocketClientProtocol):
 
     def onClose(self, wasClean, code, reason):
         print("WebSocket connection closed as Client: {0}".format(reason))
+        pdb.set_trace()
         self.connection.close()
                           
         
@@ -341,10 +342,8 @@ class WSServerProtocol(WebSocketServerProtocol):
         self.in_use = True
         self.id = uuid.uuid4()
         self.time_of_creation = time.time()
-        self.connection.protocol = self
         self.server = self.factory.connection_manager.server
         self.connection_manager = self.factory.connection_manager
-        self.connection = self.factory.connection
 
     def onOpen(self):
         pass
@@ -358,6 +357,7 @@ class WSServerProtocol(WebSocketServerProtocol):
         new_peer.port = self.transport.getPeer().port
         new_peer.ip = self.transport.getPeer().host
         self.connection = new_peer
+        self.connection.protocol = self
         self.connection_manager.connectLog(self) 
         self.connection_manager.peer_servers.update({self.connection.id:self.connection}) 
    
@@ -1051,6 +1051,7 @@ class PeerServer(GlabClient):
        except:
            pass
        self.server_time = ping_payload['server_time']
+       self.last_broadcast_time = time.time()
        # Connect to the peer as a Client
        address = "ws://" + ping_payload['server_ip'] + ":" + ping_payload['server_port']
        #print address
@@ -1060,8 +1061,6 @@ class PeerServer(GlabClient):
        wsClientFactory.connection_manager = self.server.connection_manager
        wsClientFactory.connection = self
        connectWS(wsClientFactory)
-       self.server.connection_manager.connectLog(self) 
-       self.connection_manager.peer_servers.update({self.id:self})  
         
 
     def on_message(self, payload, isBinary):
@@ -1076,6 +1075,12 @@ class PeerServer(GlabClient):
                 self.catch_msgpack_payload(payload, self)
             else:
                 self.catch_json_payload(payload, self)
+        
+    def on_open(self):
+        self.is_open_connection = True
+        self.connection_manager.peer_servers.update({self.id:self})
+        self.server.connection_manager.connectLog(self)   
+        
        
 class ScriptServer(GlabClient):
     def __init__(self):
@@ -1102,6 +1107,7 @@ class ScriptServer(GlabClient):
         wsClientFactory.connection = self
         connectWS(wsClientFactory)  
         self.connection_manager.connectLog(self)  
+        self.last_broadcast_time = time.time()
         self.connection_manager.script_servers.update({self.id:self})   
         pass
     
@@ -1126,6 +1132,9 @@ class ScriptServer(GlabClient):
 
     def on_open(self):
         self.in_use = True
+        self.is_open_connection = True
+        self.connection_manager.peer_servers.update({self.id:self})
+        self.server.connection_manager.connectLog(self)  
         self.protocol.sendMessage("output_from_script = 'Script Server Ready!'")
         
 class Queue():
