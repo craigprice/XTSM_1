@@ -321,7 +321,7 @@ class WSClientProtocol(WebSocketClientProtocol):
 
     def onClose(self, wasClean, code, reason):
         print("WebSocket connection closed as Client: {0}".format(reason))
-        self.connection.close()
+        self.connection.on_close()
                           
         
 
@@ -459,8 +459,8 @@ class WSServerProtocol(WebSocketServerProtocol):
             self.sendMessage("{'server_console':'Failed to insert SocketCommand in Queue, reason unknown'}")
     """    
     def onClose(self, wasClean, code, reason):
-        #print("WebSocket connection closed as Server: {0}".format(reason))
-        self.connection.close()
+        print("WebSocket connection closed as Server: {0}".format(reason))
+        self.connection.on_close()
         #self.transport.loseConnection()
         #del self.server
         #Does this work?? 
@@ -676,7 +676,16 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
         self.wsServerFactory.server = self.server
         listenWS(self.wsServerFactory)
         
-        
+    def is_connections_closed(self):
+        print "Checking connections"
+        #pdb.set_trace()
+        for key in self.peer_servers.keys():
+            if self.peer_servers[key].protocol.state != self.peer_servers[key].protocol.STATE_CLOSED:
+                return False
+        for key in self.script_servers.keys():
+            if self.script_servers[key].protocol.state != self.script_servers[key].protocol.STATE_CLOSED:
+                return False
+        return True    
 
        
     def identify_client(self,protocol):
@@ -936,11 +945,15 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
         logs a request
         """
         pass
+
+    def on_close(self):
+       self.is_open_connection = False
+        
     
     def close(self):
        print "Shutting down connection:", self.protocol.connection.ip
        self.protocol.transport.loseConnection()
-       self.is_open_connection = False
+       self.protocol.sendClose()
 
     def on_open(self):
         pass               
@@ -2278,14 +2291,16 @@ class GlabPythonManager():
         """
         print "Closing Python Manager"
         for key in self.connection_manager.peer_servers.keys():
-            self.connection_manager.peer_servers[key].close()
+            self.connection_manager.peer_servers[key].protocol.sendClose()
         for key in self.connection_manager.script_servers.keys():
-            self.connection_manager.script_servers[key].close()
-        reactor.stop()        
+            self.connection_manager.script_servers[key].protocol.sendClose()
         self.flush_all()
-        #self.laud.loseConnection()        
+        #self.laud.loseConnection()
+        print self.connection_manager.is_connections_closed()
+        reactor.callLater(0.01, reactor.stop)
+        reactor.stop()
         print "Done"
-
+                
     def flush_all(self):
         for dc in self.dataContexts:
             self.dataContexts[dc].__flush__()
@@ -2294,6 +2309,7 @@ class GlabPythonManager():
         """
         sends an identifying message on udp broadcast port
         """
+        
         self.server.id_node = uuid.getnode()
         self.server.ip = socket.gethostbyname(socket.gethostname())
         self.server.name = socket.gethostname()
@@ -2322,7 +2338,8 @@ class GlabPythonManager():
         """
         recieves an identifying message on udp broadcast port from other
         servers, and establishes a list of all other servers
-        """
+        """    
+        
         #print "In GlabPythonManager, pong()"
         #pdb.set_trace()
         #self.peer_servers[payload['server_name']]
