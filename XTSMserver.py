@@ -321,7 +321,6 @@ class WSClientProtocol(WebSocketClientProtocol):
 
     def onClose(self, wasClean, code, reason):
         print("WebSocket connection closed as Client: {0}".format(reason))
-        pdb.set_trace()
         self.connection.close()
                           
         
@@ -1108,7 +1107,6 @@ class ScriptServer(GlabClient):
         connectWS(wsClientFactory)  
         self.connection_manager.connectLog(self)  
         self.last_broadcast_time = time.time()
-        self.connection_manager.script_servers.update({self.id:self})   
         pass
     
     def on_message(self, payload, isBinary):
@@ -1127,13 +1125,11 @@ class ScriptServer(GlabClient):
             if self.output_from_script == '"Script Server Ready!"':
                 self.output_from_script = None
                 self.in_use = False
-        
-                type_of_client = ''
 
     def on_open(self):
         self.in_use = True
         self.is_open_connection = True
-        self.connection_manager.peer_servers.update({self.id:self})
+        self.connection_manager.script_servers.update({self.id:self})
         self.server.connection_manager.connectLog(self)  
         self.protocol.sendMessage("output_from_script = 'Script Server Ready!'")
         
@@ -2181,8 +2177,6 @@ class GlabPythonManager():
         self.ip = None
         self.instruments = {}
         self.shotnumber = None
-        self.id_node = uuid.getnode()
-        self.name = socket.gethostname()
         
         # associate the CommandProtocol as a response method on that socket
         self.listener.protocol = CommandProtocol
@@ -2211,6 +2205,7 @@ class GlabPythonManager():
         self.server_pinger.start(self.server_ping_period)
         
 
+        reactor.addSystemEventTrigger('before', 'shutdown', self.stop)
         #self.clientManager.announce_data_listener(self.data_listener_manager.listeners[i],'ccd_image','rb_analysis')
         
         #self.execu = task.LoopingCall(self.commandLibrary.execute_script)
@@ -2281,6 +2276,10 @@ class GlabPythonManager():
         Exit routine; stops twisted reactor
         """
         print "Closing Python Manager"
+        for key in self.connection_manager.peer_servers.keys():
+            self.connection_manager.peer_servers[key].close()
+        for key in self.connection_manager.script_servers.keys():
+            self.connection_manager.script_servers[key].close()
         reactor.stop()        
         self.flush_all()
         self.laud.loseConnection()        
@@ -2294,7 +2293,9 @@ class GlabPythonManager():
         """
         sends an identifying message on udp broadcast port
         """
-        self.ip = socket.gethostbyname(socket.gethostname())
+        self.server.id_node = uuid.getnode()
+        self.server.ip = socket.gethostbyname(socket.gethostname())
+        self.server.name = socket.gethostname()
         if not hasattr(self,"ping_data"):
             #need to include a list called ping_data - which is updated as needed. by "ping_data fnctions in objects of the server.
         #Nmaely this includes a list of instruments that are attached to the server.
@@ -2548,4 +2549,5 @@ active_xtsm = ''
 
 theBeast=GlabPythonManager()
 theBeast.run()
+
 
