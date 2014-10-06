@@ -86,7 +86,7 @@ class MulticastProtocol(DatagramProtocol):
         port = address[1]
         if not datagram.has_key("server_ping"): 
             return
-        if datagram['server_uuid_node'] == uuid.getnode() and port == 8085 and datagram.has_key("server_ping"): 
+        if datagram.has_key("server_ping") and datagram['server_id_node'] == uuid.getnode() and port == 8085: 
             #pdb.set_trace()
             global last_connection_time
             last_connection_time = time.time()
