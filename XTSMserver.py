@@ -1567,13 +1567,13 @@ class CommandLibrary():
             #Dispatch all scripts, - Scripts in InstrumentCommand is in a subset of all Scripts - so, dispatch all Scripts first
             
             #Need to find the InstrumentCommand for the current sequence 
-            '''
+            
             commands = xtsm_object.XTSM.getDescendentsByType("InstrumentCommand")#Need to dispatch all scripts. Change This CP
             for c in commands:
                 c.Script.dispatch(self.server)
-            '''
             
-            self.server.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self.server,'create_example_pollcallback':True})})
+            
+           # self.server.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self.server,'create_example_pollcallback':True})})
 
                 #Also need to change the passing in of a script body to actually have those lines of code.
                 #Then in the GUI we can make a text box so the code is visible,

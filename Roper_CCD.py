@@ -42,7 +42,7 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
     """
     #EXP_TIMING_MODE = 3 for External Sync
     #EXP_TIMING_MODE = 1 for Freerun
-    defaults={"EXP_TIMING_MODE":3,"EXP_EXPOSURETIME":10.0, "EXP_ACCUMS":2}
+    defaults={"EXP_TIMING_MODE":3,"EXP_EXPOSURETIME":0.1, "EXP_ACCUMS":1}
 
     class MultipleWinviewInstancesError(Exception):
         pass

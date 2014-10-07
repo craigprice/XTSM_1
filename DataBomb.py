@@ -651,12 +651,12 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 if dest != None:
                     flag = True
             if not flag:
-                self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
-                #self.destinations.append("10.1.1.124")
+                #self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
+                self.destinations.append("10.1.1.124")
             self.destinations = [x for x in self.destinations if x is not None]
             packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'default:127.0.0.1','databomb':self.packed_data}, use_bin_type=True)
             for dest in self.destinations:
-                dest = "10.1.1.112"
+                dest = "10.1.1.124"
                 if dest == None:
                     print "No destination"
                     continue
