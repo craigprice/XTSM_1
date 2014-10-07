@@ -11,7 +11,7 @@ import file_locations
 import XTSM_Server_Objects
 import msgpack
 
-DEFAULT_CHUNKSIZE=100*1000*1000
+DEFAULT_CHUNKSIZE=10*1000*1000
 
 class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Object):
     """
@@ -44,21 +44,12 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         except IOError: #Folder doesn't exist, then we make the day's folder.
             os.makedirs(self.location_root)
             self.stream = io.open(self.location, 'ab')
-            self.write(msgpack.packb('}'))
+            #self.write(msgpack.packb('}'))
         self.filehistory = [self.location]
+        print self.location
 
     class UnknownDestinationError(Exception):
         pass
-
-    def __del__(self):
-        """
-        This will assure file stream is closed when object is destroyed,
-        and will output a log file 
-        """
-        print "deleting nicely"
-        self.stream.write(msgpack.packb('{'))
-        self.stream.close()
-        self.output_log()
 
     def output_log(self):
         """
@@ -95,11 +86,11 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         """
         this method creates a file for the next chunk of data
         """
-        self.stream.write(msgpack.packb('{'))
+        #self.stream.write(msgpack.packb('{'))
         self.stream.close()
         self.location = self.location_root + str(uuid.uuid1()) + '.msgp'            
         self.stream = io.open(self.location,'ab')
-        self.stream.write(msgpack.packb('}'))
+        #self.stream.write(msgpack.packb('}'))
         self.filehistory.append(self.location)
         self.byteswritten = 0
         

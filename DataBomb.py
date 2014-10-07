@@ -56,7 +56,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
         self.stream.__flush__()
         
     def _close(self):
-        self.stream.__del__()
+        pass
 
     def add(self,bomb):
         """
@@ -235,18 +235,13 @@ class DataBombList(xstatus_ready.xstatus_ready):
             then raw data in its messagepack byte stream -
             entire object should be unpackable using messagepack unpackb routine
             twice - first to extract 'data' element, then to unpack data
-            """
-            #pdb.set_trace()
+            """   
             print "In class DataBomb, function stream_to_disk"
-            #The databomb is written into the file stream in backwards order
-            #in order to have the header read out first.
-            stream.write(msgpack.packb('},'), keep_stream_open=False)
-            stream.write(self.messagepack, keep_stream_open=True)
-            header = '{id:' + str(self.uuid) + ','
-            header = header + 'time_packed:' + str(time.time()) + ','
-            header = header + 'len_of_data:' + str(len(self.messagepack)) + ','
-            header = header + 'data:' 
-            stream.write(header, keep_stream_open=True)
+            to_disk = {'id': str(self.uuid),
+                      'time_packed': str(time.time()),
+                      'len_of_data': str(len(self.messagepack)),
+                      'packed_databomb': self.messagepack }
+            stream.write(msgpack.packb(to_disk, use_bin_type=True), keep_stream_open=False) 
             #idheader = msgpack.packb('id' + str(self.uuid))
             #timeheader = msgpack.packb('time_packed_' + str(time.time())
             #dataheader = '\xdb' + struct.pack('>L',len(self.messagepack)))
@@ -627,8 +622,9 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             data.update({"packed_time":time.time(),
             "packed_by":str(uuid.getnode())+"_DataBomber_init"})           
             self.data=data            
+            #pdb.set_trace()
             # packs data into a msgpack format (binary key-value pairs)
-            self.packed_data=msgpack.packb(data)
+            self.packed_data=msgpack.packb(data, use_bin_type=True)
             self.destinations=destinations
             
         def dispatch(self,destinations_=None):
@@ -654,11 +650,12 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 if dest != None:
                     flag = True
             if not flag:
-                #self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
-                self.destinations.append("10.1.1.124")
+                self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
+                #self.destinations.append("10.1.1.124")
             self.destinations = [x for x in self.destinations if x is not None]
-            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'default:127.0.0.1','databomb':self.packed_data})
+            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'default:127.0.0.1','databomb':self.packed_data}, use_bin_type=True)
             for dest in self.destinations:
+                dest = "10.1.1.112"
                 if dest == None:
                     print "No destination"
                     continue
@@ -666,13 +663,11 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                     flag = False
                     flag = self.server.send(packed_message,dest, isBinary=True)
                     if flag:
-                        print "dest:"
-                        print dest
+                        print "dest:", dest
                         print "Databomb Sent!"
                         self.is_sent = True
                     else:
-                        print "dest:"
-                        print dest
+                        print "dest:", dest
                         print "Databomb Not Sent!"
                 except:
                     raise

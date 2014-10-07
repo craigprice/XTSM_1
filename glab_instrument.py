@@ -18,6 +18,9 @@ class Glab_Instrument():
     """
     def __init__(self,params={}):
         self.generator_uid=str(uuid.uuid1())
+        self.data_destination=None
+        self.begin_acq_time = None
+        self.end_acq_time = None
         try:
             self.server=params['server']
         except KeyError:
@@ -75,7 +78,8 @@ class Glab_Instrument():
             return False
             
         # assemble the data payload
-        if type(data)!=type({}): data={"data":data}
+        if type(data)!=type({}):
+            data = {"data":data}
         # some default data-packaging parameters 
         default_data = {"generator":str(self),
                         "generator_instance":self.generator_uid,
@@ -115,16 +119,16 @@ class Glab_Instrument():
         create_example_pollcallback is set to true in initialization
         """
         # this triggers every-other time it is polled
-        print "generic instrument polled"
+        print "generic instrument polled", "at time:", time.time()
         if not hasattr(self,"_poll_example_it"):
             self._poll_example_it = 0
         self._poll_example_it = self._poll_example_it + 1 
-        if (self._poll_example_it+1)%2==0:
+        if (self._poll_example_it+1)%1==0:
             print "Return True from example Poll"
             return True
         else:
             return False
-    _Xserver_poll._poll_period = 10.#"15" seconds is being attached to the function as an element of the function-object
+    _Xserver_poll._poll_period = 1.#"15" seconds is being attached to the function as an element of the function-object
     
     def _Xserver_callback(self):
         """
@@ -134,5 +138,5 @@ class Glab_Instrument():
         #    return
         print "generic instrument callback called"
         # generate some random data and return it using the serve data mechanism
-        self.serve_data(numpy.random.rand(10,10).tolist())
+        self.serve_data(numpy.random.rand(5,5).tolist())
         
