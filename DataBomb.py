@@ -18,7 +18,8 @@ This is managed through two primary classes and their subclasses:
 @author: Nate
 """
 import msgpack, msgpack_numpy, StringIO, sys, time, struct, uuid, io, datetime, os, pdb
-msgpack_numpy.patch()
+msgpack_numpy.patch()#This patch actually changes the behavior of "msgpack"
+#specifically, it changes how, "encoding='utf-8'" functions when unpacking
 from xml.sax import saxutils
 import xstatus_ready
 import file_locations

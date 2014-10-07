@@ -75,7 +75,8 @@ import socket
 import XTSMobjectify
 import DataBomb
 import InfiniteFileStream
-msgpack_numpy.patch()
+msgpack_numpy.patch()#This patch actually changes the behavior of "msgpack"
+#specifically, it changes how, "encoding='utf-8'" functions when unpacking
 import XTSM_Server_Objects
 import XTSM_Transforms
 import live_content
@@ -265,7 +266,7 @@ class MulticastProtocol(DatagramProtocol):
         if 'shotnumber_started' in datagram.keys():
             self.server.shotnumber = datagram['shotnumber_started']
             pxi_time = datagram['time']#Make this so that it synchronizes the clocks CP
-            print "Shot started:", datagram['shotnumber_started'], "pxi_time:", pxi_time
+            print "Shot started:", datagram['shotnumber_started'], "pxi_time:", pxi_time, "time.time():", time.time()
         if datagram.has_key("server_ping"): 
             self.server.catch_ping(datagram)
     
