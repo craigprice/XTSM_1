@@ -89,6 +89,8 @@ import script_server
 import matplotlib as mpl
 import matplotlib.pyplot as plt 
 import hdf5_liveheap
+import gc
+import objgraph
 #from IPy import IP
 
 def tracefunc(frame, event, arg, indent=[0]):
@@ -113,7 +115,7 @@ def tracefunc(frame, event, arg, indent=[0]):
 DEBUG_LINENO = 0      
 DEBUG_TRACE = False
 TRACE_IGNORE=["popexecute","getChildNodes","getItemByFieldValue"]
-MAX_SCRIPT_SERVERS = 1
+MAX_SCRIPT_SERVERS = 2
       
 if DEBUG_TRACE: sys.settrace(tracefunc)
 
@@ -127,7 +129,7 @@ except IndexError:
     wsport = 8084
     udpbport = 8085
 
-NUM_RETAINED_XTSM=100
+NUM_RETAINED_XTSM=10
 
 class Experiment_Sync_Group(HasTraits):
     """
@@ -261,14 +263,20 @@ class MulticastProtocol(DatagramProtocol):
         """
         called when a udp broadcast is received
         """
-        print "Datagram received from "+ repr(address) 
+        #print "Datagram received from "+ repr(address) 
         datagram = simplejson.loads(datagram_)
-        if 'shotnumber_started' in datagram.keys():
-            self.server.shotnumber = datagram['shotnumber_started']
-            pxi_time = datagram['time']#Make this so that it synchronizes the clocks CP
-            print "Shot started:", datagram['shotnumber_started'], "pxi_time:", pxi_time, "time.time():", time.time()
-        if datagram.has_key("server_ping"): 
-            self.server.catch_ping(datagram)
+        if hasattr(datagram,'keys'):
+            if 'shotnumber_started' in datagram.keys():
+                self.server.shotnumber = datagram['shotnumber_started']
+                pxi_time = datagram['time']#Make this so that it synchronizes the clocks CP
+                print "Shot started:", datagram['shotnumber_started'], "pxi_time:", pxi_time, "time.time():", float(time.time()) - 1412863872
+                return
+        try:
+            datagram["server_ping"] 
+        except KeyError:
+            print "unknown UDP message:\n", datagram
+        ping_command = ServerCommand(self.server.catch_ping, datagram)
+        self.server.command_queue.add(ping_command)
     
 class HTTPRequest(BaseHTTPRequestHandler):
     """
@@ -307,7 +315,9 @@ class WSClientProtocol(WebSocketClientProtocol):
         #print "class WSClientProtocol, func onMessage"
         self.log_message()
         self.connection.last_message_time = time.time()
-        self.connection.on_message(payload, isBinary, self)
+        msg_command = ServerCommand(self.connection.on_message, payload, isBinary, self)
+        self.server.command_queue.add(msg_command)
+        
 
 
     def log_message(self):
@@ -391,7 +401,8 @@ class WSServerProtocol(WebSocketServerProtocol):
         self.connection.last_connection_time = time.time()
         self.log_message()
         self.connection.last_message_time = time.time()
-        self.connection.on_message(payload, isBinary, self)
+        msg_command = ServerCommand(self.connection.on_message, payload, isBinary, self)
+        self.server.command_queue.add(msg_command)
 
     def log_message(self):
         headerItemsforCommand=['host','origin']
@@ -546,7 +557,7 @@ class CommandProtocol(protocol.Protocol):
         # insert request, if valid, into command queue (persistently resides in self.Factory)        
         SC=SocketCommand(self.params,self.request)
         try:
-            self.factory.connection_manager.server.commandQueue.add(SC)
+            self.factory.connection_manager.server.command_queue.add(SC)
             #self.factory.commandQueue.add(SC)
         except AttributeError:
             print 'Failed to insert SocketCommand in Queue, No Queue'
@@ -639,11 +650,15 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
     def __init__(self, server):
         self.server = server
         self.id = uuid.uuid4()
-        self.maintenance_task = self.server.task.LoopingCall(self.periodic_maintainence)
-        self.maintenance_task.start(5)
+        self.maintenance_period = 5
         self.peer_servers = {}
         self.script_servers = {}
         self.TCP_connections = {}
+        
+        maintenance_command = ServerCommand(self.periodic_maintainence)
+        self.server.reactor.callLater(self.maintenance_period,
+                                      self.server.command_queue.add,
+                                      maintenance_command)
         # setup the websocket server services
 
         #self.wsfactory.protocol.commandQueue = self.commandQueue
@@ -727,7 +742,7 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
         for key in self.peer_servers.keys():
             #print self.peer_servers[key].last_broadcast_time
             if self.peer_servers[key].is_open_connection == False:
-                return
+                continue
             if (time.time() - self.peer_servers[key].last_broadcast_time) > 30:
                 print ("Shutting down inactive peer_server:",
                        self.peer_servers[key].name,
@@ -806,6 +821,8 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
             #print "in use:", self.script_servers[key].in_use
             if self.script_servers[key].in_use == False:
                 return self.script_servers[key]
+        
+        #Past here, all script servers are in use
         global MAX_SCRIPT_SERVERS
         if len(self.script_servers) < MAX_SCRIPT_SERVERS:
             self.add_script_server()
@@ -975,7 +992,7 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
         try:
             #self.commandQueue.add(SC)
             #pdb.set_trace()
-            self.server.commandQueue.add(SC)
+            self.server.command_queue.add(SC)
             #print "added socket command"
         #except AttributeError:
             #    self.commandQueue=CommandQueue(SC)
@@ -1019,7 +1036,7 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
                            CommandLibrary = self.server.commandLibrary)
         try:
             #self.commandQueue.add(SC)
-            self.server.commandQueue.add(SC)
+            self.server.command_queue.add(SC)
         #except AttributeError:
             #    self.commandQueue=CommandQueue(SC)
         except:
@@ -1142,7 +1159,13 @@ class ScriptServer(GlabClient):
         self.server.connection_manager.connectLog(self)  
         self.protocol.sendMessage("output_from_script = 'Script Server Ready!'")
         
-class Queue():
+        
+class CommandQueue():
+    """
+    The CommandQueue manages server command executions; it is basically a stack
+    of requests generated by incoming requests, combined with a library of
+    known commands with which to respond.
+    """
     def __init__(self,server,Command=None,owner=None):
         self.server = server
         if Command!=None:
@@ -1151,20 +1174,44 @@ class Queue():
             self.queue=[]
         if owner!=None: 
             self.owner=owner
-    def add(self,Command):
+
+    def get_next_command(self):
+        '''
+        Get compile_active_xtsm asap, otherwise, other priority commands
+        '''
+        for command in self.queue:
+            if not hasattr(command, 'command'):
+                continue
+            if not hasattr(command.command, 'has_key'):
+                continue
+            if not command.command.has_key('IDLSocket_ResponseFunction'):
+                continue
+            if command.command['IDLSocket_ResponseFunction'] == 'compile_active_xtsm':
+                compile_command = command
+                self.queue.remove(compile_command)
+                return compile_command
+            else:
+                continue
+            
+        return self.queue.pop()
+            
+            
+    
+    def add(self,command):
         #print "class Queue, function add"
         #pdb.set_trace()
-        if isinstance(  Command , ServerCommand):
+        if isinstance(  command , ServerCommand):
             #print "This is a ServerCommand"
             pass
             #pdb.set_trace()
-        self.queue.append(Command)
+        self.queue.append(command)
         #print "class Queue, function add - End"
     def popexecute(self):
         #print "class Queue, function popexecute"
         if len(self.queue) > 0:
             #print "Executing top of Queue"
-            self.queue.pop().execute(self.server.commandLibrary)
+            command = self.get_next_command()
+            command.execute(self.server.commandLibrary)
             #print "Executing top of Queue - End"
     def xstatus(self):
         stat="<Commands>"
@@ -1190,63 +1237,6 @@ class Queue():
                 stat += '</Command>'
         stat += "</Commands>"
         return stat
-        
-class CommandQueue(Queue):
-    """
-    The CommandQueue manages server command executions; it is basically a stack
-    of requests generated by incoming requests, combined with a library of
-    known commands with which to respond.
-    """
-    def __init__(self,server,Command=None,owner=None):
-        Queue.__init__(self,server,Command=None,owner=None)
-            
-            
-class ScriptQueue(Queue):
-    def __init__(self,server,Command=None,owner=None):
-        Queue.__init__(self,server,Command=None,owner=None)
-        
-    def popexecute(self):
-        #print "class ScriptQueue, function popexecute"
-        #print "script_servers:", self.server.clientManager.script_servers
-        #print "script_queue =", self.queue
-        ss = self.server.connection_manager.get_available_script_server()#Need to call this in order to create script_servers. Returns None when no servers ready     
-        #print "return from get_avail... ss =", ss
-        if len(self.queue) == 0 or ss == None:
-            return
-        if self.queue[0]['on_main_server'] == True:
-            #Add functionality for timing
-            #print "Executing on Main Server"
-            code_locals = {}
-            #print "print queue[0]:"
-            #print self.queue[0]
-            #print "compile...."
-            #inst = glab_instrument(self.server)
-            #inst.name = self.queue[0]['name']
-            #if self.queue[0]['name'] == 'CCD':
-            ##    Roper_CCD.Princeton_CCD(self.queue[0])
-            #self.server.instruments.update({inst.id:inst})
-            #try:
-            #    code = compile(self.queue.pop()['script_body'], '<string>', 'exec')
-            #except:
-            #    print "compile unsuccessful"
-            #    raise
-            #print "compile successful"
-            print "executing"
-            script = self.queue.pop()['script_body']
-            with open(script) as f:
-                code = compile(f.read(), script, 'exec')
-                exec(code, globals(), locals())
-            print "done executing"
-            return
-        else:
-            #add functionality for timing
-            #self.queue.pop().execute(self.server.commandLibrary)    
-            #Trying to connect to a server that is not responsive will restart that server and try to connect again.
-            #self.server.clientManager.use_script_server(ss)
-            #print "got server"
-            self.server.send(self.queue.pop()['script_body'], ss)
-            return
-        return
 
 class CommandLibrary():
     """
@@ -1364,7 +1354,7 @@ class CommandLibrary():
         These write functions may crash any websocket connections that it
         tries to write into since it may not be json
         """
-        params['request']['protocol'].transport.write('catch_ping')
+        params['request']['protocol'].transport.write('ping')
         params['request']['protocol'].transport.loseConnection()
 
     def get_server_status(self,params):
@@ -1492,7 +1482,7 @@ class CommandLibrary():
         containing the active_xtsm string and shotnumber, they are skipped.
         """
         # mark requestor as an XTSM compiler
-        print "In class CommandLibrary, function compile_active_xtsm", "time:",time.time()
+        print "In class CommandLibrary, function compile_active_xtsm", "time:", float(time.time()) - 1412863872
         #pdb.set_trace()
         self.server.connection_manager.update_client_roles(params['request'],'active_XTSM_compiler')
         
@@ -1561,7 +1551,6 @@ class CommandLibrary():
             xtsm_object.installListeners(dc['_bombstack'].dataListenerManagers)#This calls _generate_listeners_ and passes in the DLM instance.
             #InstallListeners passes the return of __generate_listeners__ to spawn in DLM class
             # InstrumentCommands
-            print "here"
             #pdb.set_trace()
             
             #Dispatch all scripts, - Scripts in InstrumentCommand is in a subset of all Scripts - so, dispatch all Scripts first
@@ -1597,7 +1586,7 @@ class CommandLibrary():
             These write functions may crash any websocket connections that it
             tries to write into since it may not be json
             """
-            print "timingstringOutput, at time:", time.time()
+            print "timingstringOutput, at time:", float(time.time()) - 1412863872
             params['request']['protocol'].transport.write(timingstringOutput)
             dc.get('_exp_sync').shotnumber = sn + 1
             params['request']['protocol'].transport.loseConnection()
@@ -1610,33 +1599,6 @@ class CommandLibrary():
             # attach the xtsm object that generated the outgoing control arrays to the experiment sync's xtsm_stack
             dc['_exp_sync'].compiled_xtsm.update({sn:xtsm_object})
             dc['_exp_sync'].last_successful_xtsm=exp_sync.active_xtsm
-
-    def execute_script(self, params=None):
-        #May want to pass this to a shadow server
-        #Add functionality where main server timesout the shadow server if it doesn't return the original secript
-        #Now should make a list of shadow servers.
-        #Look into specifing which processor the script is launched on
-        #Limit number to ~100
-        #Keep track in peer_server.
-        #dc=self.__determineContext__(params)
-        #time = dc.get('time')
-        #shotnumber = dc.get('shotnumber')
-        #script = dc.get('script_xml')
-        #script = "print 'This is script that is executed'"
-        #pdb.set_trace()    
-        #print "class CommandLibrary, function execute_script"
-        
-        #script = 'output_from_script = "hi"'
-        script_body = params['script_body']
-        print "script_body:"
-        print script_body
-        self.server.script_queue.add(params)
-        #if self.server.clientManager.send("Hi",'ws://localhost:8086'):
-        #self.server.send(script,'ws://localhost:8086')
-        #wsClientFactory = WebSocketClientFactory(address, debug = True)
-        #wsClientFactory.protocol = WSClientProtocol
-        #wsClientFactory.clientManager = self
-        #connectWS(wsClientFactory)  
 
     def testparse_active_xtsm(self, params):
         """
@@ -1711,9 +1673,11 @@ class CommandLibrary():
             #params['request']['protocol'].transport.loseConnection()
             
         # next line adds a deployment command to the command queue
-        self.server.commandQueue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
+        self.server.command_queue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
+        #self.temp_plot(params, dbombnum)
         
-        
+    def temp_plot(self, params, dbombnum):
+                
         raw_databomb = msgpack.unpackb(params['databomb'])
         #hdf5_liveheap.glab_liveheap
         #file_storage = hdf5_liveheap.glab_datastore()
@@ -1763,7 +1727,7 @@ class CommandLibrary():
 
         ax4 = fig.add_subplot(224)
         cax4 = ax4.imshow(region_of_interest, cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
-        num_atoms = region_of_interest.sum() * 303 * pow(10,-6)
+        num_atoms = region_of_interest.sum() * 303 * pow(10,-6) *30
         
         '''
         numrows, numcols = corrected_image.shape
@@ -1788,8 +1752,10 @@ class CommandLibrary():
         path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()
         file_name = 'databomb_' + dbombnum + '_at_time_' + str(raw_databomb['packed_time'])
         plt.title("SN="+str(raw_databomb['shotnumber'])+'\n_'+path+'\n/'+file_name+'\nNum_Atoms=total_counts*303*10^-6 = '+str(num_atoms)+' Counts = '+str(region_of_interest.sum()), fontsize=10)
-        plt.show(block=False)        
+        #reactor.callInThread(plt.show,'block=False')
+        #reactor.callFromThread(plt.close)
         #subtracted image
+        plt.show(block=False)
                 
         '''        
         f = open(path+'/'+file_name+'.txt', 'w')
@@ -1872,6 +1838,81 @@ class CommandLibrary():
         content_json = simplejson.dumps({content_id:content})
         msg = simplejson.dumps({"receive_live_content":content_json})
         write_method(msg)
+
+    def execute_script(self, params):
+        #May want to pass this to a shadow server
+        #Add functionality where main server timesout the shadow server if it doesn't return the original secript
+        #Now should make a list of shadow servers.
+        #Look into specifing which processor the script is launched on
+        #Limit number to ~100
+        #Keep track in peer_server.
+        #dc=self.__determineContext__(params)
+        #time = dc.get('time')
+        #shotnumber = dc.get('shotnumber')
+        #script = dc.get('script_xml')
+        #script = "print 'This is script that is executed'"
+        #pdb.set_trace()    
+        #print "class CommandLibrary, function execute_script"
+        
+        #script = 'output_from_script = "hi"'
+        #script_body = params['script_body']
+        #print "script_body:"
+        #print script_body
+        #self.server.script_queue.add(params)
+        #if self.server.clientManager.send("Hi",'ws://localhost:8086'):
+        #self.server.send(script,'ws://localhost:8086')
+        #wsClientFactory = WebSocketClientFactory(address, debug = True)
+        #wsClientFactory.protocol = WSClientProtocol
+        #wsClientFactory.clientManager = self
+        #connectWS(wsClientFactory)          
+        
+        #print "class ScriptQueue, function popexecute"
+        #print "script_servers:", self.server.clientManager.script_servers
+        #print "script_queue =", self.queue
+        
+        '''Need to move this to the conditions on exectuting commands in the queue'''
+        script_server = self.server.connection_manager.get_available_script_server()#Need to call this in order to create script_servers. Returns None when no servers ready     
+        #print "return from get_avail... ss =", ss
+        if ss == None:
+            pass
+            #Need to add self back to the queue
+            return
+        if params['on_main_server'] == True:
+            #This should be done in the sheltered scipt environment.
+            #Add functionality for timing
+            #print "Executing on Main Server"
+            code_locals = {}
+            #print "print queue[0]:"
+            #print self.queue[0]
+            #print "compile...."
+            #inst = glab_instrument(self.server)
+            #inst.name = self.queue[0]['name']
+            #if self.queue[0]['name'] == 'CCD':
+            ##    Roper_CCD.Princeton_CCD(self.queue[0])
+            #self.server.instruments.update({inst.id:inst})
+            #try:
+            #    code = compile(self.queue.pop()['script_body'], '<string>', 'exec')
+            #except:
+            #    print "compile unsuccessful"
+            #    raise
+            #print "compile successful"
+            print "executing"
+            script = params['script_body']
+            with open(script) as f:
+                #Capture std out, look at sheltered script
+                code = compile(f.read(), script, 'exec')
+                exec(code, globals(), locals())#Copying of variables occur
+            print "done executing"
+            return
+        else:
+            #add functionality for timing
+            #self.queue.pop().execute(self.server.commandLibrary)    
+            #Trying to connect to a server that is not responsive will restart that server and try to connect again.
+            #self.server.clientManager.use_script_server(ss)
+            #print "got server"
+            self.server.send(params['script_body'], script_server)
+            return
+        return
 
     def _respond_and_close(params,msg):
         """
@@ -1990,8 +2031,8 @@ class GlabServerFactory(protocol.Factory):
     in response to incoming HTTP requests
     """
 
-    def associateCommandQueue(self,commandQueue):
-        self.commandQueue = commandQueue
+    def associateCommandQueue(self,command_queue):
+        self.command_queue = command_queue
     def associateConnectionManager(self,connection_manager):
         self.connection_manager = connection_manager
     def xstatus(self):
@@ -2100,9 +2141,10 @@ class Mediated_StdOut(StringIO):
                 col=self.context_col[inspect.stack()[3][3]]
             return col
 
-            
-    buffers={"default":contextual_buffer(params={"prompt":"","display_name":"default","bg":colorama.Back.WHITE,"col":"contextualize"}),
-             "lineReceived":contextual_buffer(params={"prompt":">u> ","display_name":"console","bg":colorama.Back.WHITE,"col":colorama.Fore.BLACK})}
+    default_params={"prompt":"","display_name":"default","bg":colorama.Back.WHITE,"col":"contextualize"}
+    received_params={"prompt":">u> ","display_name":"console","bg":colorama.Back.WHITE,"col":colorama.Fore.BLACK}
+    buffers={"default":contextual_buffer(default_params),
+             "lineReceived":contextual_buffer(received_params)}
     def write(self,s):
         """
         write routine called by print statements
@@ -2183,8 +2225,7 @@ class GlabPythonManager():
         reactor.callWhenRunning(hello)
 
         # create a Command Queue, Client Manager, and Default Data Context
-        self.commandQueue = CommandQueue(self)
-        self.script_queue = ScriptQueue(self)
+        self.command_queue = CommandQueue(self)
         self.commandLibrary = CommandLibrary(self)
         self.connection_manager = ConnectionManager(self)
         self.dataContexts = {'default':DataContext('default',self)}
@@ -2198,17 +2239,13 @@ class GlabPythonManager():
         self.listener.protocol = CommandProtocol
 
         # associate the Command Queue and ClienManager with the socket listener
-        self.listener.associateCommandQueue(self.commandQueue)
+        self.listener.associateCommandQueue(self.command_queue)
         self.listener.associateConnectionManager(self.connection_manager)
         
         # create a periodic command queue execution
-        self.queueCommand = task.LoopingCall(self.commandQueue.popexecute)
+        self.queueCommand = task.LoopingCall(self.command_queue.popexecute)
         self.queueCommand.start(0.03)
-        #self.queueCommand.start(0.5)
         self.initdisplay()
-        
-        self.script_queue_command = task.LoopingCall(self.script_queue.popexecute)
-        self.script_queue_command.start(1)
 
         
         # setup the udp broadcast for peer discovery
@@ -2216,10 +2253,14 @@ class GlabPythonManager():
                                                  MulticastProtocol(),
                                                  listenMultiple=True)
         self.multicast.protocol.server = self 
-        self.server_pinger = task.LoopingCall(self.server_ping)
-        self.server_ping_period = 5.0
-        self.server_pinger.start(self.server_ping_period)
+                
+        script_command = ServerCommand(self.connection_manager.add_script_server)
+        reactor.callWhenRunning(self.command_queue.add, script_command)
+        reactor.callWhenRunning(self.command_queue.add, script_command)
         
+        self.server_ping_period = 5.0 
+        ping_command = ServerCommand(self.server_ping)
+        reactor.callWhenRunning(self.command_queue.add, ping_command)
 
         reactor.addSystemEventTrigger('before', 'shutdown', self.stop)
         #self.clientManager.announce_data_listener(self.data_listener_manager.listeners[i],'ccd_image','rb_analysis')
@@ -2331,9 +2372,13 @@ class GlabPythonManager():
                             "server_ping":"ping!"}
         self.ping_data.update({"server_time":time.time()})
         self.multicast.protocol.send(simplejson.dumps(self.ping_data))
+        server_command = ServerCommand(self.server_ping)
+        reactor.callLater(self.server_ping_period,
+                          self.command_queue.add,
+                          server_command)
 
         
-    def isOwnPingBroadcast(self,payload_):
+    def is_own_ping_broadcast(self,payload_):
         if payload_['server_id'] == self.id:
             return True
         else:
@@ -2472,6 +2517,7 @@ class GlabPythonManager():
                 callback()
             else:
                 return
+        #Will this interfere with the CommandQueue executing "compile_active_xtsm"?
         thistask = task.LoopingCall(pollcallback)
         if not hasattr(self, "pollcallbacks"):
             self.pollcallbacks=[]        
@@ -2520,7 +2566,7 @@ class GlabPythonManager():
         # Active Connections        
         stat+=self.listener.xstatus()
         # Command Queue
-        stat+=self.commandQueue.xstatus()
+        stat+=self.command_queue.xstatus()
         # Data Contexts
         if hasattr(self,'dataContexts'):
             stat+='<DataContexts>'

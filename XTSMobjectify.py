@@ -1444,6 +1444,8 @@ class channelData():
                 else:
                     self.holdingval=0
             else: self.holdingval=0
+            
+             
             # retrieve intedges
             if self.isclock:
                 # if this is a clock channel, take the clock edges if already constructed or construct from clockstring
@@ -1505,7 +1507,11 @@ class channelData():
             self.intedges[2,:]=self.parent.denseT
             self.intedges[3,:]=values
             #t1=time.time()
-            #print "times given: ", t1-t0
+        self.intedges=self.intedges[:,self.intedges[2,:].argsort()]  # added 10/8/14 NDG,JZ,CP  to solve missing edge elements which follow an interval in source XTSM
+#        try: 
+#            if self.chanObj.TimingGroupIndex.PCDATA==u'19': pdb.set_trace() 
+#        except: pass          
+           #print "times given: ", t1-t0
 
     def clock_harvest(self,clock_edge_array,dense_time_array,chan_num=None): #LRJ 3-11-2014, NDG 5-16-14        
         """
@@ -1646,6 +1652,7 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
         
         # collect requested timing edges, intervals, etc...
         self.collectTimingProffers()
+        #pdb.set_trace()
         # create an element to hold parser output
         pOutNode=self.insert(ParserOutput())
         # step through timing groups, starting from lowest on heirarchy
@@ -2332,6 +2339,13 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         host the instrument is on, etc...)
         """
         
+        #Right now this will prevent any scripts from sending if PullData is False
+        #We should change this so that it still sends the scripts but no data is returned from the other server
+        if not hasattr(self.__parent__,'PullData'):
+            return
+        if self.__parent__.PullData.PCDATA == 'False':
+            return
+            
         xtsm_owner = self.getOwnerXTSM()
         def destination_from_instrument(script):
             #This gets the instrument object's metadata
@@ -2408,34 +2422,42 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         """
         print "in class InstrumentCommand, function __generate_listener__"
         #pdb.set_trace()
-        if hasattr(self,'PullData'):
-            if (not self.scoped): self.buildScope()
-            data={}
-            #pdb.set_trace()
-            data.update({"generator": self})
-            xtsm_owner = self.getOwnerXTSM()
-            #cm=self.getOwnerXTSM().head[0].ChannelMap[0]
-            #[tg,tgi]=self.OnChannel[0].getTimingGroupIndex()
-            # chanobj=cm.getChannel(self.OnChannel.PCDATA) # might need this later
-            #tgobj=cm.getItemByFieldValue("TimingGroupData","GroupNumber",str(int(tg)))
-            #This gets the instrument object's metadata
-            #pdb.set_trace()
-            instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
-                                                             "OnInstrument",
-                                                             self.OnInstrument[0].PCDATA)
-            gen =  instrument_head.ServerIPAddress[0].PCDATA #CCD right now
-            print gen
-            self.__listener_criteria__ = {"shotnumber":int(self.scope["shotnumber"]),
+        
+        
+        
+        if not hasattr(self,'PullData'):
+            return
+        if self.PullData.PCDATA == 'False':
+            return
+        
+            
+        if (not self.scoped): self.buildScope()
+        data={}
+        #pdb.set_trace()
+        data.update({"generator": self})
+        xtsm_owner = self.getOwnerXTSM()
+        #cm=self.getOwnerXTSM().head[0].ChannelMap[0]
+        #[tg,tgi]=self.OnChannel[0].getTimingGroupIndex()
+        # chanobj=cm.getChannel(self.OnChannel.PCDATA) # might need this later
+        #tgobj=cm.getItemByFieldValue("TimingGroupData","GroupNumber",str(int(tg)))
+        #This gets the instrument object's metadata
+        #pdb.set_trace()
+        instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
+                                                         "OnInstrument",
+                                                         self.OnInstrument[0].PCDATA)
+        gen =  instrument_head.ServerIPAddress[0].PCDATA #CCD right now
+        print gen
+        self.__listener_criteria__ = {"shotnumber":int(self.scope["shotnumber"]),
                                           "sender":gen}
                                    #"sender":tgobj.Name.PCDATA}
-            self.__listener_criteria__.update({'data_generator':gen,
+        self.__listener_criteria__.update({'data_generator':gen,
                                      'server_IP_address':instrument_head.ServerIPAddress[0].PCDATA,
                                         'number_in_data_sequence':0})
-            data.update({"listen_for":self.__listener_criteria__ })
-            data.update({"method": "link"})
-            data.update({"onlink":self.onlink})
-            self.data_link = None
-            return data
+        data.update({"listen_for":self.__listener_criteria__ })
+        data.update({"method": "link"})
+        data.update({"onlink":self.onlink})
+        self.data_link = None
+        return data
         
     def onlink(self,listener):
         """

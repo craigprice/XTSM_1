@@ -885,7 +885,7 @@
         <MaxDuration expanded="1"/>
         <MaxTriggers expanded="1"/>
       </Channel>
-      <Channel expanded="0">
+      <Channel expanded="1">
         <Name expanded="1"/>
         <ChannelName expanded="1">GuideBeamUpAmp</ChannelName>
         <Comments expanded="1"/>
@@ -894,8 +894,8 @@
         <TimingGroupIndex expanded="1">23</TimingGroupIndex>
         <ConnectsTo expanded="1"/>
         <Group expanded="1"/>
-        <InitialValue expanded="1">-0.04</InitialValue>
-        <HoldingValue expanded="1">-0.04</HoldingValue>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
         <Calibration expanded="1"/>
         <MinValue expanded="1"/>
         <MaxValue expanded="1"/>
@@ -1225,7 +1225,7 @@
     </Instrument>
   </head>
   <body lock="1" expanded="1" disable="0">
-    <SequenceSelector _parseValue="UHVMOTFromMolassesFluorescence">"UHVMOTFromRSCFluorescence"</SequenceSelector>
+    <SequenceSelector _parseValue="UHVMOTFromMolassesFluorescence">"UHVMultiloadFromMolassesFluorescence" if numpy.mod(shotnumber,2) else "UHVMOTFromRSCFluorescence"</SequenceSelector>
     <Figure expanded="1">
       <Type>TimeSeries</Type>
     </Figure>
@@ -1872,7 +1872,7 @@
           <Value expanded="0">1</Value>
         </Edge>
       </SubSequence>
-      <SubSequence expanded="0">
+      <SubSequence expanded="1">
         <StartTime expanded="0">414</StartTime>
         <Name expanded="0">Compression Subsequence</Name>
         <Description expanded="0">Compress MOT in the source</Description>
@@ -1900,7 +1900,7 @@
           <Value expanded="0">0.1</Value>
         </Edge>
       </SubSequence>
-      <SubSequence expanded="0">
+      <SubSequence expanded="1">
         <StartTime expanded="0">420</StartTime>
         <Name expanded="0">Molasses Subsequence</Name>
         <Description expanded="0"/>
@@ -2093,7 +2093,7 @@
           <Name expanded="0">SRC Lattice AOM On</Name>
           <OnChannel expanded="0">SYLatticeOpticalPumping</OnChannel>
           <Time expanded="0">4.95</Time>
-          <Value expanded="0">0.3</Value>
+          <Value expanded="0">0.25</Value>
         </Edge>
       </SubSequence>
       <SubSequence expanded="1">
@@ -2167,13 +2167,13 @@
         <Edge expanded="0">
           <Name expanded="0">SRC Lattice Shutter Closed</Name>
           <OnChannel expanded="0">SRCLatticeShutter</OnChannel>
-          <Time expanded="0">19+10+1</Time>
+          <Time expanded="0">19+10</Time>
           <Value expanded="0">0</Value>
         </Edge>
         <Edge expanded="0">
           <Name expanded="0">SRC Lattice Shutter Closed</Name>
           <OnChannel expanded="0">RSCDepumpShutter</OnChannel>
-          <Time expanded="0">19+10+1</Time>
+          <Time expanded="0">19+10</Time>
           <Value expanded="0">0</Value>
         </Edge>
         <Edge expanded="0">
@@ -3282,9 +3282,9 @@
       <StartTime>0</StartTime>
       <EndTime>2000</EndTime>
       <InstrumentCommand expanded="1">
-        <OnInstrument>CCD</OnInstrument>
-        <PullData/>
-        <Script expanded="1">
+        <OnInstrument>CCD </OnInstrument>
+        <PullData>True</PullData>
+        <Script expanded="0">
           <Time>1</Time>
           <Remote>10.1.1.178</Remote>
           <ScriptBody>take_picture_with_Roper.py</ScriptBody>
@@ -3362,7 +3362,7 @@
         </Edge>
       </SubSequence>
       <SubSequence expanded="0">
-        <StartTime expanded="0">490+200</StartTime>
+        <StartTime expanded="0">414+200</StartTime>
         <Name expanded="0">Compression Subsequence</Name>
         <Description expanded="0">Compress MOT in the source</Description>
         <Interval expanded="1">
@@ -3390,7 +3390,7 @@
         </Edge>
       </SubSequence>
       <SubSequence expanded="0">
-        <StartTime expanded="0">495+200</StartTime>
+        <StartTime expanded="0">420+200</StartTime>
         <Name expanded="0">Molasses Subsequence</Name>
         <Description expanded="0"/>
         <Edge expanded="0">
@@ -3478,8 +3478,8 @@
           <Value expanded="0">0</Value>
         </Edge>
       </SubSequence>
-      <SubSequence expanded="1">
-        <StartTime expanded="0">495+200</StartTime>
+      <SubSequence expanded="0">
+        <StartTime expanded="0">420+200</StartTime>
         <Name expanded="0">P1 Lattice Cooling Subsequence</Name>
         <Description expanded="0">Raman Sideband cooling in the SRC</Description>
         <Edge expanded="0">
@@ -3582,11 +3582,11 @@
           <Name expanded="0">SRC Lattice AOM On</Name>
           <OnChannel expanded="0">SYLatticeOpticalPumping</OnChannel>
           <Time expanded="0">4.95</Time>
-          <Value expanded="0">0.3</Value>
+          <Value expanded="0">0.25</Value>
         </Edge>
       </SubSequence>
-      <SubSequence expanded="1">
-        <StartTime expanded="0">495+200</StartTime>
+      <SubSequence expanded="0">
+        <StartTime expanded="0">420+200</StartTime>
         <Name expanded="0">P2 Lattice Cooling Subsequence</Name>
         <Description expanded="0">Raman Sideband cooling in the SRC</Description>
         <Edge expanded="0">
@@ -3709,13 +3709,31 @@
         </Edge>
         <Edge expanded="0">
           <Name expanded="0">SRC Lattice AOM On</Name>
+          <OnChannel expanded="0">SYMOTAmplitude</OnChannel>
+          <Time expanded="0">49</Time>
+          <Value expanded="0">10</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">SRC Lattice AOM On</Name>
           <OnChannel expanded="0">RepVCOTuning</OnChannel>
           <Time expanded="0">49</Time>
           <Value expanded="0">0</Value>
         </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">SRC Lattice AOM On</Name>
+          <OnChannel expanded="0">MOTVCOTuning</OnChannel>
+          <Time expanded="0">49</Time>
+          <Value expanded="0">0</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">SRC Lattice AOM On</Name>
+          <OnChannel expanded="0">FingerMolassesShutter</OnChannel>
+          <Time expanded="0">49</Time>
+          <Value expanded="0">1</Value>
+        </Edge>
       </SubSequence>
       <SubSequence expanded="1" guid="7268711e-288b-11e4-ad06-0010187736b5">
-        <StartTime expanded="0" guid="7268711f-288b-11e4-91bd-0010187736b5">956+200</StartTime>
+        <StartTime expanded="0" guid="7268711f-288b-11e4-91bd-0010187736b5">880+200+10</StartTime>
         <Name expanded="0" guid="72687120-288b-11e4-a148-0010187736b5">UHVMOT</Name>
         <Description expanded="0" guid="72687121-288b-11e4-9663-0010187736b5">Detect atoms by time of flight</Description>
         <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
@@ -4468,7 +4486,7 @@
       <Name guid="726786af-288b-11e4-bf20-0010187736b5">UHVMOTNumber</Name>
       <StartTime guid="726786b0-288b-11e4-bb67-0010187736b5">0</StartTime>
       <EndTime guid="726786b1-288b-11e4-9fb2-0010187736b5">2000</EndTime>
-      <SubSequence expanded="0" guid="26c6d38f-3539-11e4-bceb-0010187736b5">
+      <SubSequence expanded="1" guid="26c6d38f-3539-11e4-bceb-0010187736b5">
         <StartTime guid="26c6d390-3539-11e4-9a81-0010187736b5">0</StartTime>
         <Name guid="26c6d391-3539-11e4-ad76-0010187736b5">Ini</Name>
         <Description guid="26c6d392-3539-11e4-bcf5-0010187736b5"/>
@@ -4496,7 +4514,7 @@
           <Repetitions guid="9ad060cd-321f-11e4-9ad3-f0def100403f">0</Repetitions>
         </Iterate>
         <Description expanded="0" guid="726786b5-288b-11e4-8509-0010187736b5">Load MOT in the source and drop to the finger</Description>
-        <SubSequence expanded="0" guid="726786b2-288b-11e4-a64f-0010187736b5">
+        <SubSequence expanded="1" guid="726786b2-288b-11e4-a64f-0010187736b5">
           <StartTime expanded="0" guid="726786b3-288b-11e4-83ad-0010187736b5">0</StartTime>
           <Name expanded="0" guid="726786b4-288b-11e4-ba88-0010187736b5">MOT Subsequence</Name>
           <Description expanded="0" guid="726786b5-288b-11e4-8509-0010187736b5">Load MOT in the source and drop to the finger</Description>
@@ -4549,7 +4567,7 @@
             <Value expanded="0" guid="7267d4da-288b-11e4-a225-0010187736b5">0</Value>
           </Edge>
         </SubSequence>
-        <SubSequence expanded="0" guid="7267d4e0-288b-11e4-b723-0010187736b5">
+        <SubSequence expanded="1" guid="7267d4e0-288b-11e4-b723-0010187736b5">
           <StartTime expanded="0" guid="7267d4e1-288b-11e4-b7a7-0010187736b5">490+200</StartTime>
           <Name expanded="0" guid="7267d4e2-288b-11e4-b148-0010187736b5">Compression Subsequence</Name>
           <Description expanded="0" guid="7267d4e3-288b-11e4-b9cd-0010187736b5">Compress MOT in the source</Description>
@@ -4577,7 +4595,7 @@
             <Value expanded="0" guid="7267fbee-288b-11e4-b61b-0010187736b5">0.1</Value>
           </Edge>
         </SubSequence>
-        <SubSequence expanded="0" guid="7267fbef-288b-11e4-97e6-0010187736b5">
+        <SubSequence expanded="1" guid="7267fbef-288b-11e4-97e6-0010187736b5">
           <StartTime expanded="0" guid="7267fbf0-288b-11e4-b795-0010187736b5">495+200</StartTime>
           <Name expanded="0" guid="7267fbf1-288b-11e4-8223-0010187736b5">Molasses Subsequence</Name>
           <Description guid="7267fbf2-288b-11e4-8c6a-0010187736b5" expanded="0"/>
@@ -4659,7 +4677,7 @@
           <Name expanded="0" guid="726786b4-288b-11e4-ba88-0010187736b5">_iterations_of_Multiload</Name>
         </SubSequence>
       </SubSequence>
-      <SubSequence expanded="0" guid="7268711e-288b-11e4-ad06-0010187736b5">
+      <SubSequence expanded="1" guid="7268711e-288b-11e4-ad06-0010187736b5">
         <StartTime expanded="0" guid="7268711f-288b-11e4-91bd-0010187736b5">850+80+200+20</StartTime>
         <Name expanded="0" guid="72687120-288b-11e4-a148-0010187736b5">UHVMOT</Name>
         <Description expanded="0" guid="72687121-288b-11e4-9663-0010187736b5">Detect atoms by time of flight</Description>

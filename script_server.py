@@ -57,6 +57,7 @@ class MyServerProtocol(WebSocketServerProtocol):
 
    def onClose(self, wasClean, code, reason):
       print("WebSocket connection closed: {0}".format(reason))
+      server_shutdown()
 
 class MulticastProtocol(DatagramProtocol):
     """
