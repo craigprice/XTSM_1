@@ -42,6 +42,7 @@ class Live_Content(XTSM_Server_Objects.XTSM_Server_Object,object):
         responses to users - it will be provided to the live content manager,
         which will call it on user activity
         """
+        print "In class Live_Content, function _user_callback"
         try: getattr(self,params['args'][0])(params['args'][1:])        
         except Exception as e: 
             print e
@@ -76,6 +77,7 @@ class Live_Content(XTSM_Server_Objects.XTSM_Server_Object,object):
         
         note that the XTSM core class overrides this method.
         """
+        print "In class Live_Content, function onChange"
         try: 
             for listener in self._registeredListeners:  
                 params = self._registeredListeners[listener]
@@ -90,6 +92,7 @@ class Live_Content(XTSM_Server_Objects.XTSM_Server_Object,object):
         this is overwritten in the XTSM classes by the core class inheritance
         but for non-XTSM objects inheriting this class, this is the base method
         """
+        print "In class Live_Content, function registerListener"
         if type(listener_callback)!=type({}): 
             listener_callback={"method":listener_callback}        
         listener_callback.update({"listener_id":str(uuid.uuid1())})
@@ -112,6 +115,7 @@ class Live_Content_Manager(XTSM_Server_Objects.XTSM_Server_Object, dict):
     live content items (values) and their content_id tags (keys)
     """
     def __init__(self):
+        print "In class Live_Content_Manager, function __init__"
         self.max_data=LIVE_CONTENT_MANAGER_MAXDATA
         self.provided_to={}
         self.inserted_at={}
@@ -152,6 +156,7 @@ class Live_Content_Manager(XTSM_Server_Objects.XTSM_Server_Object, dict):
         and record of requestor (optional identifier - can be any data type, but
         preference is a websocket protocol); also keeps track of time taken to generate content
         """
+        print "In class Live_Content_Manager, function get_content"
         #pdb.set_trace()
         if (content_id=="1234" and not self.has_key("1234")):   # for testing purposes - can be removed
             self.update({"1234":self.live_icon(requester)})
@@ -207,6 +212,7 @@ class Live_Content_Manager(XTSM_Server_Objects.XTSM_Server_Object, dict):
         registers a server-necessary event back from a live data item in the GUI - 
         calls the live data element's corresponding method
         """
+        print "In class Live_Content_Manager, function registerEvent"
         try: self[params['content_id']]._user_callback(params)
         except: pass
             
@@ -220,6 +226,7 @@ class Live_Content_Manager(XTSM_Server_Objects.XTSM_Server_Object, dict):
         could immediately request new data for local storage rather than wait for a new request
         from consumer
         """
+        print "In class Live_Content_Manager, function _item_changed"
         self.content[params['content_id']]=None
         self.last_change.update({params['content_id']:time.time()})
         for user in self.provided_to[params['content_id']]:
@@ -253,14 +260,27 @@ class Live_Content_Manager(XTSM_Server_Objects.XTSM_Server_Object, dict):
             self.iterate=True
             self.ind=0
             self.l=requester.factory.parent.task.LoopingCall(self.cycle)
-            self.icon_stack=["seqicon_item_addGraph.png","seqicon_item_addTimingGroupData.png","seqicon_default.png","seqicon_building.svg"]
+            self.icon_stack=["seqicon_item_addGraph.png",
+                             "seqicon_item_addTimingGroupData.png",
+                             "seqicon_default.png",
+                             "seqicon_building.svg"]
             self.l.start(2, now=False)            
             
         def cycle(self):
             if self.iterate: self.ind+=1
             
         def _generate_live_content(self):
-            return "<img src=../images/" + self.icon_stack[self.ind%4]+" height='25px' onclick='live_content_event(this,\"on_aclick\");' onmouseover='this.setAttribute(\"height\",\"50px\");' onmouseout='this.setAttribute(\"height\",\"25px\");' />"
-        
+            height = "height='25px'"
+            onclick = "onclick='live_content_event(this,\"on_aclick\");'"
+            onmsover = "onmouseover='this.setAttribute(\"height\",\"50px\");'"
+            onmsout = "onmouseout='this.setAttribute(\"height\",\"25px\");' />"
+            msg = str("<img src=../images/" +
+                      self.icon_stack[self.ind%4]+
+                      " " + height +
+                      " " + onclick +
+                      " " + onmsover +
+                      " " + onmsout)
+            return msg
+
         def on_aclick(self,params):
             self.iterate = not self.iterate 

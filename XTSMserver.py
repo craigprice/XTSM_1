@@ -907,6 +907,10 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
             '''
             if self.peer_servers[key].ip == ping_payload['server_ip']:
                 found = True
+                '''
+                There will be two peer server instances for this server.
+                (both client and server is a peer_server instance)
+                '''
                 self.peer_servers[key].server_id = ping_payload['server_id']
                 self.peer_servers[key].last_broadcast_time = time.time()
                 self.peer_servers[key].is_active_parser = bool(ping_payload['is_active_parser'])
@@ -1662,8 +1666,8 @@ class CommandLibrary():
                     DataBomb.DataListenerManager())
 
         
-        dbombnum=dc['_bombstack'].add(DataBomb.DataBombList.DataBomb(params['databomb']))
-        msg = {'Not_Command_text_message':'databomb ' + dbombnum + ' updated at ' + time.strftime("%H:%M:%S") + '.','terminator':'die'}
+        bomb_id=dc['_bombstack'].add(DataBomb.DataBombList.DataBomb(params['databomb']))
+        msg = {'Not_Command_text_message':'databomb ' + bomb_id + ' updated at ' + time.strftime("%H:%M:%S") + '.','terminator':'die'}
         #msg = {'Not_Command_text_message':'hi','terminator':'die'}        
         
         #This closes the ws connection - I don't know why - CP       
@@ -1673,7 +1677,8 @@ class CommandLibrary():
             #params['request']['protocol'].transport.loseConnection()
             
         # next line adds a deployment command to the command queue
-        self.server.command_queue.add(ServerCommand(dc['_bombstack'].deploy,dbombnum))
+        #This should be moved into the Databomb class
+        self.server.command_queue.add(ServerCommand(dc['_bombstack'].deploy,bomb_id))
         #self.temp_plot(params, dbombnum)
         
     def temp_plot(self, params, dbombnum):
@@ -1750,7 +1755,7 @@ class CommandLibrary():
         '''
         
         path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()
-        file_name = 'databomb_' + dbombnum + '_at_time_' + str(raw_databomb['packed_time'])
+        file_name = 'databomb_' + bomb_id + '_at_time_' + str(raw_databomb['packed_time'])
         plt.title("SN="+str(raw_databomb['shotnumber'])+'\n_'+path+'\n/'+file_name+'\nNum_Atoms=total_counts*303*10^-6 = '+str(num_atoms)+' Counts = '+str(region_of_interest.sum()), fontsize=10)
         #reactor.callInThread(plt.show,'block=False')
         #reactor.callFromThread(plt.close)

@@ -80,6 +80,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
             uuid - deploys by the unique identifier assigned to the bomb on add
         """
         print "In class DataBombList, function deploy"
+        print "criteria:", criteria
         if not hasattr(self,'dataListenerManagers'): self.dataListenerManagers=[]
         def all_c(o):
             for bomb in o.databombs:
@@ -325,6 +326,7 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             params = defaultparams
         for key in params:
             defaultparams.update({key:params[key]})
+        print "Params for listener:", defaultparams
         newguy = self.DataListener(defaultparams)        
         self.listeners.update({newguy.id:newguy})
         
@@ -373,9 +375,15 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             """
             constructor for class
             """
+            print "In class DataListener, function __init__"
             self.sender = None
             self.server = None
             self.id='DL'+str(uuid.uuid1())
+            self.listen_for = None
+            self.timecreated = None
+            self.generator = None
+            self.timeout = None
+            self.eventcount = None
             defaultparams={'listen_for':{'sender':'','shotnumber':-1,'repnumber': None}
                             , 'timecreated':time.time(), 'generator': None
                             , 'timeout':360, 'eventcount':1 }        
@@ -383,6 +391,7 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
                 defaultparams.update({key:params[key]})
             self.datalinks=[]
             self.expirationtime = time.time() + defaultparams['timeout']
+            print "Params for DataListener:", defaultparams
             for key in defaultparams.keys():
                 setattr(self,str(key),defaultparams[key])   
             #pdb.set_trace()

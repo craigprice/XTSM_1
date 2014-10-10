@@ -2431,7 +2431,8 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
             return
         
             
-        if (not self.scoped): self.buildScope()
+        if (not self.scoped):
+			self.buildScope()
         data={}
         #pdb.set_trace()
         data.update({"generator": self})
@@ -2451,8 +2452,8 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
                                           "sender":gen}
                                    #"sender":tgobj.Name.PCDATA}
         self.__listener_criteria__.update({'data_generator':gen,
-                                     'server_IP_address':instrument_head.ServerIPAddress[0].PCDATA,
-                                        'number_in_data_sequence':0})
+										   'server_IP_address':instrument_head.ServerIPAddress[0].PCDATA,
+                                           'number_in_data_sequence':0})
         data.update({"listen_for":self.__listener_criteria__ })
         data.update({"method": "link"})
         data.update({"onlink":self.onlink})
