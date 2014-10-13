@@ -9,9 +9,12 @@ import time, datetime, uuid, io, os
 import xstatus_ready
 import file_locations
 import XTSM_Server_Objects
+import pdb
 import msgpack
+import cStringIO
+import zlib
 
-DEFAULT_CHUNKSIZE=10*1000*1000
+DEFAULT_CHUNKSIZE=100*1000*1000
 
 class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Object):
     """
@@ -25,6 +28,8 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
     def __init__(self, params={}):
         print "class FileStream, func __init__()"
         today = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
+        self.compression_strength = 9 # 1-9, 1 fastest, least compression. 6 default
+        self.compressobj = zlib.compressobj(self.compression_strength)
         defaultparams = { 'timecreated':time.time(),
                        'chunksize': DEFAULT_CHUNKSIZE,
                        'byteswritten' : 0}
@@ -75,12 +80,27 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         returns the file location of the chunk written.
         """
         self.byteswritten += len(bytestream)
-        self.stream.write(bytestream)
+        cBlock = self.compressobj.compress(bytestream)
+        self.stream.write(cBlock)
         if (self.byteswritten > self.chunksize) and (not keep_stream_open): 
-            self.chunkon()
-            self.byteswritten += len(bytestream)
+            self.__flush__()
             self.stream.write(bytestream)
+            self.byteswritten += len(bytestream)
         return self.location
+        
+        
+    def open_file(self):
+        fileName = 'c:/wamp/www/raw_buffers/DBFS/2014-10-13/6ea6bf2e-52fe-11e4-b225-0010187736b5.msgp'
+        import zlib
+        import cStringIO
+        f = open(fileName,'rb')
+        c = zlib.decompressobj()
+        cBlock = c.decompress(f.read())
+        print cBlock
+        output = cStringIO.StringIO(cBlock)
+        unpacker = msgpack.Unpacker(output,use_list=False)# If data was msgpacked
+        print unpacker.next()
+        print cBlock
         
     def chunkon(self):
         """
@@ -90,11 +110,14 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         self.stream.close()
         self.location = self.location_root + str(uuid.uuid1()) + '.msgp'            
         self.stream = io.open(self.location,'ab')
+        self.compressobj = zlib.compressobj(self.compression_strength)
         #self.stream.write(msgpack.packb('}'))
         self.filehistory.append(self.location)
         self.byteswritten = 0
         
     def __flush__(self):
+        cBlock = self.compressobj.flush()
+        self.stream.write(cBlock)
         self.stream.flush()
         self.chunkon()
         self.output_log()

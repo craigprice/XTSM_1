@@ -1,5 +1,6 @@
-import glab_instrument
-self.server.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self.server,'create_example_pollcallback':True})})
+#import glab_instrument
+#self.server.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self.server,'create_example_pollcallback':True})})
+'''
 '''
 import Roper_CCD
 isInitialized = False
@@ -22,4 +23,5 @@ self.server.dataContexts['default'].dict['Roper_CCD'].set_param({"EXP_TIMING_MOD
                        "EXP_ANALOG_GAIN":3})    
 self.server.dataContexts['default'].dict['Roper_CCD'].start_acquisition()
 #print "Done with Script"
+'''
 '''

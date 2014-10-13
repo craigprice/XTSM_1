@@ -638,6 +638,7 @@ class DataContext(XTSM_Server_Objects.XTSM_Server_Object):
         for item in self.dict:
             try:
                 self.dict[item].__flush__()
+                self.dict[item].flush()
             except AttributeError:
                 pass
         XTSM_Server_Objects.XTSM_Server_Object.__flush__(self)
@@ -1160,6 +1161,9 @@ class ScriptServer(GlabClient):
         self.in_use = True
         self.is_open_connection = True
         self.connection_manager.script_servers.update({self.id:self})
+        if len(self.connection_manager.script_servers) < 2:
+            script_command = ServerCommand(self.connection_manager.add_script_server)
+            reactor.callLater(0.1, self.server.command_queue.add, script_command)
         self.server.connection_manager.connectLog(self)  
         self.protocol.sendMessage("output_from_script = 'Script Server Ready!'")
         
@@ -1878,7 +1882,7 @@ class CommandLibrary():
         '''Need to move this to the conditions on exectuting commands in the queue'''
         script_server = self.server.connection_manager.get_available_script_server()#Need to call this in order to create script_servers. Returns None when no servers ready     
         #print "return from get_avail... ss =", ss
-        if ss == None:
+        if script_server == None:
             pass
             #Need to add self back to the queue
             return
@@ -2261,7 +2265,6 @@ class GlabPythonManager():
                 
         script_command = ServerCommand(self.connection_manager.add_script_server)
         reactor.callWhenRunning(self.command_queue.add, script_command)
-        reactor.callWhenRunning(self.command_queue.add, script_command)
         
         self.server_ping_period = 5.0 
         ping_command = ServerCommand(self.server_ping)
@@ -2338,11 +2341,11 @@ class GlabPythonManager():
         Exit routine; stops twisted reactor
         """
         print "Closing Python Manager"
+        self.flush_all()
         for key in self.connection_manager.peer_servers.keys():
             self.connection_manager.peer_servers[key].protocol.sendClose()
         for key in self.connection_manager.script_servers.keys():
             self.connection_manager.script_servers[key].protocol.sendClose()
-        self.flush_all()
         self.close_all()
         #self.laud.loseConnection()
         print self.connection_manager.is_connections_closed()
