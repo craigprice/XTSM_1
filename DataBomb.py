@@ -265,13 +265,13 @@ class DataBombList(xstatus_ready.xstatus_ready):
             #print "Listeners:", 
             #pdb.set_trace()
             if not hasattr(listenerManagers,'__iter__'):
-                listenerManagers=[listenerManagers]
+                listenerManagers = [listenerManagers]
             for fragment in [a for a in self.data.keys() if not self.notify_data.has_key(a)]:
                 for listenerManager in listenerManagers:
                     self.notify_data.update({"fragmentName":fragment})   
-                    frag_1 = {fragment:self.data[fragment]}
-                    frag_2 = {fragment:[f+"["+fragment+"]" for f in self.raw_links]}
-                    listenerManager.notify_data_present(self.notify_data,frag_1,frag_2)
+                    data = {fragment:self.data[fragment]}
+                    datalinks = {fragment:[f+"["+fragment+"]" for f in self.raw_links]}
+                    listenerManager.notify_data_present(self.notify_data,data,datalinks)
             try: 
                 del self.notify_data["fragmentName"]
             except KeyError:
@@ -326,7 +326,7 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
             params = defaultparams
         for key in params:
             defaultparams.update({key:params[key]})
-        print "Params for listener:", defaultparams
+        #print "Params for listener:", defaultparams
         newguy = self.DataListener(defaultparams)        
         self.listeners.update({newguy.id:newguy})
         
@@ -391,7 +391,7 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
                 defaultparams.update({key:params[key]})
             self.datalinks=[]
             self.expirationtime = time.time() + defaultparams['timeout']
-            print "Params for DataListener:", defaultparams
+            print "DefaultParams for DataListener:", defaultparams
             for key in defaultparams.keys():
                 setattr(self,str(key),defaultparams[key])   
             #pdb.set_trace()
@@ -663,7 +663,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 #self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
                 self.destinations.append("10.1.1.124")
             self.destinations = [x for x in self.destinations if x is not None]
-            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'default:127.0.0.1','databomb':self.packed_data}, use_bin_type=True)
+            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'PXI','databomb':self.packed_data}, use_bin_type=True)
             for dest in self.destinations:
                 dest = "10.1.1.124"
                 if dest == None:

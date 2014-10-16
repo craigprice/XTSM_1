@@ -563,7 +563,9 @@ class XTSM_core(object):
         """
         #print "In class XTSM_core, func installListeners"       
         if hasattr(self,"__generate_listener__"):
-            listenerManager.spawn(self.__generate_listener__())
+            params = self.__generate_listener__()
+            if params != None:
+                listenerManager.spawn(params)
         child_nodes = self.getChildNodes()
         for idx, child in enumerate(child_nodes):
             child.installListeners(listenerManager)
@@ -2367,7 +2369,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                 if getattr(self,cont[0]).get_tag() == cont[1]:
                     self.script_destination = action(self)
         sn = xtsm_owner.getItemByFieldValue("Parameter","Name","shotnumber")
-        self.insert(sn)
+        #self.insert(sn)
         self.Time[0].parse()
         #msg = self.write_xml()
         msg = self.ScriptBody.PCDATA
@@ -2381,7 +2383,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                                  "on_main_server":True,
                                  "instrument_name":self.__parent__.OnInstrument[0].PCDATA,
                                  "time_to_execute":self.Time.PCDATA,
-                                 "shotnumber":self.Parameter.Value.PCDATA,
+                                 "shotnumber":sn.Value.PCDATA,
                                  "terminator":"die"})
         if not server.send(pckg,self.script_destination,isBinary=False):
             print self.script_destination, "Did not receive this message:"
@@ -2430,9 +2432,10 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         if self.PullData.PCDATA == 'False':
             return
         
-            
+        
         if (not self.scoped):
-			self.buildScope()
+            self.buildScope()
+        print "scope:", self.scope.keys()
         data={}
         #pdb.set_trace()
         data.update({"generator": self})
@@ -2446,13 +2449,13 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
                                                          "OnInstrument",
                                                          self.OnInstrument[0].PCDATA)
-        gen =  instrument_head.ServerIPAddress[0].PCDATA #CCD right now
+        gen =  instrument_head.ServerIPAddress[0].PCDATA 
         print gen
         self.__listener_criteria__ = {"shotnumber":int(self.scope["shotnumber"]),
                                           "sender":gen}
                                    #"sender":tgobj.Name.PCDATA}
         self.__listener_criteria__.update({'data_generator':gen,
-										   'server_IP_address':instrument_head.ServerIPAddress[0].PCDATA,
+                                           'server_IP_address':instrument_head.ServerIPAddress[0].PCDATA,
                                            'number_in_data_sequence':0})
         data.update({"listen_for":self.__listener_criteria__ })
         data.update({"method": "link"})
@@ -2469,11 +2472,12 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         #print "Class InstrumentCommand, function onlink"
         #print "data links in listeners:"
         #print listener.datalinks
-        #pdb.set_trace()
         for link in listener.datalinks:
             for elm in link:
-                self.insert(DataLink(reference_string=link[elm]))#Change t oDataLInk, argument for initialization is <URL for a file>.msgp[idstring][element]
-
+                reference_string = link[elm]
+                self.insert(DataLink(reference_string))#Change t oDataLInk, argument for initialization is <URL for a file>.msgp[idstring][element]
+                #print "Inserted DataLink into:", self, "with arg:", reference_string
+                
 class ScriptOutput(gnosis.xml.objectify._XO_,XTSM_core):
     """
     A class for exporting script results to datanodes
@@ -2771,18 +2775,23 @@ class DataLink(gnosis.xml.objectify._XO_,XTSM_core):
         creates a DataLink XTSM element from a reference string - expected formats
         for reference string are:
             
-        <URL for a file>.msgp[idstring][element]
+        <URL for a file>.msgp?idstring=xxx
         URL for dataheap elements not devised yet... follow hdf5 convention!        
         ... no more so far ...
+        xxx will be the way to navigate within the file to get to the linked
+        piece of data.
+        make some sort of hierarchical format that allows (with slashes would
+        be simple to remember) navigation within the file.
+        eg. stream to disk is shot centric. Sort by shot would make sense.
         """
         XTSM_core.__init__(self)
-        if reference_string.count('.msgp')>=1:
+        if reference_string.count('.msgp') >= 1:
             self.set_value(reference_string)
             return
         else: self.set_value(reference_string)
         
     def attach_data(self):
-        self.PCDATA=saxutils.escape(str(self.get_data()))
+        self.PCDATA = saxutils.escape(str(self.get_data()))
     
     def retrieveData(self):
         if self.PCDATA.find('.heap')>=0: return self.get_from_heap()
@@ -2791,17 +2800,20 @@ class DataLink(gnosis.xml.objectify._XO_,XTSM_core):
         if self.PCDATA.find('.msgp')>=0: return self.get_from_msgp()
         
     def get_from_msgp(self):
-        dataelm=self.PCDATA.split('.msgp[')[1].split(']')[0]
-        f=io.open(self.PCDATA.split('.msgp[')[0],'rb')
-        alldata=msgpack.unpackb[f.readall()]
+        dataelm = self.PCDATA.split('.msgp[')[1].split(']')[0]
+        f = io.open(self.PCDATA.split('.msgp[')[0],'rb')
+        alldata = msgpack.unpackb[f.readall()]
         f.close()
         return alldata[dataelm]
 
     def get_from_heap(self):
-        if not self.scoped: self.buildScope()
+        if not self.scoped:
+            self.buildScope()
         heapname = self.PCDATA.split('.heap')[0]
-        try: return self.getOwnerXTSM().dataContext['_heaps'][heapname].getdata(self.scope['shotnumber'])
-        except: False
+        try: 
+            return self.getOwnerXTSM().dataContext['_heaps'][heapname].getdata(self.scope['shotnumber'])
+        except:
+            False
 
     def get_from_hdf5(self):
         loc=self.PCDATA.split['.h5']

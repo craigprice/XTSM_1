@@ -13,6 +13,7 @@ import pdb
 import msgpack
 import cStringIO
 import zlib
+import zipfile
 
 DEFAULT_CHUNKSIZE=100*1000*1000
 
@@ -45,9 +46,11 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
             setattr(self, key, defaultparams[key])   
         self.location = self.location_root + str(uuid.uuid1()) + '.msgp'
         try: 
+            #self.zip_file = zipfile.ZipFile(self.location, mode='a', compression=zipfile.ZIP_DEFLATED)
             self.stream = io.open(self.location, 'ab')
         except IOError: #Folder doesn't exist, then we make the day's folder.
             os.makedirs(self.location_root)
+            #self.zip_file = zipfile.ZipFile()
             self.stream = io.open(self.location, 'ab')
             #self.write(msgpack.packb('}'))
         self.filehistory = [self.location]
@@ -93,6 +96,20 @@ class FileStream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         fileName = 'c:/wamp/www/raw_buffers/DBFS/2014-10-13/6ea6bf2e-52fe-11e4-b225-0010187736b5.msgp'
         import zlib
         import cStringIO
+        import zipfile
+        zf = zipfile.ZipFile(fileName, 'r')
+        print zf.namelist()
+        for info in zf.infolist():
+            print info.filename
+            print '\tComment:\t', info.comment
+            print '\tModified:\t', datetime.datetime(*info.date_time)
+            print '\tSystem:\t\t', info.create_system, '(0 = Windows, 3 = Unix)'
+            print '\tZIP version:\t', info.create_version
+            print '\tCompressed:\t', info.compress_size, 'bytes'
+            print '\tUncompressed:\t', info.file_size, 'bytes'
+            print
+        #info = zf.getinfo(filename)
+        #data = zf.read(filename)
         f = open(fileName,'rb')
         c = zlib.decompressobj()
         cBlock = c.decompress(f.read())

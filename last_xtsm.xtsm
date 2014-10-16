@@ -308,6 +308,24 @@
         <MaxDuration expanded="1"/>
         <MaxTriggers expanded="1"/>
       </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">UHVCoilSwitchNorth</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">25</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">1</HoldingValue>
+        <InitialValue expanded="1">1</InitialValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
       <TimingGroupData expanded="0">
         <Name expanded="1">RIO01/sync</Name>
         <Description expanded="1">FPGA - based synchronous commands - upper half of the FPGA .vi; master clock source for experiment.  PXI-7951R, slot 5</Description>
@@ -885,7 +903,7 @@
         <MaxDuration expanded="1"/>
         <MaxTriggers expanded="1"/>
       </Channel>
-      <Channel expanded="1">
+      <Channel expanded="0">
         <Name expanded="1"/>
         <ChannelName expanded="1">GuideBeamUpAmp</ChannelName>
         <Comments expanded="1"/>
@@ -1225,7 +1243,7 @@
     </Instrument>
   </head>
   <body lock="1" expanded="1" disable="0">
-    <SequenceSelector _parseValue="UHVMOTFromMolassesFluorescence">"UHVMultiloadFromMolassesFluorescence" if numpy.mod(shotnumber,2) else "UHVMOTFromRSCFluorescence"</SequenceSelector>
+    <SequenceSelector _parseValue="UHVMOTFromMolassesFluorescence">"UHVMultiloadFromMolassesFluorescence"</SequenceSelector>
     <Figure expanded="1">
       <Type>TimeSeries</Type>
     </Figure>
@@ -1233,7 +1251,7 @@
       <Name>MolassesTOFSeq</Name>
       <StartTime>0</StartTime>
       <EndTime>1000</EndTime>
-      <SubSequence expanded="1">
+      <SubSequence expanded="0">
         <StartTime expanded="0">0</StartTime>
         <Name expanded="0">MOT Subsequence</Name>
         <Description expanded="0">Load MOT in the source and drop to the finger</Description>
@@ -3277,7 +3295,7 @@
         </Edge>
       </SubSequence>
     </Sequence>
-    <Sequence expanded="1">
+    <Sequence expanded="0">
       <Name>UHVMOTFromRSCFluorescence</Name>
       <StartTime>0</StartTime>
       <EndTime>2000</EndTime>
@@ -3362,7 +3380,7 @@
         </Edge>
       </SubSequence>
       <SubSequence expanded="0">
-        <StartTime expanded="0">414+200</StartTime>
+        <StartTime expanded="0">414</StartTime>
         <Name expanded="0">Compression Subsequence</Name>
         <Description expanded="0">Compress MOT in the source</Description>
         <Interval expanded="1">
@@ -3390,7 +3408,7 @@
         </Edge>
       </SubSequence>
       <SubSequence expanded="0">
-        <StartTime expanded="0">420+200</StartTime>
+        <StartTime expanded="0">420</StartTime>
         <Name expanded="0">Molasses Subsequence</Name>
         <Description expanded="0"/>
         <Edge expanded="0">
@@ -3479,7 +3497,7 @@
         </Edge>
       </SubSequence>
       <SubSequence expanded="0">
-        <StartTime expanded="0">420+200</StartTime>
+        <StartTime expanded="0">420</StartTime>
         <Name expanded="0">P1 Lattice Cooling Subsequence</Name>
         <Description expanded="0">Raman Sideband cooling in the SRC</Description>
         <Edge expanded="0">
@@ -3586,7 +3604,7 @@
         </Edge>
       </SubSequence>
       <SubSequence expanded="0">
-        <StartTime expanded="0">420+200</StartTime>
+        <StartTime expanded="0">420</StartTime>
         <Name expanded="0">P2 Lattice Cooling Subsequence</Name>
         <Description expanded="0">Raman Sideband cooling in the SRC</Description>
         <Edge expanded="0">
@@ -3733,7 +3751,7 @@
         </Edge>
       </SubSequence>
       <SubSequence expanded="1" guid="7268711e-288b-11e4-ad06-0010187736b5">
-        <StartTime expanded="0" guid="7268711f-288b-11e4-91bd-0010187736b5">880+200+10</StartTime>
+        <StartTime expanded="0" guid="7268711f-288b-11e4-91bd-0010187736b5">850+80+200</StartTime>
         <Name expanded="0" guid="72687120-288b-11e4-a148-0010187736b5">UHVMOT</Name>
         <Description expanded="0" guid="72687121-288b-11e4-9663-0010187736b5">Detect atoms by time of flight</Description>
         <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
@@ -4139,7 +4157,7 @@
           <Name expanded="0" guid="72689831-288b-11e4-9a4f-0010187736b5">TOF Scope Trigger</Name>
           <OnChannel expanded="0" guid="72689832-288b-11e4-b4d1-0010187736b5">UHVCompCoilUpDown</OnChannel>
           <Time expanded="0" guid="72689833-288b-11e4-a950-0010187736b5">-20</Time>
-          <Value expanded="0" guid="72689834-288b-11e4-bca6-0010187736b5">-9.5</Value>
+          <Value expanded="0" guid="72689834-288b-11e4-bca6-0010187736b5">-7</Value>
         </Edge>
         <Edge expanded="0" guid="72689835-288b-11e4-81b5-0010187736b5">
           <Name expanded="0" guid="72689836-288b-11e4-b5d9-0010187736b5">TOF Scope Trigger</Name>
@@ -4155,11 +4173,11 @@
         </Edge>
       </SubSequence>
     </Sequence>
-    <Sequence expanded="0" guid="726786ae-288b-11e4-85fc-0010187736b5">
+    <Sequence expanded="1" guid="726786ae-288b-11e4-85fc-0010187736b5">
       <Name guid="726786af-288b-11e4-bf20-0010187736b5">UHVMultiloadFromMolassesFluorescence</Name>
       <StartTime guid="726786b0-288b-11e4-bb67-0010187736b5">0</StartTime>
-      <EndTime guid="726786b1-288b-11e4-9fb2-0010187736b5">2000</EndTime>
-      <SubSequence expanded="1" guid="26c6d38f-3539-11e4-bceb-0010187736b5">
+      <EndTime guid="726786b1-288b-11e4-9fb2-0010187736b5">2000+2000</EndTime>
+      <SubSequence expanded="0" guid="26c6d38f-3539-11e4-bceb-0010187736b5">
         <StartTime guid="26c6d390-3539-11e4-9a81-0010187736b5">0</StartTime>
         <Name guid="26c6d391-3539-11e4-ad76-0010187736b5">Ini</Name>
         <Description guid="26c6d392-3539-11e4-bcf5-0010187736b5"/>
@@ -4179,7 +4197,7 @@
           <Value guid="26c6d39e-3539-11e4-a27a-0010187736b5">1</Value>
         </Edge>
       </SubSequence>
-      <SubSequence expanded="1" guid="726786b2-288b-11e4-a64f-0010187736b5">
+      <SubSequence expanded="0" guid="726786b2-288b-11e4-a64f-0010187736b5">
         <StartTime expanded="0" guid="726786b3-288b-11e4-83ad-0010187736b5">0</StartTime>
         <Name expanded="0" guid="726786b4-288b-11e4-ba88-0010187736b5">Multiload</Name>
         <Iterate expanded="1" guid="9ad060cb-321f-11e4-b302-f0def100403f">
@@ -4187,7 +4205,7 @@
           <Repetitions guid="9ad060cd-321f-11e4-9ad3-f0def100403f">0</Repetitions>
         </Iterate>
         <Description expanded="0" guid="726786b5-288b-11e4-8509-0010187736b5">Load MOT in the source and drop to the finger</Description>
-        <SubSequence expanded="1" guid="726786b2-288b-11e4-a64f-0010187736b5">
+        <SubSequence expanded="0" guid="726786b2-288b-11e4-a64f-0010187736b5">
           <StartTime expanded="0" guid="726786b3-288b-11e4-83ad-0010187736b5">0</StartTime>
           <Name expanded="0" guid="726786b4-288b-11e4-ba88-0010187736b5">MOT Subsequence</Name>
           <Description expanded="0" guid="726786b5-288b-11e4-8509-0010187736b5">Load MOT in the source and drop to the finger</Description>
@@ -4240,7 +4258,7 @@
             <Value expanded="0" guid="7267d4da-288b-11e4-a225-0010187736b5">0</Value>
           </Edge>
         </SubSequence>
-        <SubSequence expanded="1" guid="7267d4e0-288b-11e4-b723-0010187736b5">
+        <SubSequence expanded="0" guid="7267d4e0-288b-11e4-b723-0010187736b5">
           <StartTime expanded="0" guid="7267d4e1-288b-11e4-b7a7-0010187736b5">490+200</StartTime>
           <Name expanded="0" guid="7267d4e2-288b-11e4-b148-0010187736b5">Compression Subsequence</Name>
           <Description expanded="0" guid="7267d4e3-288b-11e4-b9cd-0010187736b5">Compress MOT in the source</Description>
@@ -4268,7 +4286,7 @@
             <Value expanded="0" guid="7267fbee-288b-11e4-b61b-0010187736b5">0.1</Value>
           </Edge>
         </SubSequence>
-        <SubSequence expanded="1" guid="7267fbef-288b-11e4-97e6-0010187736b5">
+        <SubSequence expanded="0" guid="7267fbef-288b-11e4-97e6-0010187736b5">
           <StartTime expanded="0" guid="7267fbf0-288b-11e4-b795-0010187736b5">495+200</StartTime>
           <Name expanded="0" guid="7267fbf1-288b-11e4-8223-0010187736b5">Molasses Subsequence</Name>
           <Description guid="7267fbf2-288b-11e4-8c6a-0010187736b5" expanded="0"/>
@@ -4345,7 +4363,7 @@
             <Value expanded="0" guid="72687118-288b-11e4-9707-0010187736b5">0</Value>
           </Edge>
         </SubSequence>
-        <SubSequence guid="7b972c40-4271-11e4-9cf5-0010187736b5">
+        <SubSequence guid="7b972c40-4271-11e4-9cf5-0010187736b5" expanded="0">
           <StartTime guid="726786b3-288b-11e4-83ad-0010187736b5" expanded="0">0</StartTime>
           <Name expanded="0" guid="726786b4-288b-11e4-ba88-0010187736b5">_iterations_of_Multiload</Name>
         </SubSequence>
@@ -4354,96 +4372,6 @@
         <StartTime expanded="0" guid="7268711f-288b-11e4-91bd-0010187736b5">850+80+200</StartTime>
         <Name expanded="0" guid="72687120-288b-11e4-a148-0010187736b5">UHVMOT</Name>
         <Description expanded="0" guid="72687121-288b-11e4-9663-0010187736b5">Detect atoms by time of flight</Description>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">20</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">100</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">150</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0-506</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0-500</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">10</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">20</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCoilCurrentControl</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">300</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYFingerMolassesAmplitude</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">300</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">-0.04</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYFingerMolassesAmplitude</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">450</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">10</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+20</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+100</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
-        </Edge>
-        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
-          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
-          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
-          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+10</Time>
-          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
-        </Edge>
         <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
           <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
           <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCompCoilNorthSouth0</OnChannel>
@@ -4479,6 +4407,250 @@
           <OnChannel expanded="0" guid="72689837-288b-11e4-94d7-0010187736b5">UHVCompCoilEastWest</OnChannel>
           <Time expanded="0" guid="72689838-288b-11e4-a22a-0010187736b5">-20</Time>
           <Value expanded="0" guid="7268bf30-288b-11e4-9288-0010187736b5">4</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="0" guid="7267fbef-288b-11e4-97e6-0010187736b5">
+        <StartTime expanded="0" guid="7267fbf0-288b-11e4-b795-0010187736b5">850+80+200+20</StartTime>
+        <Name expanded="0" guid="7267fbf1-288b-11e4-8223-0010187736b5">UHV Molasses Subsequence (disabled)</Name>
+        <Description guid="7267fbf2-288b-11e4-8c6a-0010187736b5" expanded="0"/>
+        <Edge expanded="0" guid="7267fbf3-288b-11e4-8c0d-0010187736b5">
+          <Name expanded="0" guid="7267fbf4-288b-11e4-893b-0010187736b5">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0" guid="726822f0-288b-11e4-a3e7-0010187736b5">UHVCompCoilNorthSouth0</OnChannel>
+          <Time expanded="0" guid="726822f1-288b-11e4-8dec-0010187736b5">0</Time>
+          <Value expanded="0" guid="726822f2-288b-11e4-b5da-0010187736b5">-3</Value>
+        </Edge>
+        <Edge expanded="0" guid="726822f3-288b-11e4-a649-0010187736b5">
+          <Name expanded="0" guid="726822f4-288b-11e4-97f0-0010187736b5">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0" guid="726822f5-288b-11e4-896c-0010187736b5">UHVCompCoilUpDown0</OnChannel>
+          <Time expanded="0" guid="726822f6-288b-11e4-b9d1-0010187736b5">0</Time>
+          <Value expanded="0" guid="726822f7-288b-11e4-b7ba-0010187736b5">-7.5</Value>
+        </Edge>
+        <Edge expanded="0" guid="726822f8-288b-11e4-8521-0010187736b5">
+          <Name expanded="0" guid="726822f9-288b-11e4-9d44-0010187736b5">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0" guid="726822fa-288b-11e4-81f8-0010187736b5">UHVCompCoilEastWest0</OnChannel>
+          <Time expanded="0" guid="726822fb-288b-11e4-ac1a-0010187736b5">0</Time>
+          <Value expanded="0" guid="726822fc-288b-11e4-9042-0010187736b5">4</Value>
+        </Edge>
+        <Edge expanded="0" guid="726822fd-288b-11e4-908a-0010187736b5">
+          <Name expanded="0" guid="726822fe-288b-11e4-9d38-0010187736b5">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0" guid="726822ff-288b-11e4-9ed6-0010187736b5">SYMOTRepumperAmplitude0</OnChannel>
+          <Time expanded="0" guid="72682300-288b-11e4-a047-0010187736b5">0</Time>
+          <Value expanded="0" guid="72682301-288b-11e4-bbdd-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="72682302-288b-11e4-9788-0010187736b5">
+          <Name expanded="0" guid="72682303-288b-11e4-84ef-0010187736b5">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0" guid="72682304-288b-11e4-980b-0010187736b5">SYMOTAmplitude0</OnChannel>
+          <Time expanded="0" guid="72682305-288b-11e4-81cc-0010187736b5">0</Time>
+          <Value expanded="0" guid="72682306-288b-11e4-adff-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="72682307-288b-11e4-ad5f-0010187736b5">
+          <Name expanded="0" guid="72684a00-288b-11e4-97d8-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a01-288b-11e4-addf-0010187736b5">MOTVCOTuning0</OnChannel>
+          <Time expanded="0" guid="72684a02-288b-11e4-8035-0010187736b5">0</Time>
+          <Value expanded="0" guid="72684a03-288b-11e4-8da5-0010187736b5">.05</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a04-288b-11e4-a9cf-0010187736b5">
+          <Name expanded="0" guid="72684a05-288b-11e4-8efd-0010187736b5">MOT Coil Off</Name>
+          <OnChannel expanded="0" guid="72684a06-288b-11e4-8a1c-0010187736b5">UHVCoilCurrentControl0</OnChannel>
+          <Time expanded="0" guid="72684a07-288b-11e4-bbc9-0010187736b5">0.04</Time>
+          <Value expanded="0" guid="72684a08-288b-11e4-853b-0010187736b5">-1</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a09-288b-11e4-ad18-0010187736b5">
+          <Name expanded="0" guid="72684a0a-288b-11e4-952a-0010187736b5">Molasses Beam On AOM</Name>
+          <OnChannel expanded="0" guid="72684a0b-288b-11e4-ab50-0010187736b5">SYMOTAmplitude0</OnChannel>
+          <Time expanded="0" guid="72684a0c-288b-11e4-aa7d-0010187736b5">0.3</Time>
+          <Value expanded="0" guid="72684a0d-288b-11e4-9a62-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">MOTVCOTuning0</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">2</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">2.20</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268710f-288b-11e4-8ca1-0010187736b5">
+          <Name expanded="0" guid="72687110-288b-11e4-8288-0010187736b5">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0" guid="72687111-288b-11e4-a674-0010187736b5">SYMOTAmplitude0</OnChannel>
+          <Time expanded="0" guid="72687112-288b-11e4-a68c-0010187736b5">3</Time>
+          <Value expanded="0" guid="72687113-288b-11e4-ad3f-0010187736b5">0.1</Value>
+        </Edge>
+        <Edge expanded="0" guid="72687114-288b-11e4-99bc-0010187736b5">
+          <Name expanded="0" guid="72687115-288b-11e4-9444-0010187736b5">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0" guid="72687116-288b-11e4-a20b-0010187736b5">SYMOTAmplitude0</OnChannel>
+          <Time expanded="0" guid="72687117-288b-11e4-8451-0010187736b5">5</Time>
+          <Value expanded="0" guid="72687118-288b-11e4-9707-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="72687114-288b-11e4-99bc-0010187736b5">
+          <Name expanded="0" guid="72687115-288b-11e4-9444-0010187736b5">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0" guid="72687116-288b-11e4-a20b-0010187736b5">MOTVCOTuning0</OnChannel>
+          <Time expanded="0" guid="72687117-288b-11e4-8451-0010187736b5">6</Time>
+          <Value expanded="0" guid="72687118-288b-11e4-9707-0010187736b5">0</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1" guid="7267fbef-288b-11e4-97e6-0010187736b5">
+        <StartTime expanded="0" guid="7267fbf0-288b-11e4-b795-0010187736b5">850+80+200</StartTime>
+        <Name expanded="0" guid="7267fbf1-288b-11e4-8223-0010187736b5">UHV Imaging Subsequence </Name>
+        <Description guid="7267fbf2-288b-11e4-8c6a-0010187736b5" expanded="0"/>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0-506</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0-500</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0+78</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">20+78</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">40+78</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">150+78</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">10+78</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">20+78</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">80</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">DetectionShutter</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">80</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">82.5</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">82.6</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">SYFingerMolassesAmplitude</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">80.5</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">UHVCoilCurrentControl</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">80</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">-1</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">MOTVCOTuning</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">82.2</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">-0.32</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">DetectionShutter</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">89-2.22</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">90</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+75</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+20+75</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+10</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">500+80</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">DetectionShutter</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">500+80</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">500+83</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">500+83.1</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">DetectionShutter</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">500+89-2.22</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="72684a0e-288b-11e4-88a2-0010187736b5">
+          <Name expanded="0" guid="72684a0f-288b-11e4-8c8f-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="72684a10-288b-11e4-8d07-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="72684a11-288b-11e4-aef8-0010187736b5">500+90</Time>
+          <Value expanded="0" guid="72684a12-288b-11e4-97ca-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+40+80</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
         </Edge>
       </SubSequence>
     </Sequence>
@@ -6422,14 +6594,32 @@
         <Edge expanded="0" guid="32579bd4-32b1-11e4-b140-0010187736b5">
           <Name guid="32579bd5-32b1-11e4-a4c8-0010187736b5" expanded="0">MOT Trigger for Flourescense</Name>
           <OnChannel guid="32579bd6-32b1-11e4-ade5-0010187736b5" expanded="0">ScopeTrigger</OnChannel>
-          <Time guid="32579bd7-32b1-11e4-992c-0010187736b5" expanded="0">425</Time>
+          <Time guid="32579bd7-32b1-11e4-992c-0010187736b5" expanded="0">430</Time>
           <Value guid="32579bd8-32b1-11e4-97ef-0010187736b5" expanded="0">0</Value>
         </Edge>
         <Edge expanded="0" guid="3257c2cf-32b1-11e4-816f-0010187736b5">
           <Name guid="3257c2d0-32b1-11e4-a3b3-0010187736b5" expanded="0">MOT Detuning to Resonance</Name>
+          <OnChannel guid="3257c2d1-32b1-11e4-859d-0010187736b5" expanded="0">SYMOTAmplitude</OnChannel>
+          <Time guid="3257c2d2-32b1-11e4-899c-0010187736b5" expanded="0">420</Time>
+          <Value guid="3257c2d3-32b1-11e4-bed0-0010187736b5" expanded="0">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="3257c2de-32b1-11e4-be3e-0010187736b5">
+          <Name guid="3257c2df-32b1-11e4-9744-0010187736b5" expanded="0">MOTCoilOff</Name>
+          <OnChannel guid="3257c2e0-32b1-11e4-bd0e-0010187736b5" expanded="0">SrcMOTCoil</OnChannel>
+          <Time guid="3257c2e1-32b1-11e4-8d58-0010187736b5" expanded="0">420.3</Time>
+          <Value guid="3257c2e2-32b1-11e4-9662-0010187736b5" expanded="0">-1</Value>
+        </Edge>
+        <Edge expanded="0" guid="3257c2cf-32b1-11e4-816f-0010187736b5">
+          <Name guid="3257c2d0-32b1-11e4-a3b3-0010187736b5" expanded="0">MOT Detuning to Resonance</Name>
           <OnChannel guid="3257c2d1-32b1-11e4-859d-0010187736b5" expanded="0">MOTVCOTuning</OnChannel>
-          <Time guid="3257c2d2-32b1-11e4-899c-0010187736b5" expanded="0">420.2</Time>
+          <Time guid="3257c2d2-32b1-11e4-899c-0010187736b5" expanded="0">420.8</Time>
           <Value guid="3257c2d3-32b1-11e4-bed0-0010187736b5" expanded="0">-0.32</Value>
+        </Edge>
+        <Edge expanded="0" guid="3257c2cf-32b1-11e4-816f-0010187736b5">
+          <Name guid="3257c2d0-32b1-11e4-a3b3-0010187736b5" expanded="0">MOT Detuning to Resonance</Name>
+          <OnChannel guid="3257c2d1-32b1-11e4-859d-0010187736b5" expanded="0">SYMOTAmplitude</OnChannel>
+          <Time guid="3257c2d2-32b1-11e4-899c-0010187736b5" expanded="0">421.5</Time>
+          <Value guid="3257c2d3-32b1-11e4-bed0-0010187736b5" expanded="0">10</Value>
         </Edge>
         <Edge expanded="0" guid="3257c2d4-32b1-11e4-8367-0010187736b5">
           <Name guid="3257c2d5-32b1-11e4-b552-0010187736b5" expanded="0">MOTCoilOff</Name>
@@ -6443,276 +6633,6 @@
           <Time guid="3257c2dc-32b1-11e4-92a8-0010187736b5" expanded="0">430</Time>
           <Value guid="3257c2dd-32b1-11e4-b47e-0010187736b5" expanded="0">0</Value>
         </Edge>
-        <Edge expanded="0" guid="3257c2de-32b1-11e4-be3e-0010187736b5">
-          <Name guid="3257c2df-32b1-11e4-9744-0010187736b5" expanded="0">MOTCoilOff</Name>
-          <OnChannel guid="3257c2e0-32b1-11e4-bd0e-0010187736b5" expanded="0">SrcMOTCoil</OnChannel>
-          <Time guid="3257c2e1-32b1-11e4-8d58-0010187736b5" expanded="0">430</Time>
-          <Value guid="3257c2e2-32b1-11e4-9662-0010187736b5" expanded="0">0</Value>
-        </Edge>
-        <SubSequence expanded="1" guid="3257c2e3-32b1-11e4-a02c-0010187736b5">
-          <StartTime guid="3257c2e4-32b1-11e4-89ef-0010187736b5" expanded="0">0</StartTime>
-          <Name guid="3257c2e5-32b1-11e4-b4da-0010187736b5" expanded="0">_iterations_of_MOTNumber Subsequence</Name>
-          <SubSequence expanded="1" guid="3257c2e6-32b1-11e4-802e-0010187736b5">
-            <StartTime guid="3257e9e1-32b1-11e4-aacc-0010187736b5" expanded="0">500.0</StartTime>
-            <Name guid="3257e9e2-32b1-11e4-a378-0010187736b5" expanded="0">_iter_0_MOTNumber Subsequence</Name>
-            <Description guid="3257e9e3-32b1-11e4-852d-0010187736b5" expanded="0">Load MOT in the source and detune MOT laser to resonance and shutoff coil</Description>
-            <Edge expanded="0" guid="3257e9e4-32b1-11e4-bb4a-0010187736b5">
-              <Name guid="3257e9e5-32b1-11e4-b461-0010187736b5" expanded="0">MOTCoilOn</Name>
-              <OnChannel guid="3257e9e6-32b1-11e4-8279-0010187736b5" expanded="0">SrcMOTCoil</OnChannel>
-              <Time guid="3257e9e7-32b1-11e4-be82-0010187736b5" expanded="0">0</Time>
-              <Value guid="3257e9e8-32b1-11e4-8fb9-0010187736b5" expanded="0">4.5</Value>
-            </Edge>
-            <Edge expanded="0" guid="3257e9e9-32b1-11e4-8617-0010187736b5">
-              <Name guid="3257e9ea-32b1-11e4-9ba7-0010187736b5" expanded="0">MOT Shutter Open</Name>
-              <OnChannel guid="3257e9eb-32b1-11e4-af1c-0010187736b5" expanded="0">MOTRepumperShutter</OnChannel>
-              <Time guid="3257e9ec-32b1-11e4-9bf4-0010187736b5" expanded="0">0</Time>
-              <Value guid="3257e9ed-32b1-11e4-9bd9-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="3257e9ee-32b1-11e4-80b1-0010187736b5">
-              <Name guid="3257e9ef-32b1-11e4-95e8-0010187736b5" expanded="0">MOT Shutter Open</Name>
-              <OnChannel guid="3257e9f0-32b1-11e4-8174-0010187736b5" expanded="0">MOTShutter</OnChannel>
-              <Time guid="3257e9f1-32b1-11e4-922f-0010187736b5" expanded="0">0</Time>
-              <Value guid="3257e9f2-32b1-11e4-822a-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="3257e9f3-32b1-11e4-b209-0010187736b5">
-              <Name guid="3257e9f4-32b1-11e4-a920-0010187736b5" expanded="0">MOT Detuning Scan</Name>
-              <OnChannel guid="3257e9f5-32b1-11e4-a968-0010187736b5" expanded="0">MOTVCOTuning</OnChannel>
-              <Time guid="3257e9f6-32b1-11e4-9862-0010187736b5" expanded="0">0</Time>
-              <Value guid="325810f0-32b1-11e4-bfac-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="325810f1-32b1-11e4-8c65-0010187736b5">
-              <Name guid="325810f2-32b1-11e4-8a1b-0010187736b5" expanded="0">MOT Trigger for Flourescense</Name>
-              <OnChannel guid="325810f3-32b1-11e4-bd22-0010187736b5" expanded="0">ScopeTrigger</OnChannel>
-              <Time guid="325810f4-32b1-11e4-a75d-0010187736b5" expanded="0">420</Time>
-              <Value guid="325810f5-32b1-11e4-b997-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="325810f6-32b1-11e4-9c8b-0010187736b5">
-              <Name guid="325810f7-32b1-11e4-8469-0010187736b5" expanded="0">MOT Trigger for Flourescense</Name>
-              <OnChannel guid="325810f8-32b1-11e4-b4d9-0010187736b5" expanded="0">ScopeTrigger</OnChannel>
-              <Time guid="325810f9-32b1-11e4-8f64-0010187736b5" expanded="0">425</Time>
-              <Value guid="325810fa-32b1-11e4-973f-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="325810fb-32b1-11e4-bdb6-0010187736b5">
-              <Name guid="325810fc-32b1-11e4-a6b3-0010187736b5" expanded="0">MOT Detuning to Resonance</Name>
-              <OnChannel guid="325810fd-32b1-11e4-9edd-0010187736b5" expanded="0">MOTVCOTuning</OnChannel>
-              <Time guid="325810fe-32b1-11e4-ad0b-0010187736b5" expanded="0">420.2</Time>
-              <Value guid="325810ff-32b1-11e4-9f86-0010187736b5" expanded="0">-0.32</Value>
-            </Edge>
-            <Edge expanded="0" guid="32581100-32b1-11e4-9564-0010187736b5">
-              <Name guid="32581101-32b1-11e4-96a9-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="32581102-32b1-11e4-b370-0010187736b5" expanded="0">MOTRepumperShutter</OnChannel>
-              <Time guid="32581103-32b1-11e4-9381-0010187736b5" expanded="0">430</Time>
-              <Value guid="32581104-32b1-11e4-ad25-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="32583800-32b1-11e4-baa8-0010187736b5">
-              <Name guid="32583801-32b1-11e4-a031-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="32583802-32b1-11e4-a19b-0010187736b5" expanded="0">MOTShutter</OnChannel>
-              <Time guid="32583803-32b1-11e4-9f68-0010187736b5" expanded="0">430</Time>
-              <Value guid="32583804-32b1-11e4-a9fb-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="32583805-32b1-11e4-b1e1-0010187736b5">
-              <Name guid="32583806-32b1-11e4-ba72-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="32583807-32b1-11e4-bdd5-0010187736b5" expanded="0">SrcMOTCoil</OnChannel>
-              <Time guid="32583808-32b1-11e4-afe3-0010187736b5" expanded="0">430</Time>
-              <Value guid="32583809-32b1-11e4-a24e-0010187736b5" expanded="0">0</Value>
-            </Edge>
-          </SubSequence>
-          <SubSequence expanded="1" guid="3258380a-32b1-11e4-97fd-0010187736b5">
-            <StartTime guid="3258380b-32b1-11e4-b8d3-0010187736b5" expanded="0">1000.0</StartTime>
-            <Name guid="3258380c-32b1-11e4-8e15-0010187736b5" expanded="0">_iter_1_MOTNumber Subsequence</Name>
-            <Description guid="3258380d-32b1-11e4-a841-0010187736b5" expanded="0">Load MOT in the source and detune MOT laser to resonance and shutoff coil</Description>
-            <Edge expanded="0" guid="3258380e-32b1-11e4-a802-0010187736b5">
-              <Name guid="3258380f-32b1-11e4-9682-0010187736b5" expanded="0">MOTCoilOn</Name>
-              <OnChannel guid="32583810-32b1-11e4-bf8f-0010187736b5" expanded="0">SrcMOTCoil</OnChannel>
-              <Time guid="32583811-32b1-11e4-82a9-0010187736b5" expanded="0">0</Time>
-              <Value guid="32583812-32b1-11e4-8c8b-0010187736b5" expanded="0">4.5</Value>
-            </Edge>
-            <Edge expanded="0" guid="32583813-32b1-11e4-8b07-0010187736b5">
-              <Name guid="32583814-32b1-11e4-8d68-0010187736b5" expanded="0">MOT Shutter Open</Name>
-              <OnChannel guid="32583815-32b1-11e4-a0a8-0010187736b5" expanded="0">MOTRepumperShutter</OnChannel>
-              <Time guid="32585f11-32b1-11e4-858b-0010187736b5" expanded="0">0</Time>
-              <Value guid="32585f12-32b1-11e4-a52a-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="32585f13-32b1-11e4-830b-0010187736b5">
-              <Name guid="32585f14-32b1-11e4-bcc0-0010187736b5" expanded="0">MOT Shutter Open</Name>
-              <OnChannel guid="32585f15-32b1-11e4-b954-0010187736b5" expanded="0">MOTShutter</OnChannel>
-              <Time guid="32585f16-32b1-11e4-8aea-0010187736b5" expanded="0">0</Time>
-              <Value guid="32585f17-32b1-11e4-89f4-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="32585f18-32b1-11e4-ad0d-0010187736b5">
-              <Name guid="32585f19-32b1-11e4-ac49-0010187736b5" expanded="0">MOT Detuning Scan</Name>
-              <OnChannel guid="32585f1a-32b1-11e4-a95b-0010187736b5" expanded="0">MOTVCOTuning</OnChannel>
-              <Time guid="32585f1b-32b1-11e4-adfe-0010187736b5" expanded="0">0</Time>
-              <Value guid="32585f1c-32b1-11e4-a2cc-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="32585f1d-32b1-11e4-9e9d-0010187736b5">
-              <Name guid="32585f1e-32b1-11e4-b7e7-0010187736b5" expanded="0">MOT Trigger for Flourescense</Name>
-              <OnChannel guid="32585f1f-32b1-11e4-8e31-0010187736b5" expanded="0">ScopeTrigger</OnChannel>
-              <Time guid="32585f20-32b1-11e4-b99e-0010187736b5" expanded="0">420</Time>
-              <Value guid="32585f21-32b1-11e4-ad21-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="32585f22-32b1-11e4-8228-0010187736b5">
-              <Name guid="32585f23-32b1-11e4-ac3d-0010187736b5" expanded="0">MOT Trigger for Flourescense</Name>
-              <OnChannel guid="32585f24-32b1-11e4-92ac-0010187736b5" expanded="0">ScopeTrigger</OnChannel>
-              <Time guid="32585f25-32b1-11e4-88b9-0010187736b5" expanded="0">425</Time>
-              <Value guid="32585f26-32b1-11e4-8f67-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="32588621-32b1-11e4-9144-0010187736b5">
-              <Name guid="32588622-32b1-11e4-a707-0010187736b5" expanded="0">MOT Detuning to Resonance</Name>
-              <OnChannel guid="32588623-32b1-11e4-9a37-0010187736b5" expanded="0">MOTVCOTuning</OnChannel>
-              <Time guid="32588624-32b1-11e4-b7fe-0010187736b5" expanded="0">420.2</Time>
-              <Value guid="32588625-32b1-11e4-b752-0010187736b5" expanded="0">-0.32</Value>
-            </Edge>
-            <Edge expanded="0" guid="32588626-32b1-11e4-8f4a-0010187736b5">
-              <Name guid="32588627-32b1-11e4-8cdf-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="32588628-32b1-11e4-9239-0010187736b5" expanded="0">MOTRepumperShutter</OnChannel>
-              <Time guid="32588629-32b1-11e4-9c32-0010187736b5" expanded="0">430</Time>
-              <Value guid="3258862a-32b1-11e4-acc5-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258862b-32b1-11e4-a226-0010187736b5">
-              <Name guid="3258862c-32b1-11e4-b550-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="3258862d-32b1-11e4-8ec5-0010187736b5" expanded="0">MOTShutter</OnChannel>
-              <Time guid="3258862e-32b1-11e4-b12d-0010187736b5" expanded="0">430</Time>
-              <Value guid="3258862f-32b1-11e4-b90a-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="32588630-32b1-11e4-9812-0010187736b5">
-              <Name guid="32588631-32b1-11e4-8596-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="32588632-32b1-11e4-a7ba-0010187736b5" expanded="0">SrcMOTCoil</OnChannel>
-              <Time guid="32588633-32b1-11e4-a06f-0010187736b5" expanded="0">430</Time>
-              <Value guid="32588634-32b1-11e4-902c-0010187736b5" expanded="0">0</Value>
-            </Edge>
-          </SubSequence>
-          <SubSequence expanded="1" guid="32588635-32b1-11e4-9fcb-0010187736b5">
-            <StartTime guid="3258ad30-32b1-11e4-b376-0010187736b5" expanded="0">1500.0</StartTime>
-            <Name guid="3258ad31-32b1-11e4-9d6b-0010187736b5" expanded="0">_iter_2_MOTNumber Subsequence</Name>
-            <Description guid="3258ad32-32b1-11e4-ae40-0010187736b5" expanded="0">Load MOT in the source and detune MOT laser to resonance and shutoff coil</Description>
-            <Edge expanded="0" guid="3258ad33-32b1-11e4-9c3c-0010187736b5">
-              <Name guid="3258ad34-32b1-11e4-acf6-0010187736b5" expanded="0">MOTCoilOn</Name>
-              <OnChannel guid="3258ad35-32b1-11e4-8b3d-0010187736b5" expanded="0">SrcMOTCoil</OnChannel>
-              <Time guid="3258ad36-32b1-11e4-b813-0010187736b5" expanded="0">0</Time>
-              <Value guid="3258ad37-32b1-11e4-8030-0010187736b5" expanded="0">4.5</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258ad38-32b1-11e4-944f-0010187736b5">
-              <Name guid="3258ad39-32b1-11e4-b264-0010187736b5" expanded="0">MOT Shutter Open</Name>
-              <OnChannel guid="3258ad3a-32b1-11e4-93cd-0010187736b5" expanded="0">MOTRepumperShutter</OnChannel>
-              <Time guid="3258ad3b-32b1-11e4-81ef-0010187736b5" expanded="0">0</Time>
-              <Value guid="3258ad3c-32b1-11e4-bd2a-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258ad3d-32b1-11e4-8d7c-0010187736b5">
-              <Name guid="3258ad3e-32b1-11e4-9e13-0010187736b5" expanded="0">MOT Shutter Open</Name>
-              <OnChannel guid="3258ad3f-32b1-11e4-b0d9-0010187736b5" expanded="0">MOTShutter</OnChannel>
-              <Time guid="3258ad40-32b1-11e4-a46e-0010187736b5" expanded="0">0</Time>
-              <Value guid="3258ad41-32b1-11e4-80e1-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258ad42-32b1-11e4-b08d-0010187736b5">
-              <Name guid="3258ad43-32b1-11e4-b646-0010187736b5" expanded="0">MOT Detuning Scan</Name>
-              <OnChannel guid="3258ad44-32b1-11e4-8f43-0010187736b5" expanded="0">MOTVCOTuning</OnChannel>
-              <Time guid="3258ad45-32b1-11e4-884c-0010187736b5" expanded="0">0</Time>
-              <Value guid="3258d440-32b1-11e4-bb5a-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258d441-32b1-11e4-80c5-0010187736b5">
-              <Name guid="3258d442-32b1-11e4-addd-0010187736b5" expanded="0">MOT Trigger for Flourescense</Name>
-              <OnChannel guid="3258d443-32b1-11e4-a1f6-0010187736b5" expanded="0">ScopeTrigger</OnChannel>
-              <Time guid="3258d444-32b1-11e4-894c-0010187736b5" expanded="0">420</Time>
-              <Value guid="3258d445-32b1-11e4-abb0-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258d446-32b1-11e4-b654-0010187736b5">
-              <Name guid="3258d447-32b1-11e4-9077-0010187736b5" expanded="0">MOT Trigger for Flourescense</Name>
-              <OnChannel guid="3258d448-32b1-11e4-bfd0-0010187736b5" expanded="0">ScopeTrigger</OnChannel>
-              <Time guid="3258d449-32b1-11e4-b6b7-0010187736b5" expanded="0">425</Time>
-              <Value guid="3258d44a-32b1-11e4-9102-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258d44b-32b1-11e4-b568-0010187736b5">
-              <Name guid="3258d44c-32b1-11e4-895c-0010187736b5" expanded="0">MOT Detuning to Resonance</Name>
-              <OnChannel guid="3258d44d-32b1-11e4-b96f-0010187736b5" expanded="0">MOTVCOTuning</OnChannel>
-              <Time guid="3258d44e-32b1-11e4-8dcf-0010187736b5" expanded="0">420.2</Time>
-              <Value guid="3258d44f-32b1-11e4-9f84-0010187736b5" expanded="0">-0.32</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258d450-32b1-11e4-ba26-0010187736b5">
-              <Name guid="3258d451-32b1-11e4-ad2a-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="3258d452-32b1-11e4-ba67-0010187736b5" expanded="0">MOTRepumperShutter</OnChannel>
-              <Time guid="3258d453-32b1-11e4-b330-0010187736b5" expanded="0">430</Time>
-              <Value guid="3258d454-32b1-11e4-ac69-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258d455-32b1-11e4-8400-0010187736b5">
-              <Name guid="3258fb4f-32b1-11e4-9623-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="3258fb50-32b1-11e4-be07-0010187736b5" expanded="0">MOTShutter</OnChannel>
-              <Time guid="3258fb51-32b1-11e4-a950-0010187736b5" expanded="0">430</Time>
-              <Value guid="3258fb52-32b1-11e4-968c-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258fb53-32b1-11e4-87be-0010187736b5">
-              <Name guid="3258fb54-32b1-11e4-b332-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="3258fb55-32b1-11e4-81b0-0010187736b5" expanded="0">SrcMOTCoil</OnChannel>
-              <Time guid="3258fb56-32b1-11e4-8517-0010187736b5" expanded="0">430</Time>
-              <Value guid="3258fb57-32b1-11e4-bf2b-0010187736b5" expanded="0">0</Value>
-            </Edge>
-          </SubSequence>
-          <SubSequence expanded="1" guid="3258fb58-32b1-11e4-9502-0010187736b5">
-            <StartTime guid="3258fb59-32b1-11e4-8cd4-0010187736b5" expanded="0">2000.0</StartTime>
-            <Name guid="3258fb5a-32b1-11e4-9353-0010187736b5" expanded="0">_iter_3_MOTNumber Subsequence</Name>
-            <Description guid="3258fb5b-32b1-11e4-b8d0-0010187736b5" expanded="0">Load MOT in the source and detune MOT laser to resonance and shutoff coil</Description>
-            <Edge expanded="0" guid="3258fb5c-32b1-11e4-a254-0010187736b5">
-              <Name guid="3258fb5d-32b1-11e4-a519-0010187736b5" expanded="0">MOTCoilOn</Name>
-              <OnChannel guid="3258fb5e-32b1-11e4-9630-0010187736b5" expanded="0">SrcMOTCoil</OnChannel>
-              <Time guid="3258fb5f-32b1-11e4-94b7-0010187736b5" expanded="0">0</Time>
-              <Value guid="3258fb60-32b1-11e4-9c06-0010187736b5" expanded="0">4.5</Value>
-            </Edge>
-            <Edge expanded="0" guid="3258fb61-32b1-11e4-9f36-0010187736b5">
-              <Name guid="3258fb62-32b1-11e4-905f-0010187736b5" expanded="0">MOT Shutter Open</Name>
-              <OnChannel guid="3258fb63-32b1-11e4-8fff-0010187736b5" expanded="0">MOTRepumperShutter</OnChannel>
-              <Time guid="3258fb64-32b1-11e4-9941-0010187736b5" expanded="0">0</Time>
-              <Value guid="3259225e-32b1-11e4-8759-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="3259225f-32b1-11e4-b90e-0010187736b5">
-              <Name guid="32592260-32b1-11e4-aaa8-0010187736b5" expanded="0">MOT Shutter Open</Name>
-              <OnChannel guid="32592261-32b1-11e4-bd54-0010187736b5" expanded="0">MOTShutter</OnChannel>
-              <Time guid="32592262-32b1-11e4-9111-0010187736b5" expanded="0">0</Time>
-              <Value guid="32592263-32b1-11e4-a1d7-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="32592264-32b1-11e4-89e4-0010187736b5">
-              <Name guid="32592265-32b1-11e4-9159-0010187736b5" expanded="0">MOT Detuning Scan</Name>
-              <OnChannel guid="32592266-32b1-11e4-9dc5-0010187736b5" expanded="0">MOTVCOTuning</OnChannel>
-              <Time guid="32592267-32b1-11e4-9b47-0010187736b5" expanded="0">0</Time>
-              <Value guid="32592268-32b1-11e4-9d76-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="32592269-32b1-11e4-a887-0010187736b5">
-              <Name guid="3259226a-32b1-11e4-9616-0010187736b5" expanded="0">MOT Trigger for Flourescense</Name>
-              <OnChannel guid="3259226b-32b1-11e4-9b6e-0010187736b5" expanded="0">ScopeTrigger</OnChannel>
-              <Time guid="3259226c-32b1-11e4-8907-0010187736b5" expanded="0">420</Time>
-              <Value guid="3259226d-32b1-11e4-afa3-0010187736b5" expanded="0">1</Value>
-            </Edge>
-            <Edge expanded="0" guid="3259226e-32b1-11e4-a5a5-0010187736b5">
-              <Name guid="3259226f-32b1-11e4-b305-0010187736b5" expanded="0">MOT Trigger for Flourescense</Name>
-              <OnChannel guid="32592270-32b1-11e4-bca6-0010187736b5" expanded="0">ScopeTrigger</OnChannel>
-              <Time guid="32592271-32b1-11e4-a0b4-0010187736b5" expanded="0">425</Time>
-              <Value guid="32592272-32b1-11e4-ac27-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="3259496e-32b1-11e4-a6da-0010187736b5">
-              <Name guid="3259496f-32b1-11e4-8d80-0010187736b5" expanded="0">MOT Detuning to Resonance</Name>
-              <OnChannel guid="32594970-32b1-11e4-bf88-0010187736b5" expanded="0">MOTVCOTuning</OnChannel>
-              <Time guid="32594971-32b1-11e4-9e84-0010187736b5" expanded="0">420.2</Time>
-              <Value guid="32594972-32b1-11e4-8564-0010187736b5" expanded="0">-0.32</Value>
-            </Edge>
-            <Edge expanded="0" guid="32594973-32b1-11e4-b6bc-0010187736b5">
-              <Name guid="32594974-32b1-11e4-baee-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="32594975-32b1-11e4-82b0-0010187736b5" expanded="0">MOTRepumperShutter</OnChannel>
-              <Time guid="32594976-32b1-11e4-af39-0010187736b5" expanded="0">430</Time>
-              <Value guid="32594977-32b1-11e4-817f-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="32594978-32b1-11e4-b088-0010187736b5">
-              <Name guid="32594979-32b1-11e4-9f98-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="3259497a-32b1-11e4-99ea-0010187736b5" expanded="0">MOTShutter</OnChannel>
-              <Time guid="3259497b-32b1-11e4-b8b7-0010187736b5" expanded="0">430</Time>
-              <Value guid="3259497c-32b1-11e4-afd3-0010187736b5" expanded="0">0</Value>
-            </Edge>
-            <Edge expanded="0" guid="3259497d-32b1-11e4-81ff-0010187736b5">
-              <Name guid="3259497e-32b1-11e4-bbbb-0010187736b5" expanded="0">MOTCoilOff</Name>
-              <OnChannel guid="3259497f-32b1-11e4-9cd9-0010187736b5" expanded="0">SrcMOTCoil</OnChannel>
-              <Time guid="32594980-32b1-11e4-8b10-0010187736b5" expanded="0">430</Time>
-              <Value guid="32594981-32b1-11e4-808b-0010187736b5" expanded="0">0</Value>
-            </Edge>
-          </SubSequence>
-        </SubSequence>
       </SubSequence>
     </Sequence>
     <Sequence expanded="0">

@@ -180,8 +180,10 @@ class Experiment_Sync_Group(HasTraits):
             inserts another element - should be shotnumber:xtsm pair 
             """
             collections.OrderedDict.update(self,*args,**kwds)
-            for elm in args: self.archived.update({elm.keys()[0]:False})       
-            for elm in args: self.timeadded.update({elm.keys()[0]:time.time()})
+            for elm in args:
+                self.archived.update({elm.keys()[0]:False})       
+            for elm in args:
+                self.timeadded.update({elm.keys()[0]:time.time()})
             while len(self)>NUM_RETAINED_XTSM:
                 self.heave()
             #pdb.set_trace()                
@@ -208,9 +210,10 @@ class Experiment_Sync_Group(HasTraits):
             stores an element to disk in the infinite filestream - does not check
             if element is active - that is duty of caller
             """
-            if type(elm)==type(0): elm=(elm,self[elm])
+            if type(elm)==type(0):
+                elm=(elm,self[elm])
             self._write_out(elm)
-            self.archived[elm[0]]=True  
+            self.archived[elm[0]] = True  
             
         def _write_out(self,elm):
             """
@@ -224,8 +227,9 @@ class Experiment_Sync_Group(HasTraits):
             it if it has not already been - in this case, the element is removed
             even if it has active listeners; they are removed too, to avoid memory leaks.
             """
-            heavethis=self.popitem(last=False)
-            if heavethis[1].isActive(): heavethis[1].deactivate(params={"message":"This element was deactivated when heaved from XTSM_Stack"})
+            heavethis = self.popitem(last=False)
+            if heavethis[1].isActive():
+                heavethis[1].deactivate(params={"message":"This element was deactivated when heaved from XTSM_Stack"})
             if not self.archived[heavethis[0]]:
                 self._write_out(heavethis)
                 
@@ -267,9 +271,17 @@ class MulticastProtocol(DatagramProtocol):
         datagram = simplejson.loads(datagram_)
         if hasattr(datagram,'keys'):
             if 'shotnumber_started' in datagram.keys():
-                self.server.shotnumber = datagram['shotnumber_started']
-                pxi_time = datagram['time']#Make this so that it synchronizes the clocks CP
-                print "Shot started:", datagram['shotnumber_started'], "pxi_time:", pxi_time, "time.time():", float(time.time()) - 1412863872
+                #dc.get('_exp_sync').shotnumber = datagram['shotnumber_started']
+                self.server.pxi_time = float(datagram['time'])
+                self.server.pxi_time_server_time = float(datagram['time']) - float(time.time())#Make this so that it synchronizes the clocks CP
+                self.server.active_parser_ip = datagram['server_ip_in_charge']#Make this so that it synchronizes the clocks CP
+                self.server.active_parser_port = datagram['server_port_in_charge']#Make this so that it synchronizes the clocks CP
+                dc = self.server.dataContexts['PXI']
+                if not dc.dict.has_key('_exp_sync'):
+                     exp_sync = Experiment_Sync_Group(self.server)
+                     dc.update({'_exp_sync':exp_sync})
+                dc['_exp_sync'].shotnumber = int(datagram['shotnumber_started'])
+                print "Shot started:", datagram['shotnumber_started'], "pxi_time:", self.server.pxi_time, "time.time():", float(time.time())
                 return
         try:
             datagram["server_ping"] 
@@ -587,6 +599,7 @@ class DataContext(XTSM_Server_Objects.XTSM_Server_Object):
     .dict contains dictionary of variables and values
     """
     def __init__(self, name, server):
+        print "class DataContext, function __init__", 'name:', name
         self.dict = {"__context__":name}
         self.name = name
         self.server = server
@@ -854,7 +867,7 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
         if address == 'active_parser':
             print "-----------act---------"
             for key in self.peer_servers:
-                if self.peer_servers[key].is_active_parser:
+                if self.peer_servers[key].ip == self.server.active_parser_ip:
                     self.peer_servers[key].protocol.sendMessage(data,isBinary)
                     print "Just Sent:", data   
                     return True
@@ -914,7 +927,6 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
                 '''
                 self.peer_servers[key].server_id = ping_payload['server_id']
                 self.peer_servers[key].last_broadcast_time = time.time()
-                self.peer_servers[key].is_active_parser = bool(ping_payload['is_active_parser'])
                 self.peer_servers[key].server_time = ping_payload['server_time']
                 self.peer_servers[key].ping_payload = ping_payload
                 if self.peer_servers[key].is_open_connection == False:
@@ -1029,12 +1041,14 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
         print "payload:"
         print payload
 
-        
+        '''
         if hasattr(payload, "shotnumber"):
             #pdb.set_trace() # need to test the below
             for dc in self.parent.dataContexts:
                 dc['_running_shotnumber']=payload['shotnumber']
+        '''
         payload.update({'request':protocol.request})
+        #payload.update({'protocol':protocol})
         payload.update({'socket_type':"Websocket"})
         SC = SocketCommand(params = payload,
                            request = protocol.request,
@@ -1069,7 +1083,6 @@ class PeerServer(GlabClient):
         self.name = None
         self.ping_payload = None
         self.last_broadcast_time = 0
-        self.is_active_parser = False
         self.protocol = None
         #pdb.set_trace()
         
@@ -1260,19 +1273,57 @@ class CommandLibrary():
         self.server = server
         
     def __determineContext__(self,params):
-        #print "class CommandLibrary, func __determineContext__"
+        print "class CommandLibrary, func __determineContext__"
+        #print params
+        if not params.has_key('data_context'):
+            ip_address = ''
+            try:
+                ip_address = params['request']['protocol'].peer.split(":")[0]
+            except KeyError:
+                print "Error: class CommandLibrary, func __determineContext__"
+                pdb.set_trace()
+                raise
+            default_dc_name = "default:" + ip_address
+            dcname = default_dc_name
+            if ip_address == '127.0.0.1':
+                dcname = 'default:' + self.server.ip
+            if not self.server.dataContexts.has_key(dcname):
+                dc = DataContext(dcname, self.server)
+                self.server.dataContexts.update({dcname:dc})
+            print "dcname:",dcname
+            return self.server.dataContexts[dcname]
+            
+        dcname = params['data_context']
+        if not self.server.dataContexts.has_key(dcname):
+            dc = DataContext(dcname, self.server)
+            self.server.dataContexts.update({dcname:dc})
+        print "dcname:",dcname
+        return self.server.dataContexts[dcname]
+        
+        '''
+        old function:
+        print "class CommandLibrary, func __determineContext__"
+        print params
         try: 
             dcname = params['data_context']
+            if dcname == 'exp_sync':
+                dcname = 'default:10.1.1.136'
             #print "dcname:", dcname
             if not params['request']['protocol'].server.dataContexts.has_key(dcname):
                 raise KeyError
         except KeyError:
             # look for a default data context for this IP address, if none, create
+            #pdb.set_trace()
             dcname = "default:"+params['request']['protocol'].peer.split(":")[0]
+            if params['request']['protocol'].peer.split(":")[0] == '127.0.0.1':
+                dcname = "default:"+self.server.ip
             if not params['request']['protocol'].server.dataContexts.has_key(dcname):
                 dc = DataContext(dcname, self.server)
                 params['request']['protocol'].server.dataContexts.update({dcname:dc})
+        print "dcname:",dcname
         return params['request']['protocol'].server.dataContexts[dcname]
+        '''        
+        
     # below are methods available to external HTTP requests - such as those required
     # by experiment GUI and timing system to implement basic functions of timing system
     # all must accept a single dictionary argument params, containing arguments of HTTP request
@@ -1282,6 +1333,7 @@ class CommandLibrary():
         """
         sets a variable by name in the caller's data context
         """
+        print "class CommandLibrary, func set_global_variable_from_socket"
         if params.has_key('IDLSPEEDTEST'):
             srtime = time.time()
             """
@@ -1347,6 +1399,7 @@ class CommandLibrary():
         These write functions may crash any websocket connections that it
         tries to write into since it may not be json
         """
+        print "class CommandLibrary, func get_global_variable_from_socket"
         try:
             varname=params['variablename']
             dc=self.__determineContext__(params)
@@ -1381,6 +1434,7 @@ class CommandLibrary():
         These write functions may crash any websocket connections that it
         tries to write into since it may not be json
         """
+        print "class CommandLibrary, func get_data_contexts"
         for dc in params['request']['protocol'].factory.parent.dataContexts:
             params['request']['protocol'].transport.write(str(dc) + ',')
         params['request']['protocol'].transport.loseConnection()
@@ -1394,6 +1448,7 @@ class CommandLibrary():
         These write functions may crash any websocket connections that it
         tries to write into since it may not be json
         """
+        print "class CommandLibrary, func execute_from_socket"
         dc=self.__determineContext__(params).dict
         # setup a buffer to capture response, temporarily grab stdio
         params['request']['protocol'].transport.write('<Python<           '+params['command']+'\n\r')        
@@ -1429,18 +1484,20 @@ class CommandLibrary():
         Posts the active xtsm string that will be used for all subsequent calls
         from timing systems
         """
-        dc=self.__determineContext__(params)
+        print "class CommandLibrary, func post_active_xtsm"
+        params.update({'data_context':'PXI'})#Not sure if this the right idea. CP
+        dc = self.__determineContext__(params)
         try: 
-            exp_sync=dc.get('_exp_sync')        
+            exp_sync = dc.get('_exp_sync')        
         except: 
-            exp_sync=Experiment_Sync_Group(self.server)
+            exp_sync = Experiment_Sync_Group(self.server)
             dc.update({'_exp_sync':exp_sync})
         try:
-            ax=params['_active_xtsm']
+            ax = params['_active_xtsm']
         except KeyError:
-            ax=params['active_xtsm']
-        ax=XTSM_Transforms.strip_to_active(ax)
-        exp_sync.active_xtsm=ax
+            ax = params['active_xtsm']
+        ax = XTSM_Transforms.strip_to_active(ax)
+        exp_sync.active_xtsm = ax
         """
         These write functions may crash any websocket connections that it
         tries to write into since it may not be json
@@ -1452,23 +1509,44 @@ class CommandLibrary():
         """
         Retrieves and returns xtsm by shotnumber
         """
+        print "class CommandLibrary, func request_xtsm"
         dc = self.__determineContext__(params)
         message = 'XTSM requested, but shot number does not exist'
+        '''
+        Added to make work CP. To fix, need to change the gui query.
+        '''
         try: 
-            exp_sync=dc.get('_exp_sync')
+            exp_sync = dc.get('_exp_sync')
+        except:
+            params.update({'data_context':'PXI'})
+            dc = self.__determineContext__(params)
+        '''
+        End addition CP
+        '''
+        #pdb.set_trace()
+        
+        try: 
+            exp_sync = dc.get('_exp_sync')
         except:
             self._respond_and_close(params,"XTSM requested, but none exists")
             return
         try:
-            reqxtsm = simplejson.dumps({"xtsm_return":simplejson.dumps({"xtsm":exp_sync.compiled_xtsm[int(params['shotnumber'])].XTSM.write_xml(),
-                                                                        "shotnumber":int(params['shotnumber'])})})
+            sn = exp_sync.shotnumber + int(params['shotnumber'])
+            xtsm = exp_sync.compiled_xtsm[sn].XTSM
+            msg = {"xtsm":xtsm.write_xml(),"shotnumber":int(params['shotnumber'])}
+            #xtsm = exp_sync.compiled_xtsm[int(params['shotnumber'])].XTSM
+            #msg = {"xtsm":xtsm.write_xml(),"shotnumber":int(params['shotnumber'])}
+            reqxtsm = simplejson.dumps({"xtsm_return":simplejson.dumps(msg)})
+            #print reqxtsm
         except KeyError: 
-            try: params['request']['write']('{"server_console":"'+message+'"}')
+            try:
+                params['request']['write']('{"server_console":"'+message+'"}')
             except KeyError: 
                 params['request']['protocol'].transport.write(message)
                 params['request']['protocol'].transport.loseConnection()
-
-        try: params['request']['write'](reqxtsm)
+                print "Error"
+        try:
+            params['request']['write'](reqxtsm)
         except KeyError: 
             """
             These write functions may crash any websocket connections that it
@@ -1476,6 +1554,10 @@ class CommandLibrary():
             """
             params['request']['protocol'].transport.write(reqxtsm)
             params['request']['protocol'].transport.loseConnection()
+            print "Error"
+        except UnboundLocalError:
+            pass
+            print "GUI tried to search for shotnumber that doesn't exist."
 
     def compile_active_xtsm(self, params):
         """
@@ -1489,15 +1571,26 @@ class CommandLibrary():
         the requester's data context.  If any are missing the _exp_sync element
         containing the active_xtsm string and shotnumber, they are skipped.
         """
+        print params
         # mark requestor as an XTSM compiler
         print "In class CommandLibrary, function compile_active_xtsm", "time:", float(time.time()) - 1412863872
-        #pdb.set_trace()
         self.server.connection_manager.update_client_roles(params['request'],'active_XTSM_compiler')
-        
-        dc=self.__determineContext__(params)
+        if params['request']['host'] == '169.254.174.200:8083':
+            #Coming from the PXI system. Right now a hack to preserve backwards
+            #compatability. I think I need to change this in labview
+            params.update({'data_context':'PXI'})
+            dc = self.__determineContext__(params)
+            if not dc.dict.has_key('_exp_sync'):
+                exp_sync = Experiment_Sync_Group(self.server)
+                dc.update({'_exp_sync':exp_sync})
+            dc['_exp_sync'].shotnumber = int(params['shotnumber'])
+        dc = self.__determineContext__(params)
+        '''
+        These lines are obsolete I think (CP) the pxi data context is "PXI"
         parent_dc = ''
         if dc.dict.has_key('_exp_sync'): 
             parent_dc=dc
+            
         # next lines look for the first defined data context that has
         # a pxi_data_context element matching 'default:ip address' of pxi system 
         else:
@@ -1515,59 +1608,73 @@ class CommandLibrary():
             params['request']['protocol'].transport.loseConnection()
             return
         else:
-            # get the experiment synchronization object; retrieve the current shotnumber
-            self.server.is_active_parser = True
-            dc=parent_dc
-            exp_sync = dc.get('_exp_sync')
-            sn = exp_sync.shotnumber
-         
-            # turn the active_xtsm string into an object
-            dc.update({'_active_xtsm_obj':XTSMobjectify.XTSM_Object(exp_sync.active_xtsm)})
-            xtsm_object = dc.get('_active_xtsm_obj')
+            dc = parent_dc
+        '''
+        if not dc.dict.has_key('_exp_sync'): 
+            self.server.broadcast('{"server_console": "'+
+                                params['request']['protocol'].peer.split(":")[0] +
+                                ' requested timing data, but nothing is ' +
+                                'assigned to run on this system."}')
+            params['request']['protocol'].transport.loseConnection()
+            return
+        
+        # get the experiment synchronization object; retrieve the current shotnumber
+        exp_sync = dc.get('_exp_sync')
+        #
+        '''
+        The pxi system is now keeping track of the shotnumber.
+        '''
+        sn = exp_sync.shotnumber
+        
+        #pdb.set_trace()
+        # turn the active_xtsm string into an object
+        dc.update({'_active_xtsm_obj':XTSMobjectify.XTSM_Object(exp_sync.active_xtsm)})
+        xtsm_object = dc.get('_active_xtsm_obj')
 
-            # parse the active xtsm to produce timingstrings
-            self.server.broadcast('{"server_console": "' +
-                                 str(datetime.now()) +
-                                 " Parsing started" +
-                                 " Shotnumber= " + str(sn) + '"}')
-            XTSMobjectify.preparse(xtsm_object)
-            t0 = time.time()
-            parserOutput = xtsm_object.parse(sn)
-            tp = time.time()
-            XTSMobjectify.postparse(parserOutput)            
-            t1 = time.time()
-            print "Parse Time: " , t1-t0, "s", "(postparse ", t1-tp, " s)"
-            self.server.broadcast('{"server_console": "' +
+        # parse the active xtsm to produce timingstrings
+        self.server.broadcast('{"server_console": "' +#'server_console' comnmand in javasdcript
+        str(datetime.now()) +  " Parsing started" + " Shotnumber= " + str(sn) + '"}')
+        
+        XTSMobjectify.preparse(xtsm_object)
+        t0 = time.time()
+        parserOutput = xtsm_object.parse(sn)
+        tp = time.time()
+        XTSMobjectify.postparse(parserOutput)            
+        t1 = time.time()
+        print "Parse Time: " , t1-t0, "s", "(postparse ", t1-tp, " s)"
+        self.server.broadcast('{"server_console": "' +
                                  str(datetime.now()) +
                                  " Parsing finished" +
                                  " Shotnumber= " + str(sn) +  '"}')
-            self.server.broadcast('{"parsed_active_xtsm": "' +
+        self.server.broadcast('{"parsed_active_xtsm": "' +
                                  str(datetime.now()) + '"}')
 
-            # setup data listeners for returned data
-            if (not dc.dict.has_key('_bombstack')):
-                dc.update({'_bombstack':DataBomb.DataBombList()})
-            if (not hasattr(dc['_bombstack'],'dataListenerManagers')):
-                setattr(dc['_bombstack'],
+        # setup data listeners for returned data
+        #pdb.set_trace()
+        if (not dc.dict.has_key('_bombstack')):
+            dc.update({'_bombstack':DataBomb.DataBombList()})
+        if (not hasattr(dc['_bombstack'],'dataListenerManagers')):
+            setattr(dc['_bombstack'],
                         'dataListenerManagers',
                         DataBomb.DataListenerManager())            
-            #pdb.set_trace()
-            if (not dc.dict.has_key('_analysis_stream')):
-                dc.update({'_analysis_stream':InfiniteFileStream.FileStream(params={'file_root_selector':'analysis_stream'})})
-            xtsm_object.XTSM._analysis_stream = dc['_analysis_stream']
-            #pdb.set_trace()
-            xtsm_object.installListeners(dc['_bombstack'].dataListenerManagers)#This calls _generate_listeners_ and passes in the DLM instance.
-            #InstallListeners passes the return of __generate_listeners__ to spawn in DLM class
-            # InstrumentCommands
-            #pdb.set_trace()
+        #pdb.set_trace()
+        if (not dc.dict.has_key('_analysis_stream')):
+            p = {'file_root_selector':'analysis_stream'}
+            dc.update({'_analysis_stream':InfiniteFileStream.FileStream(params=p)})
+        xtsm_object.XTSM._analysis_stream = dc['_analysis_stream']
+        #pdb.set_trace()
+        xtsm_object.installListeners(dc['_bombstack'].dataListenerManagers)#This calls _generate_listeners_ and passes in the DLM instance.
+        #InstallListeners passes the return of __generate_listeners__ to spawn in DLM class
+        # InstrumentCommands
             
-            #Dispatch all scripts, - Scripts in InstrumentCommand is in a subset of all Scripts - so, dispatch all Scripts first
+        #Dispatch all scripts, - Scripts in InstrumentCommand is in a subset of all Scripts - so, dispatch all Scripts first
+        for d in self.server.dataContexts:
+            print d
+        #Need to find the InstrumentCommand for the current sequence 
             
-            #Need to find the InstrumentCommand for the current sequence 
-            
-            commands = xtsm_object.XTSM.getDescendentsByType("InstrumentCommand")#Need to dispatch all scripts. Change This CP
-            for c in commands:
-                c.Script.dispatch(self.server)
+        commands = xtsm_object.XTSM.getDescendentsByType("InstrumentCommand")#Need to dispatch all scripts. Change This CP
+        for c in commands:
+            c.Script.dispatch(self.server)
             
             
            # self.server.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self.server,'create_example_pollcallback':True})})
@@ -1589,31 +1696,32 @@ class CommandLibrary():
             #    s.dispatch(self.server)
 
             # send back the timingstrings
-            timingstringOutput = str(bytearray(parserOutput.package_timingstrings()))
-            """
-            These write functions may crash any websocket connections that it
-            tries to write into since it may not be json
-            """
-            print "timingstringOutput, at time:", float(time.time()) - 1412863872
-            params['request']['protocol'].transport.write(timingstringOutput)
-            dc.get('_exp_sync').shotnumber = sn + 1
-            params['request']['protocol'].transport.loseConnection()
+        timingstringOutput = str(bytearray(parserOutput.package_timingstrings()))
+        """
+        These write functions may crash any websocket connections that it
+        tries to write into since it may not be json
+        """
+        print "timingstringOutput, at time:", float(time.time()) - 1412863872
+        params['request']['protocol'].transport.write(timingstringOutput)
+        #dc.get('_exp_sync').shotnumber = sn + 1 PXI system will keep track of sn
+        params['request']['protocol'].transport.loseConnection()
 
-            # begin tracking changes to the xtsm_object
-            def _changed_xtsm(changedelm):
-                self.server.broadcast('{"xtsm_change":"'+str(sn)+'"}')
-            xtsm_object.XTSM.onChange=_changed_xtsm
+        # begin tracking changes to the xtsm_object
+        def _changed_xtsm(changedelm):
+            self.server.broadcast('{"xtsm_change":"'+str(sn)+'"}')
+        xtsm_object.XTSM.onChange = _changed_xtsm
             
-            # attach the xtsm object that generated the outgoing control arrays to the experiment sync's xtsm_stack
-            dc['_exp_sync'].compiled_xtsm.update({sn:xtsm_object})
-            dc['_exp_sync'].last_successful_xtsm=exp_sync.active_xtsm
+        # attach the xtsm object that generated the outgoing control arrays to the experiment sync's xtsm_stack
+        dc['_exp_sync'].compiled_xtsm.update({sn:xtsm_object})
+        dc['_exp_sync'].last_successful_xtsm = exp_sync.active_xtsm
 
     def testparse_active_xtsm(self, params):
         """
         Parses the active_xtsm and posts the processed xtsm in the current data context
         as _testparsed_xtsm, as well as returns it to the requester as an xml string
         """
-        dc=self.__determineContext__(params)  # gets the calling command's data context
+        print "In class CommandLibrary, function testparse_active_xtsm"
+        dc = self.__determineContext__(params)  # gets the calling command's data context
         parent_dc = ''  # begins looking for the pxi system's data context
         for name, pdc in params['request']['protocol'].factory.parent.dataContexts.iteritems():
             try:
@@ -1622,10 +1730,13 @@ class CommandLibrary():
             except KeyError:
                 pass
 
-        if parent_dc=='': parent_dc=dc  # if there is no pxi data context, revert to caller's
+        if parent_dc=='':
+            parent_dc = dc  # if there is no pxi data context, revert to caller's
         active_xtsm = parent_dc.get('_active_xtsm')  # retrieve the xtsm code currently active
-        try: sn = parent_dc.get('_shotnumber')
-        except AttributeError: sn = 0
+        try:
+            sn = parent_dc.get('_shotnumber')
+        except AttributeError:
+            sn = 0
 
         xtsm_object = XTSMobjectify.XTSM_Object(active_xtsm)
         print datetime.now(), " Parsing started", " Shotnumber= ",sn
@@ -1637,7 +1748,7 @@ class CommandLibrary():
         timingstringOutput = str(bytearray(parserOutput.package_timingstrings()))
         # create timingstring even though it isn't used
         
-        parsed_xtsm=xtsm_object.XTSM.write_xml()
+        parsed_xtsm = xtsm_object.XTSM.write_xml()
         dc.update({'_testparsed_xtsm':parsed_xtsm})
         """
         These write functions may crash any websocket connections that it
@@ -1683,9 +1794,9 @@ class CommandLibrary():
         # next line adds a deployment command to the command queue
         #This should be moved into the Databomb class
         self.server.command_queue.add(ServerCommand(dc['_bombstack'].deploy,bomb_id))
-        #self.temp_plot(params, dbombnum)
+        self.temp_plot(params, bomb_id)
         
-    def temp_plot(self, params, dbombnum):
+    def temp_plot(self, params, bomb_id):
                 
         raw_databomb = msgpack.unpackb(params['databomb'])
         #hdf5_liveheap.glab_liveheap
@@ -1719,11 +1830,17 @@ class CommandLibrary():
                 raise
         #min_scale = 65536
         min_scale = -50
-        max_scale = 2000
-        bottom_left_coord = (260,165)
-        top_right_coord = (271,185)
-        region_of_interest = corrected_image[bottom_left_coord[0]:top_right_coord[0],
-                                             bottom_left_coord[1]:top_right_coord[1]]
+        max_scale = 3*1000
+        #bottom_left_coord = (120,345)
+        #top_right_coord = (340,180)
+        bottom_left_coord = (350,120)#(x,y)
+        top_right_coord = (350,180)
+        #bottom_left_coord = (260,165)
+        #top_right_coord = (271,185)
+        region_of_interest = corrected_image[top_right_coord[1]:bottom_left_coord[0],
+                                             bottom_left_coord[1]:top_right_coord[0]]
+        #region_of_interest = corrected_image[180:350, #down, specify bottom,
+        #                                     120:350]#second number is how far accross
         #pdb.set_trace()
         cax = ax.imshow(np.asarray(raw_img_data[1],dtype=int), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
         cbar = fig.colorbar(cax)
@@ -1736,7 +1853,7 @@ class CommandLibrary():
 
         ax4 = fig.add_subplot(224)
         cax4 = ax4.imshow(region_of_interest, cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
-        num_atoms = region_of_interest.sum() * 303 * pow(10,-6) *30
+        num_atoms = float(region_of_interest.sum()) * 303 * pow(10,-6) * 0.7
         
         '''
         numrows, numcols = corrected_image.shape
@@ -1760,7 +1877,7 @@ class CommandLibrary():
         
         path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()
         file_name = 'databomb_' + bomb_id + '_at_time_' + str(raw_databomb['packed_time'])
-        plt.title("SN="+str(raw_databomb['shotnumber'])+'\n_'+path+'\n/'+file_name+'\nNum_Atoms=total_counts*303*10^-6 = '+str(num_atoms)+' Counts = '+str(region_of_interest.sum()), fontsize=10)
+        plt.title("SN="+str(raw_databomb['shotnumber'])+'\n_'+path+'\n/'+file_name+'\nNum_Atoms=total_counts*303*10^-6*0.7 = '+str(num_atoms)+' Counts = '+str(region_of_interest.sum()), fontsize=10)
         #reactor.callInThread(plt.show,'block=False')
         #reactor.callFromThread(plt.close)
         #subtracted image
@@ -1923,7 +2040,7 @@ class CommandLibrary():
             return
         return
 
-    def _respond_and_close(params,msg):
+    def _respond_and_close(self,params,msg):
         """
         resonds to and closes (for standard HTTP) the socket communication 
         """
@@ -2202,7 +2319,7 @@ class GlabPythonManager():
     """
     def __init__(self):
         # intercept print statements
-        #sys.stdout=Mediated_StdOut()
+        #sys.stdout = Mediated_StdOut()
         
         if debug:
             print "debug: GlabPythonManager(), __init__"
@@ -2226,23 +2343,20 @@ class GlabPythonManager():
             time.sleep(10)
             reactor.listenTCP(port, self.listener)
         #reactor.addSystemEventTrigger('before','shutdown',server_shutdown)
-        def hello():
-            print ('Listening on ports:',
-                   str(port), '(standard HTTP),',
-                   str(wsport) + ' (websocket)',
-                   str(udpbport) + ' (udp port)')
-        reactor.callWhenRunning(hello)
+
 
         # create a Command Queue, Client Manager, and Default Data Context
         self.command_queue = CommandQueue(self)
         self.commandLibrary = CommandLibrary(self)
         self.connection_manager = ConnectionManager(self)
-        self.dataContexts = {'default':DataContext('default',self)}
+        self.dataContexts = {}
         self.server = self
-        self.is_active_parser = False
         self.ip = None
         self.instruments = {}
-        self.shotnumber = None
+        self.pxi_time_server_time = 0
+        self.active_parser_ip = None
+        self.active_parser_port = 0
+        self.pxi_time = 0
         
         # associate the CommandProtocol as a response method on that socket
         self.listener.protocol = CommandProtocol
@@ -2262,13 +2376,7 @@ class GlabPythonManager():
                                                  MulticastProtocol(),
                                                  listenMultiple=True)
         self.multicast.protocol.server = self 
-                
-        script_command = ServerCommand(self.connection_manager.add_script_server)
-        reactor.callWhenRunning(self.command_queue.add, script_command)
         
-        self.server_ping_period = 5.0 
-        ping_command = ServerCommand(self.server_ping)
-        reactor.callWhenRunning(self.command_queue.add, ping_command)
 
         reactor.addSystemEventTrigger('before', 'shutdown', self.stop)
         #self.clientManager.announce_data_listener(self.data_listener_manager.listeners[i],'ccd_image','rb_analysis')
@@ -2277,8 +2385,9 @@ class GlabPythonManager():
         #self.period = 5.0
         #self.execu.start(self.period)
         
+        self.server_ping_period = 5.0 
+        reactor.callWhenRunning(self._init_when_running)
 
-      
         #Moved into Client Manager CP
         # setup the websocket services
         #self.wsfactory = WebSocketServerFactory("ws://localhost:" + 
@@ -2318,6 +2427,20 @@ class GlabPythonManager():
         # the display has been disabled due to conflicts and hangs
         #self.refreshdisplay=task.LoopingCall(self.display.refresh)
         #self.refreshdisplay.start(0.5)
+
+    def _init_when_running(self):
+        self.server.id_node = uuid.getnode()
+        self.server.ip = socket.gethostbyname(socket.gethostname())
+        self.server.name = socket.gethostname()
+        dc_name = 'default:'+str(self.server.ip)
+        dc = DataContext(dc_name, self.server)
+        self.dataContexts.update({dc_name:dc})
+        self.command_queue.add(ServerCommand(self.connection_manager.add_script_server))
+        self.command_queue.add(ServerCommand(self.server_ping))
+        print ('Listening on ports:',
+               str(port), '(standard HTTP),',
+               str(wsport) + ' (websocket)',
+               str(udpbport) + ' (udp port)')
 
     def run(self):
         """
@@ -2365,9 +2488,6 @@ class GlabPythonManager():
         sends an identifying message on udp broadcast port
         """
         
-        self.server.id_node = uuid.getnode()
-        self.server.ip = socket.gethostbyname(socket.gethostname())
-        self.server.name = socket.gethostname()
         if not hasattr(self,"ping_data"):
             #need to include a list called ping_data - which is updated as needed. by "ping_data fnctions in objects of the server.
         #Nmaely this includes a list of instruments that are attached to the server.
@@ -2376,7 +2496,6 @@ class GlabPythonManager():
                             "server_ip":self.ip,
                             "server_port":str(wsport),
                             "server_id_node":self.id_node,
-                            "is_active_parser":self.is_active_parser,
                             "server_ping":"ping!"}
         self.ping_data.update({"server_time":time.time()})
         self.multicast.protocol.send(simplejson.dumps(self.ping_data))
