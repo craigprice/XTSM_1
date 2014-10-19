@@ -39,7 +39,6 @@ colorama.init(strip=False)
 import textwrap
 import pickle
 #import roperdarknoise as rdn
-import numpy as np
 import pstats
 
 import msgpack
@@ -82,7 +81,7 @@ import XTSM_Transforms
 import live_content
 import xstatus_ready
 import file_locations
-import server_initializations
+import server_initializations       
 import glab_instrument
 import script_server
 
@@ -91,6 +90,10 @@ import matplotlib.pyplot as plt
 import hdf5_liveheap
 import gc
 import objgraph
+import numpy as np
+import scipy
+from pyqtgraph.Qt import QtCore, QtGui
+import pyqtgraph as pg
 #from IPy import IP
 
 def tracefunc(frame, event, arg, indent=[0]):
@@ -281,7 +284,7 @@ class MulticastProtocol(DatagramProtocol):
                      exp_sync = Experiment_Sync_Group(self.server)
                      dc.update({'_exp_sync':exp_sync})
                 dc['_exp_sync'].shotnumber = int(datagram['shotnumber_started'])
-                print "Shot started:", datagram['shotnumber_started'], "pxi_time:", self.server.pxi_time, "time.time():", float(time.time())
+                #print "Shot started:", datagram['shotnumber_started'], "pxi_time:", self.server.pxi_time, "time.time():", float(time.time())
                 return
         try:
             datagram["server_ping"] 
@@ -862,7 +865,7 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
         #print "In class connection_manager, function, send()"
         if address.__class__.__name__ == 'ScriptServer':
             address.protocol.sendMessage(data,isBinary)
-            print "Just Sent:", data
+            #print "Just Sent:", data
             return True
         if address == 'active_parser':
             print "-----------act---------"
@@ -884,12 +887,14 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
                 p.sendMessage(data,isBinary)
                 #p.sendMessage(simplejson.dumps({'Not_Command_text_message':'hi','terminator':'die'}, ensure_ascii = False).encode('utf8'))
                 if not isBinary:
-                    print "Just Sent:", data
+                    pass
+                    #print "Just Sent:", data
                 else:
-                    print "Just Sent (binary):"
+                    #print "Just Sent (binary):"
                     d = msgpack.unpackb(data)
                     if 'databomb' in d:
-                        print "-A lot of databomb data here-"
+                        pass
+                        #print "-A lot of databomb data here-"
                     else:
                         print d
                 return True
@@ -995,7 +1000,7 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
                
     def catch_msgpack_payload(self, payload_, protocol):
         #pdb.set_trace()
-        print "class GlabClient, func catch_msgpack_payload"
+        #print "class GlabClient, func catch_msgpack_payload"
         try:
             payload = msgpack.unpackb(payload_)
         except:
@@ -1273,7 +1278,7 @@ class CommandLibrary():
         self.server = server
         
     def __determineContext__(self,params):
-        print "class CommandLibrary, func __determineContext__"
+        #print "class CommandLibrary, func __determineContext__"
         #print params
         if not params.has_key('data_context'):
             ip_address = ''
@@ -1290,14 +1295,14 @@ class CommandLibrary():
             if not self.server.dataContexts.has_key(dcname):
                 dc = DataContext(dcname, self.server)
                 self.server.dataContexts.update({dcname:dc})
-            print "dcname:",dcname
+            #print "dcname:",dcname
             return self.server.dataContexts[dcname]
             
         dcname = params['data_context']
         if not self.server.dataContexts.has_key(dcname):
             dc = DataContext(dcname, self.server)
             self.server.dataContexts.update({dcname:dc})
-        print "dcname:",dcname
+        #print "dcname:",dcname
         return self.server.dataContexts[dcname]
         
         '''
@@ -1333,7 +1338,7 @@ class CommandLibrary():
         """
         sets a variable by name in the caller's data context
         """
-        print "class CommandLibrary, func set_global_variable_from_socket"
+        #print "class CommandLibrary, func set_global_variable_from_socket"
         if params.has_key('IDLSPEEDTEST'):
             srtime = time.time()
             """
@@ -1386,7 +1391,7 @@ class CommandLibrary():
         #End Test
 
     def announce_listener(self,params):
-        print "class server, function announce_listener"
+        #print "class server, function announce_listener"
         self.server.DataBombDispatcher.link_to_instrument(params)
         #send back errors - return fail - ie no instrument.
 
@@ -1399,7 +1404,7 @@ class CommandLibrary():
         These write functions may crash any websocket connections that it
         tries to write into since it may not be json
         """
-        print "class CommandLibrary, func get_global_variable_from_socket"
+        #print "class CommandLibrary, func get_global_variable_from_socket"
         try:
             varname=params['variablename']
             dc=self.__determineContext__(params)
@@ -1434,7 +1439,7 @@ class CommandLibrary():
         These write functions may crash any websocket connections that it
         tries to write into since it may not be json
         """
-        print "class CommandLibrary, func get_data_contexts"
+        #print "class CommandLibrary, func get_data_contexts"
         for dc in params['request']['protocol'].factory.parent.dataContexts:
             params['request']['protocol'].transport.write(str(dc) + ',')
         params['request']['protocol'].transport.loseConnection()
@@ -1448,7 +1453,7 @@ class CommandLibrary():
         These write functions may crash any websocket connections that it
         tries to write into since it may not be json
         """
-        print "class CommandLibrary, func execute_from_socket"
+        #print "class CommandLibrary, func execute_from_socket"
         dc=self.__determineContext__(params).dict
         # setup a buffer to capture response, temporarily grab stdio
         params['request']['protocol'].transport.write('<Python<           '+params['command']+'\n\r')        
@@ -1484,7 +1489,7 @@ class CommandLibrary():
         Posts the active xtsm string that will be used for all subsequent calls
         from timing systems
         """
-        print "class CommandLibrary, func post_active_xtsm"
+        #print "class CommandLibrary, func post_active_xtsm"
         params.update({'data_context':'PXI'})#Not sure if this the right idea. CP
         dc = self.__determineContext__(params)
         try: 
@@ -1509,7 +1514,7 @@ class CommandLibrary():
         """
         Retrieves and returns xtsm by shotnumber
         """
-        print "class CommandLibrary, func request_xtsm"
+        #print "class CommandLibrary, func request_xtsm"
         dc = self.__determineContext__(params)
         message = 'XTSM requested, but shot number does not exist'
         '''
@@ -1571,9 +1576,9 @@ class CommandLibrary():
         the requester's data context.  If any are missing the _exp_sync element
         containing the active_xtsm string and shotnumber, they are skipped.
         """
-        print params
+        #print params
         # mark requestor as an XTSM compiler
-        print "In class CommandLibrary, function compile_active_xtsm", "time:", float(time.time()) - 1412863872
+        #print "In class CommandLibrary, function compile_active_xtsm", "time:", float(time.time()) - 1412863872
         self.server.connection_manager.update_client_roles(params['request'],'active_XTSM_compiler')
         if params['request']['host'] == '169.254.174.200:8083':
             #Coming from the PXI system. Right now a hack to preserve backwards
@@ -1641,13 +1646,23 @@ class CommandLibrary():
         tp = time.time()
         XTSMobjectify.postparse(parserOutput)            
         t1 = time.time()
-        print "Parse Time: " , t1-t0, "s", "(postparse ", t1-tp, " s)"
+        #print "Parse Time: " , t1-t0, "s", "(postparse ", t1-tp, " s)"
         self.server.broadcast('{"server_console": "' +
                                  str(datetime.now()) +
                                  " Parsing finished" +
                                  " Shotnumber= " + str(sn) +  '"}')
         self.server.broadcast('{"parsed_active_xtsm": "' +
                                  str(datetime.now()) + '"}')
+
+        #Setting parameters:
+        #pdb.set_trace()
+        for par in xtsm_object.XTSM.getDescendentsByType("Parameter"):
+            if hasattr(par,"PostToContext"):
+                if par.PostToContext.PCDATA == 'True':
+                    try:
+                        dc.update({par.Name.PCDATA:par.Value.parse()})
+                    except Exception as e:
+                        par.addAttribute("parser_error", str(e))
 
         # setup data listeners for returned data
         #pdb.set_trace()
@@ -1669,7 +1684,8 @@ class CommandLibrary():
             
         #Dispatch all scripts, - Scripts in InstrumentCommand is in a subset of all Scripts - so, dispatch all Scripts first
         for d in self.server.dataContexts:
-            print d
+            pass
+            #print d
         #Need to find the InstrumentCommand for the current sequence 
             
         commands = xtsm_object.XTSM.getDescendentsByType("InstrumentCommand")#Need to dispatch all scripts. Change This CP
@@ -1701,7 +1717,7 @@ class CommandLibrary():
         These write functions may crash any websocket connections that it
         tries to write into since it may not be json
         """
-        print "timingstringOutput, at time:", float(time.time()) - 1412863872
+        #print "timingstringOutput, at time:", float(time.time()) - 1412863872
         params['request']['protocol'].transport.write(timingstringOutput)
         #dc.get('_exp_sync').shotnumber = sn + 1 PXI system will keep track of sn
         params['request']['protocol'].transport.loseConnection()
@@ -1720,7 +1736,7 @@ class CommandLibrary():
         Parses the active_xtsm and posts the processed xtsm in the current data context
         as _testparsed_xtsm, as well as returns it to the requester as an xml string
         """
-        print "In class CommandLibrary, function testparse_active_xtsm"
+        #print "In class CommandLibrary, function testparse_active_xtsm"
         dc = self.__determineContext__(params)  # gets the calling command's data context
         parent_dc = ''  # begins looking for the pxi system's data context
         for name, pdc in params['request']['protocol'].factory.parent.dataContexts.iteritems():
@@ -1739,11 +1755,11 @@ class CommandLibrary():
             sn = 0
 
         xtsm_object = XTSMobjectify.XTSM_Object(active_xtsm)
-        print datetime.now(), " Parsing started", " Shotnumber= ",sn
+        #print datetime.now(), " Parsing started", " Shotnumber= ",sn
         XTSMobjectify.preparse(xtsm_object)
         parserOutput = xtsm_object.parse(sn)
         XTSMobjectify.postparse(parserOutput)
-        print datetime.now(), " Parsing finished", " Shotnumber= ",sn
+        #print datetime.now(), " Parsing finished", " Shotnumber= ",sn
 
         timingstringOutput = str(bytearray(parserOutput.package_timingstrings()))
         # create timingstring even though it isn't used
@@ -1765,7 +1781,7 @@ class CommandLibrary():
         and for analyses to be initiated 
         """
         
-        print "dealing with data bomb that came back"
+        #print "dealing with data bomb that came back"
         #print self.server.dataContexts['default:127.0.0.1'].dict['_bombstack'].dataListenerManagers.listeners #This is the context that has the listeners
         #pdb.set_trace()
         
@@ -1794,9 +1810,55 @@ class CommandLibrary():
         # next line adds a deployment command to the command queue
         #This should be moved into the Databomb class
         self.server.command_queue.add(ServerCommand(dc['_bombstack'].deploy,bomb_id))
-        self.temp_plot(params, bomb_id)
+        self.temp_plot(params, bomb_id,dc)
+        #self.temp_plot_qt(params, bomb_id,dc)
         
-    def temp_plot(self, params, bomb_id):
+    def temp_plot_qt(self,params,bomb_id, dc):
+        print "plotting"
+        raw_databomb = msgpack.unpackb(params['databomb'])
+        fig = plt.figure(figsize=(18, 12))  
+        ax = fig.add_subplot(221)
+        #pdb.set_trace()
+        raw_img_data = raw_databomb['data']
+        num_pics = len(raw_img_data)
+        corrected_image = [[]]
+        if num_pics != 0:
+            if num_pics == 3:
+                #print "three frames"prindd
+                corrected_image = np.subtract(np.asarray(raw_img_data[1],dtype=int),
+                                              np.asarray(raw_img_data[2],dtype=int))
+            else:
+                print "Not Supported"
+                return
+                raise
+        #min_scale = 65536
+        min_scale = -50
+        max_scale = 3*1000
+        if dc.dict.has_key('ImageScale'):
+            max_scale = dc['ImageScale']
+            
+
+        pix = 512
+        frame1 = np.asarray(np.random.rand(pix,pix).tolist())
+        frame2 = np.asarray(np.random.rand(pix,pix).tolist())
+
+        app = QtGui.QApplication([])
+        win = QtGui.QMainWindow()
+        win.resize(800,800)
+        imv = pg.ImageView()
+        win.setCentralWidget(imv)
+        win.show()
+        img = np.random.normal(size=(pix, pix)) * 20 + 100
+        img = frame1
+        img = img[np.newaxis,:,:]
+        data = np.asarray([frame1,frame2])
+        imv.setImage(data)
+        
+        if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
+            QtGui.QApplication.instance().exec_()
+        
+        
+    def temp_plot(self, params, bomb_id,dc):
                 
         raw_databomb = msgpack.unpackb(params['databomb'])
         #hdf5_liveheap.glab_liveheap
@@ -1820,17 +1882,19 @@ class CommandLibrary():
                 #                              np.asarray(raw_img_data[0],dtype=int))
                 corrected_image= np.subtract(np.asarray(raw_img_data[1],dtype=int), rdn.darkavg)               
             elif num_pics == 3:
-                print "three frames"
-                corrected_image = np.subtract(np.asarray(raw_img_data[1],dtype=int),
-                                              np.asarray(raw_img_data[2],dtype=int))
+                #print "three frames"prindd
+                corrected_image = np.log(np.divide(np.asarray(raw_img_data[1],dtype=float),
+                                              np.asarray(raw_img_data[2],dtype=float)))
                
             else:
                 print "Not Supported"
                 return
                 raise
         #min_scale = 65536
-        min_scale = -50
-        max_scale = 3*1000
+        min_scale = np.amin(raw_img_data[1])
+        max_scale = np.amax(raw_img_data[1])
+        if dc.dict.has_key('ImageScale'):
+            max_scale = dc['ImageScale']
         #bottom_left_coord = (120,345)
         #top_right_coord = (340,180)
         bottom_left_coord = (350,120)#(x,y)
@@ -1842,18 +1906,24 @@ class CommandLibrary():
         #region_of_interest = corrected_image[180:350, #down, specify bottom,
         #                                     120:350]#second number is how far accross
         #pdb.set_trace()
-        cax = ax.imshow(np.asarray(raw_img_data[1],dtype=int), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
+        max_scale_corr=np.amax(region_of_interest)
+        min_scale_corr=np.amin(region_of_interest)
+        self.server.ALL_DATABOMBS.update({str(raw_databomb['shotnumber']):[raw_img_data[0],raw_img_data[1],raw_img_data[2]]})
+        cax = ax.imshow(np.asarray(raw_img_data[1],dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
         cbar = fig.colorbar(cax)
         
         ax2 = fig.add_subplot(222)
-        cax2 = ax2.imshow(np.asarray(raw_img_data[2],dtype=int), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+        cax2 = ax2.imshow(np.asarray(raw_img_data[2],dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
 
         ax3 = fig.add_subplot(223)
-        cax3 = ax3.imshow(corrected_image, cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+        cax3 = ax3.imshow(corrected_image, cmap = mpl.cm.Greys_r,vmin=min_scale_corr, vmax=max_scale_corr,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+        cbar3 = fig.colorbar(cax3)
 
         ax4 = fig.add_subplot(224)
-        cax4 = ax4.imshow(region_of_interest, cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+        cax4 = ax4.imshow(region_of_interest, cmap = mpl.cm.Greys_r,vmin=min_scale_corr, vmax=max_scale_corr,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
         num_atoms = float(region_of_interest.sum()) * 303 * pow(10,-6) * 0.7
+        cbar4 = fig.colorbar(cax4)
+
         
         '''
         numrows, numcols = corrected_image.shape
@@ -1902,9 +1972,9 @@ class CommandLibrary():
         '''        
         #print "--> Data pickled to:", path+'/'+file_name+'.txt'
         #plt.savefig(path+'/'+file_name+'.svg')
-        #plt.savefig(path+'/'+file_name+'.png')
-        print "==Shotnumber:", raw_databomb['shotnumber']
-        print "Path to saved picture/data:", str(path+'/'+file_name+'.txt')
+        plt.savefig(path+'/'+file_name+'.png')
+        print "Shotnumber:", str(raw_databomb['shotnumber'])
+        #print "Path to saved picture/data:", str(path+'/'+file_name+'.txt')
         #plt.close()
         
         # mark requestor as a data generator
@@ -2112,10 +2182,10 @@ class SocketCommand():
         """
         Executes this command from CommandLibrary's functions
         """
-        print "In class SocketCommand, function execute"
+        #print "In class SocketCommand, function execute"
         #print "Params:"
         if self.params.has_key("databomb"):
-            print "---A databomb's data---"
+            #print "---A databomb's data---"
             pass
             #pdb.set_trace()
         else:
@@ -2357,7 +2427,8 @@ class GlabPythonManager():
         self.active_parser_ip = None
         self.active_parser_port = 0
         self.pxi_time = 0
-        
+        self.ALL_DATABOMBS = {}
+        #if self.ALL_DATABOMBS.len
         # associate the CommandProtocol as a response method on that socket
         self.listener.protocol = CommandProtocol
 

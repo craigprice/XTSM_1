@@ -2422,7 +2422,7 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         Returns listener creation data - this will be automatically called
         recursively down the tree by installListeners in XSTM_core class.
         """
-        print "in class InstrumentCommand, function __generate_listener__"
+        #print "in class InstrumentCommand, function __generate_listener__"
         #pdb.set_trace()
         
         
