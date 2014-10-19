@@ -113,6 +113,8 @@ dest.write( cBlock )
 source.close()
 dest.close()
 '''
+
+'''
 bytestream = msgpack.packb({'to_disk':3}, use_bin_type=True)
 filename = 'C:\\wamp\\www\\raw_buffers\\DBFS\\2014-10-09\\test'+str(time.time())+'.txt'
 f = open(filename,'ab')
@@ -135,11 +137,112 @@ unpacker = msgpack.Unpacker(output,use_list=False)
 print unpacker.next()
 print cBlock 
 print unpacker.next()
-
+'''
 
 
 #compDecomp( compObj1, "../python.xml", "python.xml.gz" )
 #print "source", os.stat("../python.xml").st_size/1024, "k"
 #print "dest", os.stat("python.xml.gz").st_size/1024, "k"
 
+# -*- coding: utf-8 -*-
+"""
+This example demonstrates many of the 2D plotting capabilities
+in pyqtgraph. All of the plots may be panned/scaled by dragging with 
+the left/right mouse buttons. Right click on any plot to show a context menu.
+"""
+'''
+#import initExample ## Add path to library (just for examples; you do not need this)
 
+import numpy as np
+frame1 = np.asarray(np.random.rand(500,500).tolist())
+frame2 = np.asarray(np.random.rand(500,500).tolist())
+from pyqtgraph.Qt import QtGui, QtCore
+import numpy as np
+import pyqtgraph as pg
+
+#QtGui.QApplication.setGraphicsSystem('raster')
+app = QtGui.QApplication([])
+#mw = QtGui.QMainWindow()
+#mw.resize(800,800)
+
+win = pg.GraphicsWindow(title="Basic plotting examples")
+win.resize(1000,600)
+win.setWindowTitle('pyqtgraph example: Plotting')
+
+# Enable antialiasing for prettier plots
+pg.setConfigOptions(antialias=True)
+
+
+
+p5 = win.addPlot(title="Scatter plot, axis labels, log scale")
+x = np.random.normal(size=1000) * 1e-5
+y = x*1000 + 0.005 * np.random.normal(size=1000)
+y -= y.min()-1.0
+mask = x > 1e-15
+x = x[mask]
+y = y[mask]
+p5.plot(x, y, pen=None, symbol='t', symbolPen=None, symbolSize=10, symbolBrush=(100, 100, 255, 50))
+p5.setLabel('left', "Y Axis", units='A')
+p5.setLabel('bottom', "Y Axis", units='s')
+p5.setLogMode(x=True, y=False)
+
+p5_2 = win.addPlot(title="Scatter plot, axis labels, log scale")
+p5_2.plot(x, y, pen=None, symbol='t', symbolPen=None, symbolSize=10, symbolBrush=(100, 100, 255, 50))
+p5_2.setLabel('left', "Y Axis", units='A')
+p5_2.setLabel('bottom', "Y Axis", units='s')
+p5_2.setLogMode(x=True, y=False)
+
+## Start Qt event loop unless running in interactive mode or using pyside.
+if __name__ == '__main__':
+    import sys
+    if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
+        QtGui.QApplication.instance().exec_()
+'''
+
+# -*- coding: utf-8 -*-
+"""
+Demonstrates use of GLScatterPlotItem with rapidly-updating plots.
+
+"""
+# -*- coding: utf-8 -*-
+"""
+This example demonstrates the use of ImageView, which is a high-level widget for 
+displaying and analyzing 2D and 3D data. ImageView provides:
+
+  1. A zoomable region (ViewBox) for displaying the image
+  2. A combination histogram and gradient editor (HistogramLUTItem) for
+     controlling the visual appearance of the image
+  3. A timeline for selecting the currently displayed frame (for 3D data only).
+  4. Tools for very basic analysis of image data (see ROI and Norm buttons)
+
+"""
+## Add path to library (just for examples; you do not need this)
+#import initExample
+
+import numpy as np
+import scipy
+from pyqtgraph.Qt import QtCore, QtGui
+import pyqtgraph as pg
+pix = 512
+frame1 = np.asarray(np.random.rand(pix,pix).tolist())
+frame2 = np.asarray(np.random.rand(pix,pix).tolist())
+
+app = QtGui.QApplication([])
+win = QtGui.QMainWindow()
+win.resize(800,800)
+imv = pg.ImageView()
+win.setCentralWidget(imv)
+win.show()
+img = np.random.normal(size=(pix, pix)) * 20 + 100
+img = frame1
+img = img[np.newaxis,:,:]
+data = np.asarray([frame1,frame2])
+imv.setImage(data)
+
+
+
+## Start Qt event loop unless running in interactive mode.
+if __name__ == '__main__':
+    import sys
+    if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
+        QtGui.QApplication.instance().exec_()
