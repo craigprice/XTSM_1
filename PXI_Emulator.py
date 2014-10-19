@@ -14,7 +14,8 @@ def send_compile_request(shotnumber=22):
     post_multipart("127.0.0.1:8083",'127.0.0.1:8083'
                     ,[('IDLSocket_ResponseFunction','compile_active_xtsm')
                     ,('shotnumber',str(shotnumber)),('Labview Version','1.0')
-                    ,('data_context','default:127.0.0.1'),('terminator','die')],[])
+                    #,('data_context','default:127.0.0.1'),('terminator','die')],[])
+                    ,('data_context','PXI_emulator'),('terminator','die')],[])
 
 def post_multipart(host, selector, fields, files):
     """

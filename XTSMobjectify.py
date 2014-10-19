@@ -2234,12 +2234,22 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         if not self.scoped: self.buildScope()
         if not hasattr(self,'syn_tree'): self._build_ast()
         sv=self.ScriptVisitor()
-        sv.visit(self.syn_tree)
+        self.assignments={}
+        self.references={}
+        self.dependencies={}
+        try:
+            sv.visit(self.syn_tree)
+        except AttributeError:
+            return
         self.assignments=sv.assignments
         self.references=sv.references
         self.dependencies=sv.references
+        #pdb.set_trace()
         for scopeitem in self.scope:
-            del self.dependencies[scopeitem]
+            try:
+                del self.dependencies[scopeitem]
+            except KeyError:
+                pass
         for dep in self.dependencies:
             self.dependencies.update({self.dependencies[dep]:False})
         
@@ -2255,6 +2265,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         priority for data will be first to scope elements, then parent, peers,
         children
         """
+        self._analyze_script()
         targs=[self.__parent__,self.__parent__.getChildNodes(),self.getChildNodes()] # possible target nodes
         for dep in self.dependencies:  # foreach dependent find a node with this name and quit
             for targ in targs:
@@ -2279,7 +2290,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         not already in the element's scope.
         """
         if hasattr(self,'active') == False:
-            print 'Script is not "active"'
+            #print 'Script is not "active"'#CP
             return
         if not self.active: return
         for dep in self.dependencies:
@@ -2304,23 +2315,37 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         """
         executes the script
         """
+        if not hasattr(self,'data'):
+            self.data = {}
         # if this requires a timeout facility, use timed script - note this
         # requires 0.5-1.0s of startup time!
         if hasattr(self,'TimeOut'):
-            self.data=sheltered_script.timed_execute_scripts([self.ScriptBody.PCDATA],[self.data])
+            self.data=sheltered_script.timed_execute_scripts([self.ScriptBody.PCDATA],[self.data])[0]
         else:  # otherwise use standard execution
-            self.data=sheltered_script.execute_scripts([self.ScriptBody.PCDATA],[self.data])
+            self.data=sheltered_script.execute_scripts([self.ScriptBody.PCDATA],[self.data])[0]
         self.package_outputs()
     
     def package_outputs(self):
         """
+        #TODO?
         attaches script outputs to the node after execution
         """
+        #pdb.set_trace()
         # first attach the console output and errors
-        if not hasattr(self,'ScriptConsole'): self.insert(ScriptConsole())
-        self.ScriptConsole[0].stream(self.data['_script_console'])
-        self.ScriptConsole[0].stream(self.data['_SCRIPT_ERROR'],texttype='err_out')
+        if not hasattr(self,'ScriptConsole'):
+            self.insert(ScriptConsole())
+            #pdb.set_trace()
+        try:
+            self.ScriptConsole[0].stream(self.data['_script_console'])
+        except KeyError:
+            pass
+        try:
+            self.ScriptConsole[0].stream(self.data['_SCRIPT_ERROR'],texttype='err_out')
+        except (KeyError,TypeError):
+            pass
         # harvest outputs declared as child ScriptOutput elements 
+        if not hasattr(self, 'ScriptOutput'):
+            return
         for output in self.ScriptOutput:
             try: output.set_value(self.data[output.Name.PCDATA.strip()])
             except AttributeError: output.addAttribute("parser_error","could not find element as an assigned value in script")
@@ -2329,7 +2354,12 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         """
         builds the abstract syntax tree of the script
         """
-        self.syn_tree=ast.parse(saxutils.unescape(self.ScriptBody.PCDATA))
+        if self.ScriptBody.PCDATA == "":
+            return
+        if self.ScriptBody.PCDATA == None:
+            return
+        arg = saxutils.unescape(self.ScriptBody.PCDATA)
+        self.syn_tree=ast.parse(arg)
 
     def dispatch(self,server):
         """
@@ -2370,7 +2400,8 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                     self.script_destination = action(self)
         sn = xtsm_owner.getItemByFieldValue("Parameter","Name","shotnumber")
         #self.insert(sn)
-        self.Time[0].parse()
+        if hasattr(self,'Time'):
+            self.Time[0].parse()
         #msg = self.write_xml()
         msg = self.ScriptBody.PCDATA
         self.server = server
@@ -2380,7 +2411,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         pckg = simplejson.dumps({"IDLSocket_ResponseFunction":"execute_script",
                                  "script_body":msg,
                                  "destination_for_data":self.data_destination,
-                                 "on_main_server":True,
+                                 #"on_main_server":True,
                                  "instrument_name":self.__parent__.OnInstrument[0].PCDATA,
                                  "time_to_execute":self.Time.PCDATA,
                                  "shotnumber":sn.Value.PCDATA,
@@ -2390,14 +2421,15 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
             print pckg
             pass
 
-
     class ScriptVisitor(ast.NodeVisitor):
         """
         helper-class to allow walking the syntax tree to find assignments
         and references to undeclared variables
         """
-        references={}    
-        assignments={}    
+        def __init__(self):
+            self.references={}    
+            self.assignments={}    
+            
         def visit_Name(self, node):
             if node.id in self.assignments: return
             self.references.update({node.id:node.lineno})
@@ -2422,7 +2454,7 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         Returns listener creation data - this will be automatically called
         recursively down the tree by installListeners in XSTM_core class.
         """
-        #print "in class InstrumentCommand, function __generate_listener__"
+        print "in class InstrumentCommand, function __generate_listener__"
         #pdb.set_trace()
         
         
@@ -2446,17 +2478,23 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         #tgobj=cm.getItemByFieldValue("TimingGroupData","GroupNumber",str(int(tg)))
         #This gets the instrument object's metadata
         #pdb.set_trace()
+        #instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
+        #                                                 "OnInstrument",
+        #                                                 self.OnInstrument[0].PCDATA)
+                                                         
+       
+        #print gen
+        
         instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
-                                                         "OnInstrument",
+                                                         "Name",
                                                          self.OnInstrument[0].PCDATA)
-        gen =  instrument_head.ServerIPAddress[0].PCDATA 
-        print gen
-        self.__listener_criteria__ = {"shotnumber":int(self.scope["shotnumber"]),
-                                          "sender":gen}
+                                                         
+        #gen =  instrument_head.ServerIPAddress[0].PCDATA                                                  
+        self.__listener_criteria__ = {"shotnumber":int(self.scope["shotnumber"])}
                                    #"sender":tgobj.Name.PCDATA}
-        self.__listener_criteria__.update({'data_generator':gen,
-                                           'server_IP_address':instrument_head.ServerIPAddress[0].PCDATA,
-                                           'number_in_data_sequence':0})
+        self.__listener_criteria__.update({'server_IP_address':instrument_head.ServerIPAddress[0].PCDATA,
+                                           #'data_generator':gen,
+                                           'instrument_name':"CCD"})
         data.update({"listen_for":self.__listener_criteria__ })
         data.update({"method": "link"})
         data.update({"onlink":self.onlink})
@@ -2984,6 +3022,7 @@ class Parameter(gnosis.xml.objectify._XO_,XTSM_core):
             self.insert(gnosis.xml.objectify._XO_Value(value))
         return None
 
+
 def main_test():
     """
     Trouble-shooting and testing procedure - not for long-term use
@@ -3051,15 +3090,24 @@ class XTSM_Object(object):
         a textfile containing xtsm - THIS IS A TOPLEVEL ROUTINE FOR THE PARSER 
         """
         if not isinstance(source, basestring):
-            try: source=source.getvalue()
+            try:
+                source=source.getvalue()
             except AttributeError: 
                 raise InvalidSource(source)
         if source.find('<XTSM')==-1:
-            try: source=urllib.urlopen(source).read()
+            try:
+                source=urllib.urlopen(source).read()
             except IOError: 
-                try: source=urllib.urlopen('file:'+source).read()
-                except IOError: InvalidSource(source)
-        self.XTSM = gnosis.xml.objectify.make_instance(source)
+                try: 
+                    source=urllib.urlopen('file:'+source).read()
+                except IOError:
+                    InvalidSource(source)
+        try:
+            self.XTSM = gnosis.xml.objectify.make_instance(source)
+        except AttributeError as e:
+            print "Error making instance of XTSM"
+            print e
+            return
         
     def parse(self, shotnumber = 0):
         """
@@ -3375,7 +3423,7 @@ def postparse(timingstring):
     Executes functions after parsing the XTSM code.Combine timing strings from timing groups with the delay train. 
     You must list names of groups to combine (each in a seperate "value" field), including the delay train group.  These groups must have the same number of updates.
     You can optionally include integer values for a byte-length-per-value, along with filler position and filler length, the latter two of which can be repeated indefinitely.
-    For more info, see the parser's Command_Library.
+    For more info, see the parsers Command_Library.
     """
     
     timingstring.Command_Library = Command_Library()

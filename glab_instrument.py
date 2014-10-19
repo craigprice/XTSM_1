@@ -74,6 +74,7 @@ class Glab_Instrument():
         any of which can be overwritten by items in incoming data
         """
         print "class Glab_Instrument, function serve_data"
+        print data
         if not self.server: 
             return False
             
@@ -88,7 +89,7 @@ class Glab_Instrument():
                         'end_acq_time':self.end_acq_time,
                         "destination_priorities":default_databomb_destination_priorities} 
         default_data.update(params)    
-        default_data.update({'shotnumber':self.server.shotnumber})
+        default_data.update({'shotnumber':self.server.dataContexts['PXI_emulator'].dict['_exp_sync'].shotnumber})
         try: default_data.update({"server_instance":self.server.id,
                                   "server_machine":self.server.hostid})
         except:
@@ -128,7 +129,7 @@ class Glab_Instrument():
             return True
         else:
             return False
-    _Xserver_poll._poll_period = 1.#"15" seconds is being attached to the function as an element of the function-object
+    _Xserver_poll._poll_period = 1000.#"15" seconds is being attached to the function as an element of the function-object
     
     def _Xserver_callback(self):
         """
@@ -138,5 +139,6 @@ class Glab_Instrument():
         #    return
         print "generic instrument callback called"
         # generate some random data and return it using the serve data mechanism
-        self.serve_data(numpy.random.rand(5,5).tolist())
+        dim = 5
+        self.serve_data([numpy.random.rand(dim,dim).tolist(),numpy.random.rand(dim,dim).tolist(),numpy.random.rand(dim,dim).tolist()])
         
