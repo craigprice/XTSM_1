@@ -274,6 +274,7 @@ class MulticastProtocol(DatagramProtocol):
         datagram = simplejson.loads(datagram_)
         if hasattr(datagram,'keys'):
             if 'shotnumber_started' in datagram.keys():
+                print datagram
                 #dc.get('_exp_sync').shotnumber = datagram['shotnumber_started']
                 self.server.pxi_time = float(datagram['time'])
                 self.server.pxi_time_server_time = float(datagram['time']) - float(time.time())#Make this so that it synchronizes the clocks CP
@@ -328,6 +329,7 @@ class WSClientProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         #print "class WSClientProtocol, func onMessage"
+        #print payload
         self.log_message()
         self.connection.last_message_time = time.time()
         msg_command = ServerCommand(self.connection.on_message, payload, isBinary, self)
@@ -413,6 +415,8 @@ class WSServerProtocol(WebSocketServerProtocol):
         pass        
             
     def onMessage(self, payload, isBinary):
+        #print "On message"
+        #print payload
         self.connection.last_connection_time = time.time()
         self.log_message()
         self.connection.last_message_time = time.time()
@@ -591,7 +595,7 @@ class CommandProtocol(protocol.Protocol):
             del self.factory.openConnections[self.ConnectionUID]
         except KeyError:
             pass
-        print datetime.now(), "Disconnected from %s: %s" % (self.peer,reason.value)
+        #print datetime.now(), "Disconnected from %s: %s" % (self.peer,reason.value)
 
 class DataContext(XTSM_Server_Objects.XTSM_Server_Object):
     """
@@ -602,7 +606,7 @@ class DataContext(XTSM_Server_Objects.XTSM_Server_Object):
     .dict contains dictionary of variables and values
     """
     def __init__(self, name, server):
-        print "class DataContext, function __init__", 'name:', name
+        #print "class DataContext, function __init__", 'name:', name
         self.dict = {"__context__":name}
         self.name = name
         self.server = server
@@ -901,10 +905,11 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
         for ss in self.script_servers.keys():
             if self.script_servers[ss].ip == address:
                 p = self.script_servers[ss].protocol
-                print p.sendMessage(data,isBinary)
-                print "Just Sent:", data
+                #print p.sendMessage(data,isBinary)
+                #print "Just Sent:", data
                 return True
-        print "Not Sent!"
+        print "Not Sent!:"
+        #print data
         return False
         
     def is_known_server(self,ping_payload):
@@ -1043,8 +1048,8 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
             print payload['Not_Command_text_message']
             return
             
-        print "payload:"
-        print payload
+        #print "payload:"
+        #print payload
 
         '''
         if hasattr(payload, "shotnumber"):
@@ -1579,6 +1584,18 @@ class CommandLibrary():
         #print params
         # mark requestor as an XTSM compiler
         #print "In class CommandLibrary, function compile_active_xtsm", "time:", float(time.time()) - 1412863872
+        
+        '''
+        self.server.connection_manager.update_client_roles(params['request'],'active_XTSM_compiler')
+        dc = self.__determineContext__(params)
+        print "datacontext name:", dc.name
+        if not dc.dict.has_key('_exp_sync'):
+            exp_sync = Experiment_Sync_Group(self.server)
+            dc.update({'_exp_sync':exp_sync})
+        dc['_exp_sync'].shotnumber = int(params['shotnumber'])
+        print "datacontext name:", dc.name
+        '''
+        
         self.server.connection_manager.update_client_roles(params['request'],'active_XTSM_compiler')
         if params['request']['host'] == '169.254.174.200:8083':
             #Coming from the PXI system. Right now a hack to preserve backwards
@@ -1590,6 +1607,7 @@ class CommandLibrary():
                 dc.update({'_exp_sync':exp_sync})
             dc['_exp_sync'].shotnumber = int(params['shotnumber'])
         dc = self.__determineContext__(params)
+        
         '''
         These lines are obsolete I think (CP) the pxi data context is "PXI"
         parent_dc = ''
@@ -1621,8 +1639,10 @@ class CommandLibrary():
                                 ' requested timing data, but nothing is ' +
                                 'assigned to run on this system."}')
             params['request']['protocol'].transport.loseConnection()
+            print "Error: nothing assigned to run"
             return
         
+        #print "datacontext name:", dc.name
         # get the experiment synchronization object; retrieve the current shotnumber
         exp_sync = dc.get('_exp_sync')
         #
@@ -1635,12 +1655,17 @@ class CommandLibrary():
         # turn the active_xtsm string into an object
         dc.update({'_active_xtsm_obj':XTSMobjectify.XTSM_Object(exp_sync.active_xtsm)})
         xtsm_object = dc.get('_active_xtsm_obj')
+        #print "datacontext name:", dc.name
 
         # parse the active xtsm to produce timingstrings
         self.server.broadcast('{"server_console": "' +#'server_console' comnmand in javasdcript
         str(datetime.now()) +  " Parsing started" + " Shotnumber= " + str(sn) + '"}')
         
-        XTSMobjectify.preparse(xtsm_object)
+        try:
+            XTSMobjectify.preparse(xtsm_object)
+        except AttributeError:
+            print "Error: Bad XTSM"
+            return
         t0 = time.time()
         parserOutput = xtsm_object.parse(sn)
         tp = time.time()
@@ -1663,6 +1688,8 @@ class CommandLibrary():
                         dc.update({par.Name.PCDATA:par.Value.parse()})
                     except Exception as e:
                         par.addAttribute("parser_error", str(e))
+                        print "Error: parser"
+                        return
 
         # setup data listeners for returned data
         #pdb.set_trace()
@@ -1681,6 +1708,7 @@ class CommandLibrary():
         xtsm_object.installListeners(dc['_bombstack'].dataListenerManagers)#This calls _generate_listeners_ and passes in the DLM instance.
         #InstallListeners passes the return of __generate_listeners__ to spawn in DLM class
         # InstrumentCommands
+        #print "datacontext name:", dc.name
             
         #Dispatch all scripts, - Scripts in InstrumentCommand is in a subset of all Scripts - so, dispatch all Scripts first
         for d in self.server.dataContexts:
@@ -1718,6 +1746,7 @@ class CommandLibrary():
         tries to write into since it may not be json
         """
         #print "timingstringOutput, at time:", float(time.time()) - 1412863872
+        #pdb.set_trace()
         params['request']['protocol'].transport.write(timingstringOutput)
         #dc.get('_exp_sync').shotnumber = sn + 1 PXI system will keep track of sn
         params['request']['protocol'].transport.loseConnection()
@@ -1730,6 +1759,7 @@ class CommandLibrary():
         # attach the xtsm object that generated the outgoing control arrays to the experiment sync's xtsm_stack
         dc['_exp_sync'].compiled_xtsm.update({sn:xtsm_object})
         dc['_exp_sync'].last_successful_xtsm = exp_sync.active_xtsm
+        #print 'end compile active'
 
     def testparse_active_xtsm(self, params):
         """
@@ -1781,7 +1811,7 @@ class CommandLibrary():
         and for analyses to be initiated 
         """
         
-        #print "dealing with data bomb that came back"
+        print "dealing with data bomb that came back"
         #print self.server.dataContexts['default:127.0.0.1'].dict['_bombstack'].dataListenerManagers.listeners #This is the context that has the listeners
         #pdb.set_trace()
         
@@ -1810,8 +1840,9 @@ class CommandLibrary():
         # next line adds a deployment command to the command queue
         #This should be moved into the Databomb class
         self.server.command_queue.add(ServerCommand(dc['_bombstack'].deploy,bomb_id))
+        #self.temp_plot_oneframe(params, bomb_id,dc) #LRJ 10-21-2014 _oneframe
         self.temp_plot(params, bomb_id,dc)
-        #self.temp_plot_qt(params, bomb_id,dc)
+       
         
     def temp_plot_qt(self,params,bomb_id, dc):
         print "plotting"
@@ -1832,10 +1863,18 @@ class CommandLibrary():
                 return
                 raise
         #min_scale = 65536
-        min_scale = -50
-        max_scale = 3*1000
-        if dc.dict.has_key('ImageScale'):
-            max_scale = dc['ImageScale']
+        max_scale_zoom = -50
+        min_scale_zoom = 30*1000
+        max_scale_full = -50
+        min_scale_full = 30*1000
+        if dc.dict.has_key('ImageScaleZoomMax'):
+            max_scale_zoom = dc['ImageScaleZoomMax']
+        if dc.dict.has_key('ImageScaleZoomMin'):
+            min_scale_zoom = dc['ImageScaleZoomMin']
+        if dc.dict.has_key('ImageScaleFullMax'):
+            max_scale_full = dc['ImageScaleFullMax']
+        if dc.dict.has_key('ImageScaleFullMin'):
+            min_scale_full = dc['ImageScaleFullMin']
             
 
         pix = 512
@@ -1867,7 +1906,7 @@ class CommandLibrary():
                 
         
         fig = plt.figure(figsize=(18, 12))  
-        ax = fig.add_subplot(221)
+        ax = fig.add_subplot(231)
         #pdb.set_trace()
         raw_img_data = raw_databomb['data']
         num_pics = len(raw_img_data)
@@ -1883,18 +1922,29 @@ class CommandLibrary():
                 corrected_image= np.subtract(np.asarray(raw_img_data[1],dtype=int), rdn.darkavg)               
             elif num_pics == 3:
                 #print "three frames"prindd
-                corrected_image = np.log(np.divide(np.asarray(raw_img_data[1],dtype=float),
-                                              np.asarray(raw_img_data[2],dtype=float)))
+#                corrected_image = np.log(np.divide(np.asarray(raw_img_data[1],dtype=float),
+#                                              np.asarray(raw_img_data[2],dtype=float)))
+                 corrected_image = np.divide(np.asarray(raw_img_data[1],dtype=float),np.asarray(raw_img_data[2],dtype=float))
+                 
+                 thresh_image = np.log(np.divide(np.asarray(raw_img_data[1],dtype=int),np.asarray(raw_img_data[2],dtype=int)))
                
             else:
                 print "Not Supported"
                 return
                 raise
         #min_scale = 65536
-        min_scale = np.amin(raw_img_data[1])
-        max_scale = np.amax(raw_img_data[1])
-        if dc.dict.has_key('ImageScale'):
-            max_scale = dc['ImageScale']
+        max_scale_zoom = -50
+        min_scale_zoom = 3*1000
+        max_scale_full = np.amax(raw_img_data[1])
+        min_scale_full = np.amin(raw_img_data[1])
+        if dc.dict.has_key('ImageScaleZoomMax'):
+            max_scale_zoom = dc['ImageScaleZoomMax']
+        if dc.dict.has_key('ImageScaleZoomMin'):
+            min_scale_zoom = dc['ImageScaleZoomMin']
+        if dc.dict.has_key('ImageScaleFullMax'):
+            max_scale_full = dc['ImageScaleFullMax']
+        if dc.dict.has_key('ImageScaleFullMin'):
+            min_scale_full = dc['ImageScaleFullMin']
         #bottom_left_coord = (120,345)
         #top_right_coord = (340,180)
         bottom_left_coord = (350,120)#(x,y)
@@ -1906,23 +1956,25 @@ class CommandLibrary():
         #region_of_interest = corrected_image[180:350, #down, specify bottom,
         #                                     120:350]#second number is how far accross
         #pdb.set_trace()
-        max_scale_corr=np.amax(region_of_interest)
-        min_scale_corr=np.amin(region_of_interest)
         self.server.ALL_DATABOMBS.update({str(raw_databomb['shotnumber']):[raw_img_data[0],raw_img_data[1],raw_img_data[2]]})
-        cax = ax.imshow(np.asarray(raw_img_data[1],dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
+        cax = ax.imshow(np.asarray(raw_img_data[1],dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale_full, vmax=max_scale_full, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
         cbar = fig.colorbar(cax)
         
-        ax2 = fig.add_subplot(222)
-        cax2 = ax2.imshow(np.asarray(raw_img_data[2],dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+        ax2 = fig.add_subplot(232)
+        cax2 = ax2.imshow(np.asarray(raw_img_data[2],dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale_full, vmax=max_scale_full,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
 
-        ax3 = fig.add_subplot(223)
-        cax3 = ax3.imshow(corrected_image, cmap = mpl.cm.Greys_r,vmin=min_scale_corr, vmax=max_scale_corr,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+        ax3 = fig.add_subplot(233)
+        cax3 = ax3.imshow(corrected_image, cmap = mpl.cm.Greys_r,vmin=min_scale_zoom, vmax=max_scale_zoom,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
         cbar3 = fig.colorbar(cax3)
 
-        ax4 = fig.add_subplot(224)
-        cax4 = ax4.imshow(region_of_interest, cmap = mpl.cm.Greys_r,vmin=min_scale_corr, vmax=max_scale_corr,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+        ax4 = fig.add_subplot(234)
+        cax4 = ax4.imshow(region_of_interest, cmap = mpl.cm.Greys_r,vmin=min_scale_zoom, vmax=max_scale_zoom,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
         num_atoms = float(region_of_interest.sum()) * 303 * pow(10,-6) * 0.7
         cbar4 = fig.colorbar(cax4)
+        
+        ax5 = fig.add_subplot(235)
+        cax5 = ax5.imshow(thresh_image, cmap = mpl.cm.Greys_r,vmin=-1, vmax=1,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+        cbar5 = fig.colorbar(cax5)
 
         
         '''
@@ -1979,7 +2031,60 @@ class CommandLibrary():
         
         # mark requestor as a data generator
         #pdb.set_trace()
-
+       
+    def temp_plot_oneframe(self, params, bomb_id,dc):
+        
+        raw_databomb = msgpack.unpackb(params['databomb'])
+        #hdf5_liveheap.glab_liveheap
+        #file_storage = hdf5_liveheap.glab_datastore()
+        #file_storage.
+                
+        
+        fig = plt.figure(figsize=(18, 12))  
+        ax = fig.add_subplot(221)  
+        
+        #pdb.set_trace()
+        raw_img_data = raw_databomb['data']
+        num_pics = len(raw_img_data)
+        corrected_image = raw_img_data[0]
+       
+      
+        
+        
+        '''
+        numrows, numcols = corrected_image.shape
+        def format_coord(x, y):
+            col = int(x+0.5)
+            row = int(y+0.5)
+            if col>=0 and col<numcols and row>=0 and row<numrows:
+                z = corrected_image[row,col]
+                return 'x=%1.4f, y=%1.4f, z=%1.4f'%(x, y, z)
+            else:
+                return 'x=%1.4f, y=%1.4f'%(x, y)
+       '''
+       
+        max_scale=1200
+        #max_scale=np.amax(corrected_image)
+        min_scale=np.amin(corrected_image)
+        #min_scale=0
+        cax = ax.imshow(np.asarray(corrected_image,dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
+        cbar = fig.colorbar(cax)
+        
+        path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()
+        file_name = 'databomb_' + bomb_id + '_at_time_' + str(raw_databomb['packed_time'])
+        plt.title("SN="+str(raw_databomb['shotnumber']), fontsize=10)
+        plt.show(block=False)
+               
+     
+        plt.savefig(path+'/'+file_name+'.png')
+        print "Shotnumber:", str(raw_databomb['shotnumber'])
+        #print "Path to saved picture/data:", str(path+'/'+file_name+'.txt')
+        #plt.close()
+        
+        # mark requestor as a data generator
+        #pdb.set_trace()    
+    
+    
     def stop_listening(self,params):
         """
         Exit routine, stops twisted reactor (abruptly).

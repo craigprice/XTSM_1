@@ -2415,7 +2415,7 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
     """
     def __init__(self):
         XTSM_core.__init__(self)
-        print "class InstrumentCommand, func __init__"
+        #print "class InstrumentCommand, func __init__"
         
     def __generate_listener__(self):#This is called by installListeners - which is called in Server, compile active xtsm
         """
@@ -3075,7 +3075,7 @@ class XTSM_Object(object):
         scans down the XTSM tree, creating dataListeners for all elements
         which should generate them.
         """
-        print "class XTSM_object, function install Listeners"
+        #print "class XTSM_object, function install Listeners"
         self.XTSM.head.installListeners(dataListenerManager)#Runs the "install Listeners function in XTSM_core class
         self.XTSM.getActiveSequence().installListeners(dataListenerManager)
 

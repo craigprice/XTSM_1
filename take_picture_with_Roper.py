@@ -19,8 +19,8 @@ if not isInitialized:
 self.server.dataContexts['default'].dict['Roper_CCD'].set_param({"EXP_TIMING_MODE":3,
                        "EXP_EXPOSURE":0.1, 
                        "EXP_ACCUMS":1, 
-                       "EXP_SEQUENTS":3,
-                       "EXP_ANALOG_GAIN":3})    
+                       "EXP_SEQUENTS":1,
+                       "EXP_ANALOG_GAIN":1})    
 self.server.dataContexts['default'].dict['Roper_CCD'].start_acquisition()
 #print "Done with Script"
 '''
