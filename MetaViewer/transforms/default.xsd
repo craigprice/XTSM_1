@@ -527,15 +527,6 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-
-    <xs:complexType name="Comment">
-    <xs:simpleContent>
-      <xs:extension base="xs:string">
-        <xs:attributeGroup ref="XTSM_general_atts"/>
-        <xs:attributeGroup ref="XTSM_viewer_atts"/>
-      </xs:extension>
-    </xs:simpleContent>
-  </xs:complexType>
   
     <xs:complexType name="ServerIPAddress">
     <xs:simpleContent>
