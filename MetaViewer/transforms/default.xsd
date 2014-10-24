@@ -190,10 +190,8 @@
     <xs:sequence>
       <xs:element name="Name" type="Name"/>
       <xs:element name="Description" type="Description" />
-	  <xs:element name="TResolution" type="TResolution" maxOccurs="1" minOccurs="1">
-	  <xs:element name="VResolution" type="VResolution" maxOccurs="1" minOccurs="1">
       <xs:element name="StartTime" type="StartTime" maxOccurs="1" minOccurs="1">
-		<xs:annotation>
+        <xs:annotation>
           <xs:appinfo>
             <xtsm_viewer:topline value="true"/>
           </xs:appinfo>
@@ -272,8 +270,8 @@
       <xs:element name="ScriptOutput" type="ScriptOutput" maxOccurs="unbounded" minOccurs="0"/>
     </xs:sequence>
     <xs:attributeGroup ref="XTSM_general_atts"/>
-    <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
+    <xs:attributeGroup ref="XTSM_viewer_atts"/>
 
   <xs:complexType name="ScriptOutput">
     <xs:sequence>
@@ -366,6 +364,27 @@
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
 
+    <xs:complexType name="Instrument">
+    <xs:sequence>
+      <xs:element name="Name" type="Name"  maxOccurs="1" minOccurs="1">
+        <xs:annotation>
+          <xs:appinfo>
+            <xtsm_viewer:topline value="true"/>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="ServerIPAddress" type="ServerIPAddress"  maxOccurs="1" minOccurs="1">
+        <xs:annotation>
+          <xs:appinfo>
+            <xtsm_viewer:topline value="false"/>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+    <xs:attributeGroup ref="XTSM_general_atts"/>
+    <xs:attributeGroup ref="XTSM_viewer_atts"/>
+  </xs:complexType>
+  
   <xs:complexType name="HeapTo">
     <xs:simpleContent>
       <xs:extension base="xs:string">
@@ -509,6 +528,24 @@
     </xs:simpleContent>
   </xs:complexType>
 
+    <xs:complexType name="Comment">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attributeGroup ref="XTSM_general_atts"/>
+        <xs:attributeGroup ref="XTSM_viewer_atts"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  
+    <xs:complexType name="ServerIPAddress">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attributeGroup ref="XTSM_general_atts"/>
+        <xs:attributeGroup ref="XTSM_viewer_atts"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  
   <xs:complexType name="ConnectsTo">
     <xs:simpleContent>
       <xs:extension base="xs:string">
