@@ -1,19 +1,33 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Oct 19 18:27:24 2014
+    # -*- coding: utf-8 -*-
+    
+#http://stackoverflow.com/questions/4155052/how-to-display-a-message-box-on-pyqt4
+    
+    #Need the following block of imports to be before any twisted module imports.
 
-@author: Nate
-"""
-
-import numpy as np
+    
+import numpy
 import scipy, pdb
+import inspect, time
+import uuid
+import pdb
+   
+from PyQt4 import QtCore
+from PyQt4.QtGui import *
+import sys
+
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 import pyqtgraph.dockarea
 import pyqtgraph.console
-import sys, inspect, time
 
-
+    
+import msgpack
+import msgpack_numpy
+msgpack_numpy.patch()#This patch actually changes the behavior of "msgpack"
+#specifically, it changes how, "encoding='utf-8'" functions when unpacking    
+    
+DEBUG = True    
+    
 class docked_gui():
     """
     Core class for data viewing GUIs.  Uses a set of docks to store controls
@@ -24,9 +38,11 @@ class docked_gui():
     """
     _console_namespace={}
     def __init__(self,params={}):
+        if DEBUG: print("class data_guis.docked_gui, func __init__")
         for k in params.keys():
             setattr(self,k,params[k])
-        self._console_namespace.update({"self":self})        
+        self._console_namespace.update({"self":self})  
+        #self._console_namespace.update({"execute_from_socket":self.execute_from_socket})        
         self.app = QtGui.QApplication([])
         ## Create window with ImageView widget
         self.win = QtGui.QMainWindow()
@@ -34,9 +50,19 @@ class docked_gui():
         self.win.setCentralWidget(self.dock_area)
         #win.setCentralWidget(imv)
         self.win.resize(800,800)
+        self.command_library = CommandLibrary(self)
+        
+
         
         for dock in sorted([m for m in dir(self) if (("_init_dock_" in m))]):
+            pass
+            print dock
             getattr(self,dock)()
+        
+        
+        #reactor.run()
+            
+    #def execute_from_socket(self, command):
         
     def _init_dock_dockcon(self):
         self.__dock_dockcon = pyqtgraph.dockarea.Dock("Dock Control", size=(500, 50)) ## give this dock the minimum possible size
@@ -68,6 +94,93 @@ class docked_gui():
         self._console = pyqtgraph.console.ConsoleWidget(namespace=self._console_namespace)
         self.__dock_console.addWidget(self._console)
         
+class CommandLibrary():
+    """
+    The Command Library contains all methods a server can execute in response
+    to an HTTP request; the command is specified by name with the 
+    "IDLSocket_ResponseFunction" parameter in an HTTP request
+    Note: it is the responsibility of each routine to write responses
+    _AND CLOSE_ the initiating HTTP communication using
+    params>request>protocol>loseConnection()
+    """
+    def __init__(self, gui):
+        if DEBUG: print "class CommandLibrary, func __init__"
+        #self.server = server
+        self.gui = gui
+        
+    def execute_from_socket(self,params):
+        """
+        Executes an arbitrary python command through the socket, and returns the console
+        output
+        """
+        # setup a buffer to capture response, temporarily grab stdio
+        params['request']['protocol'].transport.write()
+        rbuffer = StringIO()
+        sys.stdout = rbuffer
+        try: 
+            exec params['command'] in self._console_namespace 
+            sys.stdout = sys.__stdout__ 
+            params['request']['protocol'].transport.write('Python>'+rbuffer.getvalue()+'\n\r')
+        except:
+            sys.stdout = sys.__stdout__ 
+            params['request']['protocol'].transport.write('ERROR>'+rbuffer.getvalue()+'\n\r')
+            params['request']['protocol'].transport.loseConnection()
+            return
+        # exec command has side-effect of adding builtins; remove them
+        if self.gui._console_namespace.has_key('__builtins__'): 
+            del self.gui._console_namespace['__builtins__']
+        # update data context
+        # params['request']['protocol'].transport.loseConnection()
+        rbuffer.close()
+        
+    def set_global_variable_from_socket(self,params):
+        """
+        sets a data element in the console namespace (equivalent to a 'data context')
+        """
+        if DEBUG: print("class data_guis.docked_gui.CommandLibrary, func set_global_variable_from_socket")
+        try:
+            del params["IDLSocket_ResponseFunction"]
+        except KeyError:
+            pass
+        try:
+            del params["terminator"]
+        except KeyError:
+            pass
+        
+        #print params
+        packed_elements = {}
+        for k,v in params.items():
+            if "packed" in k:
+                packed_elements.update({k:v})
+                
+        for k,v in packed_elements.items():
+            v = msgpack.unpackb(v)
+            params.pop(k)
+            k = k.replace('packed','unpacked')
+            params.update({k:v})
+        if DEBUG: print(params.keys())
+        if DEBUG: print(self.gui._console_namespace.keys())
+        self.gui._console_namespace.update(params)
+        if DEBUG: print(self.gui._console_namespace.keys())
+        self.gui._console_namespace['imgstack'] = numpy.asarray(params['unpacked_databomb']['data'])
+        self.gui.imv.close()
+        #self.gui._init_dock_console()
+        #self.gui._init_dock_cursor()
+        #self.gui._init_dock_dockcon()
+        self.gui._init_dock_zimv()
+        #self.imv = pg.ImageView()
+        
+        self.gui.imv = pg.ImageView()
+        self.gui.imv.show()
+        self.gui.imv.setImage(self.gui._console_namespace['imgstack'])
+        #self.gui.imv = pg.ImageView()
+        #self.gui.win.show()
+        #self.gui.imv.setImage(self.gui._console_namespace['imgstack'])
+        #self.gui.imv = pg.ImageView()
+        #self.gui.imv.update()
+        #self.gui.app.processEvents()
+        #QtGui.QApplication.processEvents()
+        
 class image_stack_gui(docked_gui):
     """
     Class to generate a gui to analyze image stacks (3d array of data)
@@ -82,15 +195,19 @@ class image_stack_gui(docked_gui):
             setattr(self,k,params[k])
         if not hasattr(self,"imgstack"):
             self._generate_random_imgstack()
+            #self.imgstack = np.random.normal(size=(512, 512, 1))
         self._console_namespace.update({"imgstack":self.imgstack})        
         docked_gui.__init__(self,params=params)
+
         self.imv = pg.ImageView()
 
-    def _start(self):
-#        self.win.show()
-        self.win.setWindowTitle('Image View')
-        if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
-            QtGui.QApplication.instance().exec_()
+   
+
+#    def _start(self):
+##        self.win.show()
+#        self.win.setWindowTitle('Image View')
+#        if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
+#            QtGui.QApplication.instance().exec_()
 
     def plot(self,img):
         """
@@ -105,10 +222,10 @@ class image_stack_gui(docked_gui):
         """
         (nx,ny)=self.imgstack.shape[1:3]
         if center==None: center=(nx/2,ny/2)
-        x = np.outer((np.arange(nx)-center[0]),np.ones(ny))
-        y = np.outer(np.ones(nx),(np.arange(ny)-center[1]))
-        r = np.sqrt(np.power(x,2.)+np.power(y,2.))
-        phi = np.arctan2(y,x)
+        x = numpy.outer((numpy.arange(nx)-center[0]),numpy.ones(ny))
+        y = numpy.outer(numpy.ones(nx),(numpy.arange(ny)-center[1]))
+        r = numpy.sqrt(numpy.power(x,2.)+numpy.power(y,2.))
+        phi = numpy.arctan2(y,x)
         return (x,y,r,phi)
 
     class cursor():
@@ -142,7 +259,8 @@ class image_stack_gui(docked_gui):
         self.dock_area.addDock(self.__dock_imv, 'top')
         self.imv=pg.ImageView()
         self.__dock_imv.addWidget(self.imv)
-
+        
+        #pdb.set_trace()
 
         self.win.show()
 
@@ -205,8 +323,8 @@ class image_stack_gui(docked_gui):
         
         proxy = pg.SignalProxy(self.imv.scene.sigMouseMoved, rateLimit=60, slot=mouseMoved)
         ## Display the data and assign each frame a time value from 1.0 to 3.0
-        self.imv.setImage(self.imgstack, xvals=np.arange(self.imgstack.shape[0]))#.linspace(1., 3., ))
-        QtGui.QApplication.instance().exec_() # this start command needs to be here to enable cursors, and hence this must initialize last
+        self.imv.setImage(self.imgstack, xvals=numpy.arange(self.imgstack.shape[0]))#.linspace(1., 3., ))
+  ###      QtGui.QApplication.instance().exec_() # this start command needs to be here to enable cursors, and hence this must initialize last
 
     def _init_dock_cursor(self):
         self._dock_cursor = pyqtgraph.dockarea.Dock("Cursor Interface", size=(500,30))
@@ -217,18 +335,118 @@ class image_stack_gui(docked_gui):
         
     def _generate_random_imgstack(self):
         ## Create random 3D data set with noisy signals
-        img = scipy.ndimage.gaussian_filter(np.random.normal(size=(200, 200)), (5, 5)) * 20 + 100
-        img = img[np.newaxis,:,:]
-        decay = np.exp(-np.linspace(0,0.3,100))[:,np.newaxis,np.newaxis]
-        data = np.random.normal(size=(100, 200, 200))
+        img = scipy.ndimage.gaussian_filter(numpy.random.normal(size=(512, 512)), (5, 5)) * 20 + 100
+        img = img[numpy.newaxis,:,:]
+        decay = numpy.exp(-numpy.linspace(0,0.3,10))[:,numpy.newaxis,numpy.newaxis]
+        data = numpy.random.normal(size=(10, 512, 512))
         data += img * decay
         data += 2
         ## Add time-varying signal
-        sig = np.zeros(data.shape[0])
-        sig[30:] += np.exp(-np.linspace(1,10, 70))
-        sig[40:] += np.exp(-np.linspace(1,10, 60))
-        sig[70:] += np.exp(-np.linspace(1,10, 30))        
-        sig = sig[:,np.newaxis,np.newaxis] * 3
+        sig = numpy.zeros(data.shape[0])
+        sig[3:] += numpy.exp(-numpy.linspace(1,10, 7))
+        sig[4:] += numpy.exp(-numpy.linspace(1,10, 6))
+        sig[7:] += numpy.exp(-numpy.linspace(1,10, 3))        
+        sig = sig[:,numpy.newaxis,numpy.newaxis] * 3
         data[:,50:60,50:60] += sig
         self.imgstack=data
+        
+def main():
 
+    #app = QApplication(sys.argv)
+            
+        
+    a = image_stack_gui()  # comment 1 line above out, put class defns above
+    app=a.app   # ,if necessary
+    win=a.win   # ,if necessary
+    
+    import qtreactor.pyqt4reactor
+    qtreactor.pyqt4reactor.install()
+    
+    last_connection_time = time.time()
+    time_last_check = time.time()   
+    time_now = time.time()
+
+    
+    from twisted.internet import reactor
+    from twisted.internet import task
+    from autobahn.twisted.websocket import WebSocketServerProtocol
+    from autobahn.twisted.websocket import WebSocketServerFactory
+    from autobahn.twisted.websocket import WebSocketClientFactory
+    from autobahn.twisted.websocket import WebSocketClientProtocol
+    from autobahn.twisted.websocket import connectWS
+    from autobahn.twisted.websocket import listenWS
+    from twisted.internet.protocol import DatagramProtocol
+    import twisted.internet.error
+    
+    #from twisted.python import log
+
+    
+        
+    class MyServerProtocol(WebSocketServerProtocol):
+    
+        def onConnect(self, request):
+            if DEBUG: print("class data_guis.MyServerProtocol, func onConnect: {0}".format(request.peer))
+            
+        def onOpen(self):
+            if DEBUG: print("class data_guis.MyServerProtocol, func onOpen")
+            
+        def onMessage(self, payload_, isBinary):
+            if DEBUG: print "class data_guis.MyServerProtocol, func onMessage"
+            #self.log_message()
+            if isBinary:
+                payload = msgpack.unpackb(payload_)
+                if not payload.has_key('IDLSocket_ResponseFunction'):
+                    return None
+                try:
+                    ThisResponseFunction = getattr(self.factory.app.command_library,
+                                               payload['IDLSocket_ResponseFunction'])
+                except AttributeError:
+                    if DEBUG: print ('Missing Socket_ResponseFunction:',
+                                     payload['IDLSocket_ResponseFunction'])
+                ThisResponseFunction(payload)
+            else:
+                print payload_
+            
+            
+        def onClose(self, wasClean, code, reason):
+            if DEBUG: print("class data_guis.MyServerProtocol, func onClose: {0}".format(reason))
+            server_shutdown()
+    
+               
+    def check_for_main_server():
+        global time_last_check
+        global time_now
+        time_last_check = time_now
+        time_now = time.time()
+        #print time_last_check, time_now, last_connection_time
+        if (time_now - last_connection_time) > 1100000 and (time_now - time_last_check) < 11:
+            server_shutdown()
+        
+        
+    def server_shutdown():
+        if DEBUG: print "----------------Shutting Down DataGuiServer Now!----------------"
+        win.close()
+        app.quit()
+        reactor.callLater(0.01, reactor.stop)
+    
+
+    sys.argv.append('localhost')
+    sys.argv.append('9100')
+    #sys.argv[0] = file name of this script
+    # szys.argv[1] = ip address of this server
+    # sys.argv[2] = port to listen on
+    factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug = True)
+    factory.setProtocolOptions(failByDrop=False)
+    factory.protocol = MyServerProtocol
+    try:
+        reactor.listenTCP(int(sys.argv[2]), factory)
+        a.factory = factory
+        factory.app = a
+    except twisted.internet.error.CannotListenError:
+        server_shutdown()
+    
+
+    reactor.run()
+    
+if __name__ == '__main__':
+    main()

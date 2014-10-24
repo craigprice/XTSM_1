@@ -10,7 +10,11 @@ import msgpack, msgpack_numpy
 msgpack_numpy.patch()
 import profile
 
+shotnumber = 1
+DEBUG = True
+
 def send_compile_request(shotnumber=22):
+    if DEBUG: print "send_compile_request"
     post_multipart("127.0.0.1:8083",'127.0.0.1:8083'
                     ,[('IDLSocket_ResponseFunction','compile_active_xtsm')
                     ,('shotnumber',str(shotnumber)),('Labview Version','1.0')
@@ -71,7 +75,9 @@ def post_databomb(shotnumber=1):
                     ,('databomb',msg),('terminator','die')],[])
     
 def constant_run(delay=2,iter=100):
-    shotnumber = 0    
+    global shotnumber
+    msg = {'fake_shotnumber_started':shotnumber,
+           'time':time.time()}
     for a in range(iter):
         send_compile_request(shotnumber)
         time.sleep(delay)

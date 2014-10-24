@@ -194,6 +194,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
             self.messagepack=messagepack
             self.timestamp=time.time()
             self.raw_links = []
+            self.databomb = 0
             self.notify_data={}
             self.uuid='DB'+uuid.uuid1().__str__()
             
@@ -208,7 +209,8 @@ class DataBombList(xstatus_ready.xstatus_ready):
             """
             print "in class DataBomb, function unpack"
             #pdb.set_trace()
-            self.data=msgpack.unpackb(self.messagepack)
+            self.data = msgpack.unpackb(self.messagepack)
+            self.shotnumber = self.data['data']
             notify_data_elms=['sender','shotnumber','repnumber','server_machine','server_IP_address']
             for elm in notify_data_elms:        
                 try: 
@@ -239,9 +241,12 @@ class DataBombList(xstatus_ready.xstatus_ready):
             twice - first to extract 'data' element, then to unpack data
             """   
             print "In class DataBomb, function stream_to_disk"
+            #stream.new_file({'shotnumber': self.shotnumber,'id': str(self.uuid)})
+                      
             to_disk = {'id': str(self.uuid),
                       'time_packed': str(time.time()),
                       'len_of_data': str(len(self.messagepack)),
+                      'shotnumber': self.shotnumber,
                       'packed_databomb': self.messagepack }
             stream.write(msgpack.packb(to_disk, use_bin_type=True), keep_stream_open=False) 
             #idheader = msgpack.packb('id' + str(self.uuid))
@@ -282,8 +287,8 @@ class DataBombList(xstatus_ready.xstatus_ready):
             streams data to disk, unpacks and deploys fragments
             """
             print "in class DataBomb, function deploy"
+            self.unpack()#Make first to extract shotnumber for file ID
             self.stream_to_disk(stream)
-            self.unpack()
             self.deploy_fragments(listenerManagers)
         
 
@@ -664,7 +669,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 self.destinations.append("10.1.1.124")
             data_context = 'PXI_emulator'#Change for generality CP
             self.destinations = [x for x in self.destinations if x is not None]
-            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':data_context,'databomb':self.packed_data}, use_bin_type=True)
+            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':data_context,'databomb':self.packed_data}, use_bin_type=True)#self.packed_data
             for dest in self.destinations:
                 #dest = "10.1.1.124"
                 dest = "10.1.1.112"

@@ -74,7 +74,7 @@ class Glab_Instrument():
         any of which can be overwritten by items in incoming data
         """
         print "class Glab_Instrument, function serve_data"
-        print data
+        #print data
         if not self.server: 
             return False
             
@@ -139,6 +139,6 @@ class Glab_Instrument():
         #    return
         print "generic instrument callback called"
         # generate some random data and return it using the serve data mechanism
-        dim = 5
+        dim = 512
         self.serve_data([numpy.random.rand(dim,dim).tolist(),numpy.random.rand(dim,dim).tolist(),numpy.random.rand(dim,dim).tolist()])
         
