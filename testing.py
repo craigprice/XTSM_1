@@ -115,6 +115,8 @@ dest.close()
 '''
 
 '''
+=======
+>>>>>>> origin/master
 bytestream = msgpack.packb({'to_disk':3}, use_bin_type=True)
 filename = 'C:\\wamp\\www\\raw_buffers\\DBFS\\2014-10-09\\test'+str(time.time())+'.txt'
 f = open(filename,'ab')
@@ -137,6 +139,7 @@ unpacker = msgpack.Unpacker(output,use_list=False)
 print unpacker.next()
 print cBlock 
 print unpacker.next()
+<<<<<<< HEAD
 '''
 
 

@@ -106,7 +106,7 @@ def check_for_main_server():
     time_last_check = time_now
     time_now = time.time()
     #print time_last_check, time_now, last_connection_time
-    if (time_now - last_connection_time) > 11 and (time_now - time_last_check) < 11:
+    if (time_now - last_connection_time) > 1100000 and (time_now - time_last_check) < 11:
         server_shutdown()
         
 

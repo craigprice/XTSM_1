@@ -79,8 +79,8 @@ class DataBombList(xstatus_ready.xstatus_ready):
             'next' - deploys one based on a First-In-First-Out (FIFO) model
             uuid - deploys by the unique identifier assigned to the bomb on add
         """
-        #print "In class DataBombList, function deploy"
-        #print "criteria:", criteria
+        print "In class DataBombList, function deploy"
+        print "criteria:", criteria
         if not hasattr(self,'dataListenerManagers'): self.dataListenerManagers=[]
         def all_c(o):
             for bomb in o.databombs:
@@ -188,7 +188,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
         as a means of (vertical) raw data storage.
         """
         def __init__(self,messagepack):
-            #print "in class Databomb, function __init__"
+            print "in class Databomb, function __init__"
             if not isinstance(messagepack, str):#Expecting a messagepacked byte string
                 pdb.set_trace()
             self.messagepack=messagepack
@@ -206,7 +206,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
                 repnumber: an integer representing the repetition number
                 onunpack: a string of python commands to execute on unpack
             """
-            #print "in class DataBomb, function unpack"
+            print "in class DataBomb, function unpack"
             #pdb.set_trace()
             self.data=msgpack.unpackb(self.messagepack)
             notify_data_elms=['sender','shotnumber','repnumber','server_machine','server_IP_address']
@@ -238,7 +238,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
             entire object should be unpackable using messagepack unpackb routine
             twice - first to extract 'data' element, then to unpack data
             """   
-            #print "In class DataBomb, function stream_to_disk"
+            print "In class DataBomb, function stream_to_disk"
             to_disk = {'id': str(self.uuid),
                       'time_packed': str(time.time()),
                       'len_of_data': str(len(self.messagepack)),
@@ -250,7 +250,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
             #head_path = '\x83' + idheader + timeheader + dataheader
             trailing_id = "[" + str(self.uuid) + "]"
             self.raw_links.append(stream.location + trailing_id)
-            #print "Path:", self.raw_links
+            print "Path:", self.raw_links
             
             
         def deploy_fragments(self,listenerManagers):
@@ -261,7 +261,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
             already have been installed in a manager by the XTSM elements, and
             this deployment should trigger them
             """
-            #print "in class DataBomb, function deploy_fragments"
+            print "in class DataBomb, function deploy_fragments"
             #print "Listeners:", 
             #pdb.set_trace()
             if not hasattr(listenerManagers,'__iter__'):
@@ -281,7 +281,7 @@ class DataBombList(xstatus_ready.xstatus_ready):
             """
             streams data to disk, unpacks and deploys fragments
             """
-            #print "in class DataBomb, function deploy"
+            print "in class DataBomb, function deploy"
             self.stream_to_disk(stream)
             self.unpack()
             self.deploy_fragments(listenerManagers)
@@ -313,7 +313,7 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
         onattach - callback method after data has been attached to listener
         onclose - callback after item is destroyed 
         """
-        #print "class DataListenerManager, function spawn"
+        print "class DataListenerManager, function spawn"
         defaultparams={'listen_for':{'sender':'',
                                      'shotnumber':-1,
                                      'server_machine':'',
@@ -638,7 +638,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             self.destinations=destinations
             
         def dispatch(self,destinations_=None):
-            #print "DataBomber, dispatch"
+            print "DataBomber, dispatch"
             """
             sends the payload to the specified destination(s) 
             (as well as any provided at initialization)
@@ -662,10 +662,12 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             if not flag:
                 #self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
                 self.destinations.append("10.1.1.124")
+            data_context = 'PXI_emulator'#Change for generality CP
             self.destinations = [x for x in self.destinations if x is not None]
-            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'PXI','databomb':self.packed_data}, use_bin_type=True)
+            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':data_context,'databomb':self.packed_data}, use_bin_type=True)
             for dest in self.destinations:
-                dest = "10.1.1.124"
+                #dest = "10.1.1.124"
+                dest = "10.1.1.112"
                 if dest == None:
                     print "No destination"
                     continue
