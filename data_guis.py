@@ -20,7 +20,7 @@ import pyqtgraph as pg
 import pyqtgraph.dockarea
 import pyqtgraph.console
 
-    
+   
 import msgpack
 import msgpack_numpy
 msgpack_numpy.patch()#This patch actually changes the behavior of "msgpack"
@@ -50,7 +50,8 @@ class docked_gui():
         self.win.setCentralWidget(self.dock_area)
         #win.setCentralWidget(imv)
         self.win.resize(800,800)
-        self.command_library = CommandLibrary(self)
+        #self.command_library = CommandLibrary(self)
+        self.command_library = CommandLibrary()
         
 
         
@@ -103,16 +104,18 @@ class CommandLibrary():
     _AND CLOSE_ the initiating HTTP communication using
     params>request>protocol>loseConnection()
     """
-    def __init__(self, gui):
+    def __init__(self, gui=None):
         if DEBUG: print "class CommandLibrary, func __init__"
         #self.server = server
-        self.gui = gui
+        #self.gui = gui
         
     def execute_from_socket(self,params):
         """
         Executes an arbitrary python command through the socket, and returns the console
         output
         """
+        if DEBUG: print("class data_guis.docked_gui.CommandLibrary, func execute_from_socket")
+        if DEBUG: print("params.keys:", params.keys())
         # setup a buffer to capture response, temporarily grab stdio
         params['request']['protocol'].transport.write()
         rbuffer = StringIO()
@@ -148,6 +151,7 @@ class CommandLibrary():
             pass
         
         #print params
+        if DEBUG: print("Params.keys:", params.keys())
         packed_elements = {}
         for k,v in params.items():
             if "packed" in k:
@@ -158,21 +162,30 @@ class CommandLibrary():
             params.pop(k)
             k = k.replace('packed','unpacked')
             params.update({k:v})
-        if DEBUG: print(params.keys())
-        if DEBUG: print(self.gui._console_namespace.keys())
-        self.gui._console_namespace.update(params)
-        if DEBUG: print(self.gui._console_namespace.keys())
-        self.gui._console_namespace['imgstack'] = numpy.asarray(params['unpacked_databomb']['data'])
-        self.gui.imv.close()
-        #self.gui._init_dock_console()
-        #self.gui._init_dock_cursor()
-        #self.gui._init_dock_dockcon()
-        self.gui._init_dock_zimv()
-        #self.imv = pg.ImageView()
-        
-        self.gui.imv = pg.ImageView()
-        self.gui.imv.show()
-        self.gui.imv.setImage(self.gui._console_namespace['imgstack'])
+        if DEBUG: print("Params.keys:", params.keys())
+            
+        self.factory.all_databombs.update({'DB_SN:'+str(params['unpacked_databomb']['shotnumber']):params['unpacked_databomb']['data']})
+        #if DEBUG: print("self.gui._console_namespace.keys()", self.gui._console_namespace.keys())
+        #self.gui._console_namespace.update(params)
+        #if DEBUG: print("self.gui._console_namespace.keys()", self.gui._console_namespace.keys())
+        #self.gui._console_namespace['imgstack'] = numpy.asarray(params['unpacked_databomb']['data'])
+        #self.gui.imv.close()
+
+        sn = str(params['unpacked_databomb']['shotnumber'])
+        databomb = params['unpacked_databomb']
+        self.factory.all_guis.update({'GUI_SN='+sn:image_stack_gui({'imgstack':numpy.asarray(databomb['data'])})})  # comment 1 line above out, put class defns above
+        self.factory.all_guis['GUI_SN='+sn]._console_namespace.update({'DB_SN='+sn:databomb})        
+        self.factory.all_guis['GUI_SN='+sn].imv = pg.ImageView()
+        #self.gui.app=a.app   # ,if necessary
+        #self.gui.win=a.win   # ,if necessary        
+        #self.gui._console_namespace.update({'DB_SN='+str(params['unpacked_databomb']['shotnumber']):numpy.asarray(params['unpacked_databomb'])})
+
+        #self.gui.imv.show()
+        #self.gui.imv.setImage(self.gui._console_namespace['DB_SN='+str(params['unpacked_databomb']['shotnumber'])])
+        #self.gui._init_dock_console(self.gui.imv)
+        #self.gui._init_dock_cursor(self.gui.imv)
+        #self.gui._init_dock_dockcon(self.gui.imv)
+        #self.gui._init_dock_zimv(self.gui.imv)
         #self.gui.imv = pg.ImageView()
         #self.gui.win.show()
         #self.gui.imv.setImage(self.gui._console_namespace['imgstack'])
@@ -180,6 +193,8 @@ class CommandLibrary():
         #self.gui.imv.update()
         #self.gui.app.processEvents()
         #QtGui.QApplication.processEvents()
+        print "dfasdf"
+        print params['unpacked_databomb'].keys()
         
 class image_stack_gui(docked_gui):
     """
@@ -194,9 +209,10 @@ class image_stack_gui(docked_gui):
         for k in params.keys():
             setattr(self,k,params[k])
         if not hasattr(self,"imgstack"):
-            self._generate_random_imgstack()
+            #self._generate_random_imgstack()
             #self.imgstack = np.random.normal(size=(512, 512, 1))
-        self._console_namespace.update({"imgstack":self.imgstack})        
+            self.imgstack = params["imgstack"] 
+            self._console_namespace.update({"imgstack":self.imgstack}) 
         docked_gui.__init__(self,params=params)
 
         self.imv = pg.ImageView()
@@ -254,10 +270,14 @@ class image_stack_gui(docked_gui):
         except: self.cursors=[c]
         
 
-    def _init_dock_zimv(self):
+    def _init_dock_zimv(self, imv=None):
         self.__dock_imv = pyqtgraph.dockarea.Dock("Image View", size=(500,500))
         self.dock_area.addDock(self.__dock_imv, 'top')
-        self.imv=pg.ImageView()
+        if imv == None:
+            self.imv=pg.ImageView()
+        else:
+            self.imv = imv
+            self.imv=pg.ImageView()
         self.__dock_imv.addWidget(self.imv)
         
         #pdb.set_trace()
@@ -355,9 +375,9 @@ def main():
     #app = QApplication(sys.argv)
             
         
-    a = image_stack_gui()  # comment 1 line above out, put class defns above
-    app=a.app   # ,if necessary
-    win=a.win   # ,if necessary
+    #a = image_stack_gui()  # comment 1 line above out, put class defns above
+    #app=a.app   # ,if necessary
+    #win=a.win   # ,if necessary
     
     import qtreactor.pyqt4reactor
     qtreactor.pyqt4reactor.install()
@@ -377,8 +397,9 @@ def main():
     from autobahn.twisted.websocket import listenWS
     from twisted.internet.protocol import DatagramProtocol
     import twisted.internet.error
-    
-    #from twisted.python import log
+    from twisted.python import log
+    log.startLogging(sys.stdout)
+   
 
     
         
@@ -398,14 +419,16 @@ def main():
                 if not payload.has_key('IDLSocket_ResponseFunction'):
                     return None
                 try:
-                    ThisResponseFunction = getattr(self.factory.app.command_library,
+                    #ThisResponseFunction = getattr(self.factory.app.command_library,
+                    #                           payload['IDLSocket_ResponseFunction'])
+                    ThisResponseFunction = getattr(self.factory.command_library,
                                                payload['IDLSocket_ResponseFunction'])
                 except AttributeError:
                     if DEBUG: print ('Missing Socket_ResponseFunction:',
                                      payload['IDLSocket_ResponseFunction'])
                 ThisResponseFunction(payload)
             else:
-                print payload_
+                print payload_.keys()
             
             
         def onClose(self, wasClean, code, reason):
@@ -425,8 +448,8 @@ def main():
         
     def server_shutdown():
         if DEBUG: print "----------------Shutting Down DataGuiServer Now!----------------"
-        win.close()
-        app.quit()
+        #win.close()
+        #app.quit()
         reactor.callLater(0.01, reactor.stop)
     
 
@@ -435,13 +458,19 @@ def main():
     #sys.argv[0] = file name of this script
     # szys.argv[1] = ip address of this server
     # sys.argv[2] = port to listen on
-    factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug = True)
+    factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug = False)
     factory.setProtocolOptions(failByDrop=False)
     factory.protocol = MyServerProtocol
+    all_databombs = {}
+    all_guis = {}
     try:
         reactor.listenTCP(int(sys.argv[2]), factory)
-        a.factory = factory
-        factory.app = a
+        #a.factory = factory
+        command_library = CommandLibrary()
+        factory.all_databombs = all_databombs
+        factory.all_guis = all_guis
+        factory.command_library = command_library
+        command_library.factory = factory
     except twisted.internet.error.CannotListenError:
         server_shutdown()
     
