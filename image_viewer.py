@@ -152,29 +152,38 @@ class CommandLibrary():
         
         #print params
         if DEBUG: print("Params.keys:", params.keys())
-        packed_elements = {}
+        packed_elements = []
+        unpacked_databombs = {}
         for k,v in params.items():
-            if "packed" in k:
-                packed_elements.update({k:v})
+            print k
+            if "packed_databom" in k:
+                for db in params[k]:
+                    print k
+                    m = msgpack.unpackb(db)
+                    #print m
+                    unpacked_databombs.update({m['shotnumber']:m})
+                    #print unpacked_databombs
                 
-        for k,v in packed_elements.items():
-            v = msgpack.unpackb(v)
-            params.pop(k)
-            k = k.replace('packed','unpacked')
-            params.update({k:v})
+            
+        unpacked_data = []
+        sn = 0
+        for key in unpacked_databombs:
+            sn = unpacked_databombs[key]['shotnumber']
+            unpacked_data.extend(unpacked_databombs[key]['data'])
+        #for db in unpacked_databombs:
+        #    unpacked_data.extend(db['data'])
+            
         if DEBUG: print("Params.keys:", params.keys())
             
-        self.factory.all_databombs.update({'DB_SN:'+str(params['unpacked_databomb']['shotnumber']):params['unpacked_databomb']['data']})
+        #self.factory.all_databombs.update({'DB_SN:'+str(params['unpacked_databomb']['shotnumber']):params['unpacked_databomb']['data']})
         #if DEBUG: print("self.gui._console_namespace.keys()", self.gui._console_namespace.keys())
         #self.gui._console_namespace.update(params)
         #if DEBUG: print("self.gui._console_namespace.keys()", self.gui._console_namespace.keys())
         #self.gui._console_namespace['imgstack'] = numpy.asarray(params['unpacked_databomb']['data'])
         #self.gui.imv.close()
 
-        sn = str(params['unpacked_databomb']['shotnumber'])
-        databomb = params['unpacked_databomb']
-        self.factory.all_guis.update({'GUI_SN='+sn:image_stack_gui({'imgstack':numpy.asarray(databomb['data'])})})  # comment 1 line above out, put class defns above
-        self.factory.all_guis['GUI_SN='+sn]._console_namespace.update({'DB_SN='+sn:databomb})        
+        self.factory.all_guis.update({'GUI_SN='+sn:image_stack_gui({'imgstack':numpy.asarray(unpacked_data)})})  # comment 1 line above out, put class defns above
+        self.factory.all_guis['GUI_SN='+sn]._console_namespace.update({'DB_SN='+sn:unpacked_databombs})        
         self.factory.all_guis['GUI_SN='+sn].imv = pg.ImageView()
         #self.gui.app=a.app   # ,if necessary
         #self.gui.win=a.win   # ,if necessary        
@@ -194,7 +203,7 @@ class CommandLibrary():
         #self.gui.app.processEvents()
         #QtGui.QApplication.processEvents()
         print "dfasdf"
-        print params['unpacked_databomb'].keys()
+        #print params['unpacked_databomb'].keys()
         
 class image_stack_gui(docked_gui):
     """
