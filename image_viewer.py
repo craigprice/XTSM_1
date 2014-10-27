@@ -168,8 +168,9 @@ class CommandLibrary():
         unpacked_data = []
         sn = 0
         for key in unpacked_databombs:
-            sn = unpacked_databombs[key]['shotnumber']
-            unpacked_data.extend(unpacked_databombs[key]['data'])
+            print "key in unpacked databomb", key
+            sn = unpacked_databombs[key]['shotnumber']              
+            unpacked_data.append(unpacked_databombs[key]['data'])
         #for db in unpacked_databombs:
         #    unpacked_data.extend(db['data'])
             
@@ -182,6 +183,9 @@ class CommandLibrary():
         #self.gui._console_namespace['imgstack'] = numpy.asarray(params['unpacked_databomb']['data'])
         #self.gui.imv.close()
 
+       
+        
+                
         self.factory.all_guis.update({'GUI_SN='+sn:image_stack_gui({'imgstack':numpy.asarray(unpacked_data)})})  # comment 1 line above out, put class defns above
         self.factory.all_guis['GUI_SN='+sn]._console_namespace.update({'DB_SN='+sn:unpacked_databombs})        
         self.factory.all_guis['GUI_SN='+sn].imv = pg.ImageView()
