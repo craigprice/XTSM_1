@@ -84,6 +84,7 @@ from scipy.optimize import curve_fit
 import math
 import numpy
 
+import getopt
 import pdb
     
 def usage(progname):
@@ -181,6 +182,46 @@ class PrologixGpibEthernet:
         self._write(line + "\n")
         
 
+''' '''
+def init_prologix(self):
+    '''
+    if ip address is not found, run the program "GPIB Configuator" and look
+    at ip. Or run "NetFinder" from Prologix
+    '''
+    self.GPIB_adapter = GPIB_control.PrologixGpibEthernet('10.1.1.113')
+    
+    read_timeout = 1.0
+    if DEBUG: print "Setting adapter read timeout to %f seconds" % read_timeout
+    self.GPIB_adapter.settimeout(read_timeout)
+    
+    gpib_address = int(7)#Scope over Rb exp
+    if DEBUG: print "Using device GPIB address of %d" % gpib_address
+    self.GPIB_device = GPIB_control.GpibDevice(self.GPIB_adapter, gpib_address)
+    if DEBUG: print "Finished initialization of GPIB controller"
+    
+    
+
+def get_scope_field(self,q1="Data:Source CH1",
+                    q2="Data:Encdg: ASCII",
+                    q3="Data:Width 2",
+                    q4="Data:Start 1",
+                    q5="Data:Stop 500",
+                    q6="wfmpre?" ,
+                    q7="curve?"):
+
+
+    e1 = time.time()
+    if not hasattr(self,'GPIB_device'):
+        if DEBUG: print "GPIB device not ready"
+        return
+    response = self.GPIB_device.converse([q1,q2,q3,q4,q5,q6,q7])
+    e2 = time.time()
+    if DEBUG: print "Scope communication took", e2-e1, "sec"
+    
+    ystr = response["curve?"]
+    if DEBUG: print "Data:", ystr
+''' '''
+
 # Interface to specific GPIB device on GPIB bus
 class GpibDevice:
     def __init__(self, gpib_adapter, gpib_addr):
@@ -205,6 +246,7 @@ class GpibDevice:
 
 def main(argv):
     progname = argv[0]
+    print argv
     import getopt
     optlist,argv = getopt.gnu_getopt(argv, "a:s:g:h");
 
@@ -218,7 +260,7 @@ def main(argv):
 #        elif (opt == "-a") :
 #          print "Connecting to Prologix GPIB Ethernet adapter using network address %s" % arg
 #          adapter = PrologixGpibEthernet(arg)
-    adapter = PrologixGpibEthernet('10.1.1.113')#if ip address is not found, run the program "GPIB Configuator" and look at ip
+    adapter = PrologixGpibEthernet('10.1.1.113')#if ip address is not found, run the program "GPIB Configuator" and look at ip. Or run "NetFinder" from Prologix
 #
 #        elif (opt == "-u") :
 #          print "USB adapter is not supported yet..."
@@ -318,4 +360,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    main(sys.argv)
