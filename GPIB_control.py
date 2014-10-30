@@ -218,7 +218,7 @@ def main(argv):
 #        elif (opt == "-a") :
 #          print "Connecting to Prologix GPIB Ethernet adapter using network address %s" % arg
 #          adapter = PrologixGpibEthernet(arg)
-    adapter = PrologixGpibEthernet('192.168.1.146')#if ip address is not found, run the program "GPIB Configuator" and look at ip
+    adapter = PrologixGpibEthernet('10.1.1.113')#if ip address is not found, run the program "GPIB Configuator" and look at ip
 #
 #        elif (opt == "-u") :
 #          print "USB adapter is not supported yet..."
