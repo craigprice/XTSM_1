@@ -136,6 +136,8 @@ class CommandLibrary():
         # params['request']['protocol'].transport.loseConnection()
         rbuffer.close()
         
+
+        
     def set_global_variable_from_socket(self,params):
         """
         sets a data element in the console namespace (equivalent to a 'data context')
@@ -165,14 +167,31 @@ class CommandLibrary():
                     #print unpacked_databombs
                 
             
+        keys_of_unpacked_databombs = unpacked_databombs.keys() 
+        int_keys = []
+        for i in keys_of_unpacked_databombs:
+            print i
+            int_keys.append(int(i))
+        int_keys.sort()
+        keys_of_unpacked_databombs_sorted = []
+        for i in int_keys:
+            keys_of_unpacked_databombs_sorted.append(str(i))
+        
         unpacked_data = []
         sn = 0
+        
+        for i,value in enumerate(keys_of_unpacked_databombs_sorted):
+            sn = unpacked_databombs[value]['shotnumber']
+            unpacked_data.append(unpacked_databombs[value]['data'])
+        
+        '''
         for key in unpacked_databombs:
             print "key in unpacked databomb", key
             sn = unpacked_databombs[key]['shotnumber']              
             unpacked_data.append(unpacked_databombs[key]['data'])
         #for db in unpacked_databombs:
         #    unpacked_data.extend(db['data'])
+        '''
             
         if DEBUG: print("Params.keys:", params.keys())
             
@@ -183,9 +202,6 @@ class CommandLibrary():
         #self.gui._console_namespace['imgstack'] = numpy.asarray(params['unpacked_databomb']['data'])
         #self.gui.imv.close()
 
-       
-        
-                
         self.factory.all_guis.update({'GUI_SN='+sn:image_stack_gui({'imgstack':numpy.asarray(unpacked_data)})})  # comment 1 line above out, put class defns above
         self.factory.all_guis['GUI_SN='+sn]._console_namespace.update({'DB_SN='+sn:unpacked_databombs})        
         self.factory.all_guis['GUI_SN='+sn].imv = pg.ImageView()
@@ -208,6 +224,8 @@ class CommandLibrary():
         #QtGui.QApplication.processEvents()
         print "dfasdf"
         #print params['unpacked_databomb'].keys()
+        
+
         
 class image_stack_gui(docked_gui):
     """

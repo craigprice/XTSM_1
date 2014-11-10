@@ -25,7 +25,6 @@ import profile
 import pstats
 #from IPy import IP
 
-DEBUG = True
 
 XO_IGNORE=['PCDATA']  # ignored elements on XML_write operations
 
@@ -569,11 +568,7 @@ class XTSM_core(object):
                 listenerManager.spawn(params)
         child_nodes = self.getChildNodes()
         for idx, child in enumerate(child_nodes):
-            try:
-                child.installListeners(listenerManager)
-            except AttributeError:#exceptions.AttributeError: 'int' object has no attribute 'installListeners' Why? CP
-                #pdb.set_trace()#It's because install listeners is trying to call, installlisteners on <Script><ScriptOutput><Value>1
-                return
+            child.installListeners(listenerManager)
                     
         
 class XTSM_Element(gnosis.xml.objectify._XO_,XTSM_core):
@@ -2162,13 +2157,7 @@ class Edge(gnosis.xml.objectify._XO_,XTSM_core):
         self.time=dense_time_array[idx]
         self.value=self.Value[0].parse({'T':self.time,'TI':self.time})
         return numpy.array([idx,self.channel,self.time,self.value,self._fasttag])
-
-'''
-class Value(gnosis.xml.objectify._XO_,XTSM_core):
-    def __init__(self, value=None):
-        XTSM_core.__init__(self, value)
-        self.value = value
-'''
+        
 
 class Interval(gnosis.xml.objectify._XO_,XTSM_core):
     scopePeers=[['Channel','ChannelName','OnChannel']]
@@ -2245,27 +2234,16 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         if not self.scoped: self.buildScope()
         if not hasattr(self,'syn_tree'): self._build_ast()
         sv=self.ScriptVisitor()
-        self.assignments={}
-        self.references={}
-        self.dependencies={}
-        try:
-            sv.visit(self.syn_tree)
-        except AttributeError:
-            return
+        sv.visit(self.syn_tree)
         self.assignments=sv.assignments
         self.references=sv.references
         self.dependencies=sv.references
-        #pdb.set_trace()
         for scopeitem in self.scope:
-            try:
-                del self.dependencies[scopeitem]
-            except KeyError:
-                pass
+            del self.dependencies[scopeitem]
         for dep in self.dependencies:
-            self.dependencies[dep] = False
-            #self.dependencies.update({self.dependencies[dep]:False})
+            self.dependencies.update({self.dependencies[dep]:False})
         
-    def _find_dependencies(self,server):
+    def _find_dependencies(self):
         """
         finds XTSM elements which should generate the data needed in dependencies
         - does so by finding one named according to the dependencies found in script.
@@ -2277,8 +2255,6 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         priority for data will be first to scope elements, then parent, peers,
         children
         """
-        self.server = server
-        self._analyze_script()
         targs=[self.__parent__,self.__parent__.getChildNodes(),self.getChildNodes()] # possible target nodes
         for dep in self.dependencies:  # foreach dependent find a node with this name and quit
             for targ in targs:
@@ -2303,7 +2279,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         not already in the element's scope.
         """
         if hasattr(self,'active') == False:
-            #print 'Script is not "active"'#CP
+            print 'Script is not "active"'
             return
         if not self.active: return
         for dep in self.dependencies:
@@ -2328,119 +2304,32 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         """
         executes the script
         """
-        if not hasattr(self,'data'):
-            self.data = {}
         # if this requires a timeout facility, use timed script - note this
         # requires 0.5-1.0s of startup time!
-        '''Old method of executing scripts - now moved to the script server. CP 2014-10-20
         if hasattr(self,'TimeOut'):
-            self.data=sheltered_script.timed_execute_scripts([self.ScriptBody.PCDATA],[self.data])[0]
+            self.data=sheltered_script.timed_execute_scripts([self.ScriptBody.PCDATA],[self.data])
         else:  # otherwise use standard execution
-            self.data=sheltered_script.execute_scripts([self.ScriptBody.PCDATA],[self.data])[0]
-        '''
-        
-        on_main = False
-        try:
-            flag = self.getDescendentsByType('ExecuteOnMainServer')[0]
-            if flag.PCDATA == 'False':
-                on_main = False
-            else:
-                on_main = True
-        except IndexError:
-            on_main = False
-        
-        if on_main:
-            self._execute()
-            #import XTSMserver.ServerCommand move to top
-            #exec_command = XTSMserver.ServerCommand(self.server, self._execute())
-            #self.server.command_queue.add(exec_command)
-            #self.package_outputs()
-        else:
-            commands = {'script_body':self.ScriptBody.PCDATA,
-                    'context': self.data,
-                    'callback_function':self.package_outputs}
-            self.server.execute_script(commands)
-            #self.server.execute_script(self.ScriptBody.PCDATA, self.data, self._execute(),self.package_outputs())
-            pass
-            #Note CP: This should provide a callback function to the script server
-            # like, self._script_complete(), that then takes the data from the
-            #script server and finishes handling it.
-            #self.package_outputs()
+            self.data=sheltered_script.execute_scripts([self.ScriptBody.PCDATA],[self.data])
+        self.package_outputs()
     
-    def _execute(self):
-        script = self.ScriptBody.PCDATA
-        context = self.data
-        old_stdout = sys.stdout
-        try:
-            capturer = StringIO.StringIO()
-            sys.stdout = capturer
-            t0=time.time()
-            exec script in globals(),context
-            t1=time.time()
-            context.update({"_starttime":t0,"_exectime":(t1-t0),"_script_console":capturer.getvalue()})
-        except Exception as e: 
-            context.update({'_SCRIPT_ERROR':e})
-            print '_SCRIPT_ERROR'
-#          del context['__builtin__']  # removes the backeffect of exec on context to add builtins
-        sys.stdout = old_stdout
-        self.data = [context]
-        self.package_outputs(self.data)
-        ###
-    
-    def package_outputs(self, data=None):
+    def package_outputs(self):
         """
-        #TODO?
         attaches script outputs to the node after execution
         """
-        if data != None:
-            self.data = data
-        #pdb.set_trace()
         # first attach the console output and errors
-        if not hasattr(self,'ScriptConsole'):
-            self.insert(ScriptConsole())
-            #pdb.set_trace()
-        try:
-            self.ScriptConsole[0].stream(self.data[0]['_script_console'])
-        except KeyError:
-            pass
-        try:
-            self.ScriptConsole[0].stream(self.data[0]['_SCRIPT_ERROR'],texttype='err_out')
-        except (KeyError):#,TypeError):
-            pass
+        if not hasattr(self,'ScriptConsole'): self.insert(ScriptConsole())
+        self.ScriptConsole[0].stream(self.data['_script_console'])
+        self.ScriptConsole[0].stream(self.data['_SCRIPT_ERROR'],texttype='err_out')
         # harvest outputs declared as child ScriptOutput elements 
-        if not hasattr(self, 'ScriptOutput'):
-            return
         for output in self.ScriptOutput:
-            if hasattr(output,'Name'):
-                name = output.Name.PCDATA.strip()
-            else:
-                pdb.set_trace()
-                #The rest of else shouldn't be necessary
-                #pdb.set_trace()
-                try:
-                    #for child in enumerate(output.getChildNodes()):
-                    name = str(output.getChildNodes()[0].get_tag()).strip()
-                except:
-                    output.addAttribute("parser_error","could not find name of elements in script")
-                    #What exceptions does this throw?
-                    pdb.set_trace()
-            try:
-                output.set_value(self.data[0][str(name)])
-                pass
-                #pdb.set_trace()
-            except AttributeError:
-                output.addAttribute("parser_error","could not set_value to XTSM")
+            try: output.set_value(self.data[output.Name.PCDATA.strip()])
+            except AttributeError: output.addAttribute("parser_error","could not find element as an assigned value in script")
         
     def _build_ast(self):
         """
         builds the abstract syntax tree of the script
         """
-        if self.ScriptBody.PCDATA == "":
-            return
-        if self.ScriptBody.PCDATA == None:
-            return
-        arg = saxutils.unescape(self.ScriptBody.PCDATA)
-        self.syn_tree=ast.parse(arg)
+        self.syn_tree=ast.parse(saxutils.unescape(self.ScriptBody.PCDATA))
 
     def dispatch(self,server):
         """
@@ -2481,8 +2370,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                     self.script_destination = action(self)
         sn = xtsm_owner.getItemByFieldValue("Parameter","Name","shotnumber")
         #self.insert(sn)
-        if hasattr(self,'Time'):
-            self.Time[0].parse()
+        self.Time[0].parse()
         #msg = self.write_xml()
         msg = self.ScriptBody.PCDATA
         self.server = server
@@ -2492,7 +2380,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
         pckg = simplejson.dumps({"IDLSocket_ResponseFunction":"execute_script",
                                  "script_body":msg,
                                  "destination_for_data":self.data_destination,
-                                 #"on_main_server":True,
+                                 "on_main_server":True,
                                  "instrument_name":self.__parent__.OnInstrument[0].PCDATA,
                                  "time_to_execute":self.Time.PCDATA,
                                  "shotnumber":sn.Value.PCDATA,
@@ -2502,15 +2390,14 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
             print pckg
             pass
 
+
     class ScriptVisitor(ast.NodeVisitor):
         """
         helper-class to allow walking the syntax tree to find assignments
         and references to undeclared variables
         """
-        def __init__(self):
-            self.references={}    
-            self.assignments={}    
-            
+        references={}    
+        assignments={}    
         def visit_Name(self, node):
             if node.id in self.assignments: return
             self.references.update({node.id:node.lineno})
@@ -2528,14 +2415,14 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
     """
     def __init__(self):
         XTSM_core.__init__(self)
-        print "class InstrumentCommand, func __init__"
+        #print "class InstrumentCommand, func __init__"
         
     def __generate_listener__(self):#This is called by installListeners - which is called in Server, compile active xtsm
         """
         Returns listener creation data - this will be automatically called
         recursively down the tree by installListeners in XSTM_core class.
         """
-        print "in class InstrumentCommand, function __generate_listener__"
+        #print "in class InstrumentCommand, function __generate_listener__"
         #pdb.set_trace()
         
         
@@ -2559,23 +2446,17 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         #tgobj=cm.getItemByFieldValue("TimingGroupData","GroupNumber",str(int(tg)))
         #This gets the instrument object's metadata
         #pdb.set_trace()
-        #instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
-        #                                                 "OnInstrument",
-        #                                                 self.OnInstrument[0].PCDATA)
-                                                         
-       
-        #print gen
-        
         instrument_head = xtsm_owner.getItemByFieldValue("Instrument",
-                                                         "Name",
+                                                         "OnInstrument",
                                                          self.OnInstrument[0].PCDATA)
-                                                         
-        #gen =  instrument_head.ServerIPAddress[0].PCDATA                                                  
-        self.__listener_criteria__ = {"shotnumber":int(self.scope["shotnumber"])}
+        gen =  instrument_head.ServerIPAddress[0].PCDATA 
+        print gen
+        self.__listener_criteria__ = {"shotnumber":int(self.scope["shotnumber"]),
+                                          "sender":gen}
                                    #"sender":tgobj.Name.PCDATA}
-        self.__listener_criteria__.update({'server_IP_address':instrument_head.ServerIPAddress[0].PCDATA,
-                                           #'data_generator':gen,
-                                           'instrument_name':"CCD"})
+        self.__listener_criteria__.update({'data_generator':gen,
+                                           'server_IP_address':instrument_head.ServerIPAddress[0].PCDATA,
+                                           'number_in_data_sequence':0})
         data.update({"listen_for":self.__listener_criteria__ })
         data.update({"method": "link"})
         data.update({"onlink":self.onlink})
@@ -2610,34 +2491,16 @@ class ScriptOutput(gnosis.xml.objectify._XO_,XTSM_core):
         self.val=value
         if not hasattr(self,'scoped'): self.buildScope()
         self.uuid=uuid.uuid1()
-        '''
-        self.messagepack=msgpack.packb(value)
-        idheader = msgpack.packb('id')+msgpack.packb(str(self.uuid))
-        timeheader = msgpack.packb('timestamp')+msgpack.packb(str(self.timestamp))
-        dataheader = '\xdb' + struct.pack('>L',len(self.messagepack))
-        self.raw_link=self.getOwnerXTSM()._analysis_stream.write('\x83' + idheader + timeheader + dataheader, preventFrag=True)+"["+self.uuid+"]"
-        self.getOwnerXTSM()._analysis_stream.write(self.messagepack)
-        '''
         try:
-            self.messagepack = msgpack.packb(value, use_bin_type=True)
+            self.messagepack=msgpack.packb(value)
+            idheader = msgpack.packb('id')+msgpack.packb(str(self.uuid))
+            timeheader = msgpack.packb('timestamp')+msgpack.packb(str(self.timestamp))
+            dataheader = '\xdb' + struct.pack('>L',len(self.messagepack))
+            self.raw_link=self.getOwnerXTSM()._analysis_stream.write('\x83' + idheader + timeheader + dataheader, preventFrag=True)+"["+self.uuid+"]"
+            self.getOwnerXTSM()._analysis_stream.write(self.messagepack)
         except:
             self.addAttribute("parser_error","can't serialize this object to msgpack")
-            #what exceptions does this throw?
-        to_disk = {'id': str(self.uuid),
-                   'time_packed': str(time.time()),
-                    'len_of_data': str(len(self.messagepack)),
-                    'packed_data': self.messagepack }
-        stream = self.getOwnerXTSM()._analysis_stream
-        stream.write(msgpack.packb(to_disk, use_bin_type=True), keep_stream_open=False) 
-        trailing_id = "[" + str(self.uuid) + "]"
-        #print self.server.dataContexts['PXI_emulator']['_exp_sync'].compiled_xtsm[8].XTSM.getDescendentsByType('Script')[0].write_xml()
-        try:
-            self.raw_links.append(stream.location + trailing_id)
-        except AttributeError:
-            self.raw_links = stream.location + trailing_id
-        if DEBUG: print "Path:", self.raw_links
-        self.insert(gnosis.xml.objectify._XO_Value(value))
-        self.insert(DataNode({"link":self.raw_links}))
+        self.insert(DataNode({"link":self.raw_link}))
 
 class ScriptConsole(gnosis.xml.objectify._XO_,XTSM_core):
     """
@@ -3121,7 +2984,6 @@ class Parameter(gnosis.xml.objectify._XO_,XTSM_core):
             self.insert(gnosis.xml.objectify._XO_Value(value))
         return None
 
-
 def main_test():
     """
     Trouble-shooting and testing procedure - not for long-term use
@@ -3188,33 +3050,22 @@ class XTSM_Object(object):
         Builds an XTSM object from an XTSM string, a file-like stream or a filepath to
         a textfile containing xtsm - THIS IS A TOPLEVEL ROUTINE FOR THE PARSER 
         """
-        if DEBUG: print "in class Command_Library, func preparse"
         if not isinstance(source, basestring):
-            try:
-                source=source.getvalue()
+            try: source=source.getvalue()
             except AttributeError: 
                 raise InvalidSource(source)
         if source.find('<XTSM')==-1:
-            try:
-                source=urllib.urlopen(source).read()
+            try: source=urllib.urlopen(source).read()
             except IOError: 
-                try: 
-                    source=urllib.urlopen('file:'+source).read()
-                except IOError:
-                    InvalidSource(source)
-        try:
-            self.XTSM = gnosis.xml.objectify.make_instance(source)
-        except AttributeError as e:
-            print "Error making instance of XTSM"
-            print e
-            return
+                try: source=urllib.urlopen('file:'+source).read()
+                except IOError: InvalidSource(source)
+        self.XTSM = gnosis.xml.objectify.make_instance(source)
         
     def parse(self, shotnumber = 0):
         """
         parses the appropriate sequence, given a shotnumber (defaults to zero)
         - THIS IS A TOPLEVEL ROUTINE FOR THE PARSER
         """
-        if DEBUG: print "in class XTSM_Object, func parse"
         self.XTSM.insert(Parameter(u'shotnumber',str(shotnumber)))
         parserOutput=self.XTSM.body[0].parseActiveSequence()
         return parserOutput
@@ -3224,7 +3075,7 @@ class XTSM_Object(object):
         scans down the XTSM tree, creating dataListeners for all elements
         which should generate them.
         """
-        print "class XTSM_object, function install Listeners"
+        #print "class XTSM_object, function install Listeners"
         self.XTSM.head.installListeners(dataListenerManager)#Runs the "install Listeners function in XTSM_core class
         self.XTSM.getActiveSequence().installListeners(dataListenerManager)
 
@@ -3495,7 +3346,6 @@ def preparse(xtsm_obj):
     """
     Executes functions before parsing the XTSM code.
     """
-    if DEBUG: print "in class Command_Library, func preparse"
     xtsm_obj.Command_Library = Command_Library()
     for command in xtsm_obj.XTSM.head.PreParseInstructions.ParserCommand:
         try:
@@ -3525,9 +3375,8 @@ def postparse(timingstring):
     Executes functions after parsing the XTSM code.Combine timing strings from timing groups with the delay train. 
     You must list names of groups to combine (each in a seperate "value" field), including the delay train group.  These groups must have the same number of updates.
     You can optionally include integer values for a byte-length-per-value, along with filler position and filler length, the latter two of which can be repeated indefinitely.
-    For more info, see the parsers Command_Library.
+    For more info, see the parser's Command_Library.
     """
-    if DEBUG: print "in class Command_Library, func postparse"
     
     timingstring.Command_Library = Command_Library()
     timingstring.XTSM = timingstring.__parent__.__parent__.__parent__

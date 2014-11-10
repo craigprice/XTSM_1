@@ -95,7 +95,12 @@ import scipy
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 import image_viewer
+import GPIB_control
+
+from scipy.optimize import curve_fit
 #from IPy import IP
+
+time_constant = 1415120086
 
 def tracefunc(frame, event, arg, indent=[0]):
       global DEBUG_LINENO, TRACE_IGNORE
@@ -274,8 +279,11 @@ class MulticastProtocol(DatagramProtocol):
         #print "Datagram received from "+ repr(address) 
         datagram = simplejson.loads(datagram_)
         if hasattr(datagram,'keys'):
+            if 'loop_started' in datagram.keys():
+                print datagram, "time.time():", float(time.time()) - time_constant
+                return
             if 'shotnumber_started' in datagram.keys():
-                print datagram
+                #print datagram
                 #dc.get('_exp_sync').shotnumber = datagram['shotnumber_started']
                 self.server.pxi_time = float(datagram['time'])
                 self.server.pxi_time_server_time = float(datagram['time']) - float(time.time())#Make this so that it synchronizes the clocks CP
@@ -286,7 +294,9 @@ class MulticastProtocol(DatagramProtocol):
                 #     exp_sync = Experiment_Sync_Group(self.server)
                 #     dc.update({'_exp_sync':exp_sync})
                 #dc['_exp_sync'].shotnumber = int(datagram['shotnumber_started'])
-                #print "Shot started:", datagram['shotnumber_started'], "pxi_time:", self.server.pxi_time, "time.time():", float(time.time())
+                print "Shot started:", datagram['shotnumber_started'], "pxi_time:", self.server.pxi_time, "time.time():", float(time.time()) - time_constant
+                return
+            if 'fake_shotnumber_started' in datagram.keys():
                 return
         try:
             datagram["server_ping"] 
@@ -545,6 +555,7 @@ class CommandProtocol(protocol.Protocol):
         # the header MUST arrive in the first fragment
         # append the new data 
         self.alldata += data
+        print data, "time_constant:", time.time() - time_constant
         if u"?console" in data: self.provide_console()
         #requests = 0   #For use with priorities
         if not hasattr(self,'mlength'):
@@ -1651,7 +1662,7 @@ class CommandLibrary():
         """
         #print params
         # mark requestor as an XTSM compiler
-        #print "In class CommandLibrary, function compile_active_xtsm", "time:", float(time.time()) - 1412863872
+        print "In class CommandLibrary, function compile_active_xtsm", "time:", float(time.time()) - time_constant
         
         '''
         self.server.connection_manager.update_client_roles(params['request'],'active_XTSM_compiler')
@@ -1832,8 +1843,7 @@ class CommandLibrary():
         These write functions may crash any websocket connections that it
         tries to write into since it may not be json
         """
-        #print "timingstringOutput, at time:", float(time.time()) - 1412863872
-        #pdb.set_trace()
+        print "timingstringOutput, at time:", float(time.time()) - time_constant
         params['request']['protocol'].transport.write(timingstringOutput)
         #dc.get('_exp_sync').shotnumber = sn + 1 PXI system will keep track of sn
         params['request']['protocol'].transport.loseConnection()
@@ -1847,6 +1857,7 @@ class CommandLibrary():
         dc['_exp_sync'].compiled_xtsm.update({sn:xtsm_object})
         dc['_exp_sync'].last_successful_xtsm = exp_sync.active_xtsm
         #print 'end compile active'
+        print "In class CommandLibrary, function  end compile_active_xtsm", "time:", float(time.time()) - time_constant
 
     def testparse_active_xtsm(self, params):
         """
@@ -2027,11 +2038,10 @@ class CommandLibrary():
                 raise
         #min_scale = 65536
         
-        max_scale_zoom = 500
-        min_scale_zoom = 0
+        max_scale_zoom = 200
+        min_scale_zoom = -100
         max_scale_full = 500
-        min_scale_full = 50
-        
+        min_scale_full = -100       
         
         if dc.dict.has_key('ImageScaleZoomMax'):
             max_scale_zoom = dc['ImageScaleZoomMax']
@@ -2045,8 +2055,8 @@ class CommandLibrary():
         
         #bottom_left_coord = (120,345)
         #top_right_coord = (340,180)
-        bottom_left_coord = (400,170)#(x,y)
-        top_right_coord = (450,200)
+        bottom_left_coord = (450,0)#(x,y)
+        top_right_coord = (450,100)
         #bottom_left_coord = (260,165)
         #top_right_coord = (271,185)
         region_of_interest = corrected_image[top_right_coord[1]:bottom_left_coord[0],
@@ -2773,6 +2783,167 @@ class GlabPythonManager():
         for dc in self.dataContexts:
             self.dataContexts[dc]._close()
 
+    def init_GPIB(self, device_address=7):
+        '''
+        if ip address is not found, run the program "GPIB Configuator" and look
+        at ip. Or run "NetFinder" from Prologix
+        '''
+        self.GPIB_adapter = GPIB_control.PrologixGpibEthernet('10.1.1.113')
+        
+        read_timeout = 5.0
+        if DEBUG: print "Setting adapter read timeout to %f seconds" % read_timeout
+        self.GPIB_adapter.settimeout(read_timeout)
+        
+        gpib_address = int(device_address)#Scope over Rb exp tektronix 460A
+        #gpib_address = int(7)#Scope over Rb exp tektronix 460A
+        if DEBUG: print "Using device GPIB address of %d" % gpib_address
+        self.GPIB_device = GPIB_control.GpibDevice(self.GPIB_adapter, gpib_address)
+        if DEBUG: print "Finished initialization of GPIB controller"
+        
+        
+    
+    def get_scope_field(self,q1="Data:Source CH1",
+                        q2="Data:Encdg: ASCII",
+                        q3="Data:Width 2",
+                        q4="Data:Start 1",
+                        q5="Data:Stop 500",
+                        q6="wfmpre?" ,
+                        q7="curve?",filename='NewScopeTrace',tdiv=10,vdiv=10, fit='NoFit'):
+        '''
+        This function pull trace back from Textronix TDS460A. 
+        fit= 'SPG', fit with single peak gaussian function, return peak hight, width, and area under peak;
+        fit= 'DPG', fit with double peak gaussian function, return peak hight, width, and area under peak;
+        
+        '''
+    
+        e1 = time.time()
+        if not hasattr(self,'GPIB_device'):
+            if DEBUG: print "GPIB device not ready"
+            return
+        response = self.GPIB_device.converse([q1,q2,q3,q4,q5,q6,q7])
+        e2 = time.time()
+        if DEBUG: print "Scope communication took", e2-e1, "sec"
+        
+        ystr = response["curve?"]
+        if DEBUG: print "Data:", ystr
+            
+
+        print "Scope communication took", e2-e1,"s"
+        #pdb.set_trace()
+        ydata=np.array([float(s) for s in ystr.split(',')])
+
+        xdata=np.multiply(np.arange(len(ydata),dtype=np.float),(tdiv*10.0)/500.0) #xdata converted for 10ms/div scale
+    
+        ydata=np.multiply(ydata,(vdiv*5.0)/2.**15.) #ydata converted for 5mV/div scale, five devisions corresponding to 0~2**15
+    
+        if fit=='NoFit':
+            fig,ax=plt.subplots()
+            ax.plot(xdata,ydata)
+            plt.show(block=False)
+            plt.savefig(filename)
+            print "Figure saved. No fitting performed."
+        
+        elif fit=='SPG':
+            def gaussian(x,offset,w,a,c):
+                
+                '''
+                Define single peak gaussian function, parameters are listed below:
+                x, variable; offset; w, 1/sqrt(e) width ; a amplitude of the peak; c, peak center.
+                FWHM=2.3548*w
+                '''
+                return offset + a*np.exp(-(x-c)**2./(2.*w**2.))
+            
+            
+            fig,ax=plt.subplots()
+            ax.plot(xdata,ydata)
+            
+            #popt,popv = curve_fit(func, xdata, ydata, (-12.,12.,15.,25.,6.,5.,50.))
+            popt,popv = curve_fit(gaussian, xdata, ydata, (-10,10.,1.,50.))  
+            fit = gaussian(xdata, *popt)
+            ax.plot(xdata, fit, 'r--')
+            ax.text(0, 2*vdiv,'Fitting: Single Gaussian. \n'
+                    + 'width = '+str(popt[1])+' ms ;\n amplitude = '+str(popt[2])+' mV ; \n center = '+str(popt[3])+'ms.\n'+'FWHM = '+str(2.3548*popt[1])+'ms.')
+            ax.set_title('Time of Flight')
+            ax.grid(True)
+            ax.set_ylabel('Log Amp Output Voltage (mV)')
+            ax.set_xlabel('Time (ms)')
+            plt.show(block=False)
+            plt.savefig(filename)
+        
+        elif fit=='DPG':
+            # define the double peak Gaussian fitting function.
+            def two_gaussian(x,offset,w1,a1,c1,w2,a2,c2):
+                
+                '''
+                Define two peak gaussian function, parameters are listed below:
+                x, variable; offset; w1(w2), 1/sqrt(e) width of first(second) peak; a1(a2) amplitude of the first(second) peak; c1 (c2) peak center.
+                FWHM=2.3548*w
+                '''
+                return offset + a1*np.exp(-(x-c1)**2./(2.*w1**2.)) + a2*np.exp(-(x-c2)**2./(2.*w2**2.))
+            
+            
+            fig,ax=plt.subplots()
+            ax.plot(xdata,ydata)
+            
+            #popt,popv = curve_fit(func, xdata, ydata, (-12.,12.,15.,25.,6.,5.,50.))
+            popt,popv = curve_fit(two_gaussian, xdata[15:], ydata[15:], (-10,10.,1.,50,4.,1.,80.)) 
+            fit = two_gaussian(xdata[15:], *popt)
+            ax.plot(xdata[15:], fit, 'r--')
+            ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.])
+            ax.set_title('Time of Flight')
+            ax.xaxis.set_ticks(np.linspace(0,10*tdiv,11))
+            ax.grid(True)
+            ax.text(0, 2*vdiv,'Fitting: Two Gaussian. \n'
+                    + 'width1 = '+str(popt[1])+' ms ;\n amplitude1 = '+str(popt[2])+' mV ; \n center1 = '+str(popt[3])+'ms.\n'+ 'FWHM = '+str(2.3548*popt[1])+'ms.')
+            ax.text(6*tdiv,2*vdiv,'width2 = '+str(popt[4])+' ms ;\n amplitude2 = '+str(popt[5])+' mV ; \n center2 = '+str(popt[6])+'ms.\n'
+                    + 'FWHM = '+str(2.3548*popt[4])+'ms.\n'+'Area: '+str(popt[4]*popt[5]/2.)+'mV*ms.')
+            ax.set_ylabel('Log Amp Output Voltage (mV)')
+            ax.set_xlabel('Time (ms)')
+        
+           
+            plt.show(block=False)
+            plt.savefig(filename)
+           
+        # plt.plot(range(len(ydata)),func(range(len(ydata)), 1,1) )
+        ydatasave=str(ydata).translate(None,'[]\n')
+        savefile=open(filename,'w')
+        savefile.write(ydatasave)
+        savefile.close()
+        print "ASCII data saved"
+        print "Figure saved"
+        
+
+    def get_spectrum_analyzer_trace(self):
+    
+        e1 = time.time()
+        if not hasattr(self,'GPIB_device'):
+            if DEBUG: print "GPIB device not ready"
+            return
+        
+        q1 = 'FA?'#Specifies start frequency
+        q2 = 'FB?'#Specifies stop frequency.
+        q3 = 'RL?'#Adjusts the range level.
+        q4 = 'RB?'#Specifies resolution bandwidth
+        q5 = 'VB?'#Specifies video bandwidth.
+        q6 = 'ST?'#Sweep Time
+        q7 = 'LG?'#Log Scale
+        q8 = 'AUNITS?'#Specifies amplitude units for input, output, and display
+        #q9 = 'TDF B'#Specifies transfer in Binary format
+        q9 = 'TDF P'#Specifies transfer in ASCII decimal values in real-number parameter format
+        q10 = 'TRA?'
+        e1 = time.time()
+        response = g.GPIB_device.converse([q1,q2,q3,q4,q5,q6,q7,q8,q9])
+        e2 = time.time()
+        print response
+        if DEBUG: print "communication took", e2-e1, "sec"
+        
+        
+        e1 = time.time()
+        response = g.GPIB_device.converse([q10])
+        e2 = time.time()
+        print response
+        if DEBUG: print "communication took", e2-e1, "sec"
+
     def server_ping(self):
         """
         sends an identifying message on udp broadcast port
@@ -2889,6 +3060,126 @@ class GlabPythonManager():
             except AttributeError:
                 return ""
         
+        
+    def timing_diagram(self, xtsm_object):
+        seq = xtsm_object.XTSM.body.Sequence[12]
+        cMap=seq.getOwnerXTSM().getDescendentsByType("ChannelMap")[0]
+        channelHeir=cMap.createTimingGroupHeirarchy()        
+        channelRes=cMap.findTimingGroupResolutions()
+        seq.collectTimingProffers()
+        edge_timings = seq.TimingProffer.data['Edge']
+        
+        class Edge:
+            def __init__(self, timing_group, channel_number, time, value, tag,
+                         name, initial_value, holding_value):
+                self.timing_group = timing_group
+                self.channel_number = channel_number
+                self.time = time
+                self.value = value
+                self.tag = tag
+                self.max = 0
+                self.min = 0
+                self.name = name
+                self.holding_value = holding_value
+                self.initial_value = initial_value
+                
+            def is_same(self,edge):
+                if ((self.timing_group == edge.timing_group) and
+                (self.channel_number == edge.channel_number) and
+                (self.time == edge.time) and
+                (self.value == edge.value) and
+                (self.tag == edge.tag)):
+                    return True
+                else:
+                    return False
+            
+        edges = []
+        longest_name = 0
+        for edge in edge_timings:
+            for channel in cMap.Channel:
+                tgroup = int(channel.TimingGroup.PCDATA)
+                tgroupIndex = int(channel.TimingGroupIndex.PCDATA)
+                if tgroup == int(edge[0]) and tgroupIndex == int(edge[1]):
+                    name = channel.ChannelName.PCDATA
+                    init_val = ''
+                    hold_val = ''
+                    try:
+                        init_val = channel.InitialValue.PCDATA
+                    except AttributeError:
+                        init_val = 'None '
+                    try:
+                        hold_val = channel.HoldingValue.PCDATA
+                    except AttributeError:
+                        hold_val = 'None '
+                    if len(name) > longest_name:
+                        longest_name = len(name)
+                    edges.append(Edge(edge[0],edge[1],edge[2],edge[3],edge[4],
+                                      name, init_val,hold_val))
+                    #pdb.set_trace()
+            
+        unique_group_channels = []
+        for edge in edges:
+            is_found = False
+            for ugc in unique_group_channels:
+                if edge.is_same(ugc):
+                    is_found = True
+            if not is_found:
+                unique_group_channels.append(edge)
+                
+                
+        from operator import itemgetter
+        edge_timings_by_group = sorted(edge_timings, key=itemgetter(2))
+        edge_timings_by_group_list = []
+        for edge in edge_timings_by_group:
+            edge_timings_by_group_list.append(edge.tolist())
+        #print edge_timings
+        for p in edge_timings_by_group_list: print p   
+        
+        unique_times = []
+        for edge in edges:
+            is_found = False
+            for t in unique_times:
+                if edge.time == t.time:
+                    is_found = True
+            if not is_found:
+                unique_times.append(edge)        
+        
+        
+        #pdb.set_trace()
+        for ugc in unique_group_channels:
+            s = ugc.name.rjust(longest_name)
+            current_edge = edges[0]
+            previous_edge = edges[0]
+            is_first = True
+            for t in unique_times:
+                is_found = False
+                for edge in edges:
+                    if edge.timing_group == ugc.timing_group and edge.channel_number == ugc.channel_number and edge.time == t.time:
+                        is_found = True
+                        current_edge = edge
+                if is_first:
+                    s = s + '|' + str('%7s' % str(current_edge.initial_value))
+                    is_first = False
+                    previous_edge.value = current_edge.initial_value
+                    if previous_edge.value == 'None ':
+                        previous_edge.value = 0
+                if is_found:
+                    if current_edge.value > previous_edge.value:
+                        s += '^' + str('%7s' % str(current_edge.value))
+                    else:
+                        s += 'v' + str('%7s' % str(current_edge.value))
+                    previous_edge = current_edge
+                else:
+                    s += '|' + '.'*7
+            s = s + '|' + str('%7s' % str(current_edge.holding_value))
+            print s             
+                       
+                       
+        s = "Time (ms)".rjust(longest_name) + '|' + str('%7s' % str("Initial"))
+        for t in unique_times:
+            s += '|' + str('%7s' % str(t.time))
+        s = s + '|' + str('%7s' % str("Holding"))
+        print s        
         
     
     class display():
