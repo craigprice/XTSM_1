@@ -24,29 +24,19 @@ function live_content_event(elm) {
     // find first parent element in DOM specifying a content_id
     cid = $(elm).parents('[content_id]')[0].getAttribute("content_id");
     // pass the event content_id, and other arguments of call to server as a live_content_event
-	var pxi_dc;
-	pxi_dc = document.getElementById('pxi_dc').value;
-    mes = JSON.stringify({ "IDLSocket_ResponseFunction": "live_content_event", "content_id": cid, "args": slicedArgs, "data_context": pxi_dc});
+    mes = JSON.stringify({ "IDLSocket_ResponseFunction": "live_content_event", "content_id": cid, "args": slicedArgs });
     $('#server_push_output_textarea')[0].sendText(mes);
 }
 
 function textarea_console(textarea_generator,arg) {
     textarea_generator.className="server_push_textarea";
     textarea_generator.innerHTML = "websocket not connected";
-    //ws_function = websocketize(textarea_generator,arg);
     websocketize(textarea_generator,arg);
-    ws_function = textarea_generator;
 }
 
 function websocketize(target,arg) {
-	
-//function createWebSocket () {
-//  var connection = new WebSocket();
-//  connection.onclose = function () {setTimeout(function () {createWebSocket(); }, 10*1000);}
-//};
-
     function openSocket() {
-        if (target.reconnectAttempts > 1000) {
+        if (target.reconnectAttempts > 10) {
             target.parentNode.parentNode.style.backgroundColor = "#E0E0E0";
             clearInterval(target.reconnectInterval);
             return;
@@ -74,7 +64,6 @@ function websocketize(target,arg) {
         target.reconnectAttempts +=1 ;
     };
     target.onopencall = onopencall;
-	
     function onclosecall(e) {
         if (target.isopen) {
             //console.log("Websocket closed.");
@@ -82,19 +71,13 @@ function websocketize(target,arg) {
             target.isopen = false;
             target.reconnectAttempts = 0;
             target.parentNode.parentNode.style.backgroundColor = "#FFCCCC";
-			//setTimeout(function () {websocketize(target,arg); }, 1000);
-            target.reconnectInterval = setInterval(target.openSocket, 2000); //CP 2014-10-21
+            target.reconnectInterval = setInterval(target.openSocket, 5000);
         };
     };
     target.onclosecall = onclosecall;
-	
     function ReopenSocket() {
         target.reconnectAttempts = 0;
-		if (typeof reconimg_ws !== 'undefined') {
-			target.socket.close();
-		}
-		websocketize(target,arg);//CP 2014-10-30
-        //target.openSocket();CP 2014-10-30
+        target.openSocket();
     };
     target.ReopenSocket = ReopenSocket;
 
@@ -114,21 +97,18 @@ function websocketize(target,arg) {
     target.openSocket();
     target.socket.onopen = onopencall;
     target.socket.onclose = onclosecall;
-	if (typeof reconimg_ws === 'undefined') {
-		reconimg_ws = target.parentNode.parentNode.insertBefore(document.createElement('img'), target.parentNode);
-		reconimg_ws.src = "../images/seqicon_refresh.png";
-		reconimg_ws.height = 15;
-		reconimg_ws.onclick = target.ReopenSocket;
-	}
+    var reconimg = target.parentNode.parentNode.insertBefore(document.createElement('img'), target.parentNode);
+    reconimg.src = "../images/seqicon_refresh.png";
+    reconimg.height = 15;
+    reconimg.onclick = target.ReopenSocket;
 
     target.log = function (message) {
         /*
         writes server messages to the textarea console log. 
         */
         target.innerHTML = target.innerHTML.split("\n").slice(-6,-1).join() + "\n" + message;
-    }
-    target.socket.onmessage = function (e) {
-			console.log("in function: target.socket.onmessage");
+        }
+        target.socket.onmessage = function (e) {
             /*
             Here we define the response to any incoming websocket data.  We assume if the
             data is text format that it consists of a json-formatted set of key-value pairs.
@@ -136,39 +116,14 @@ function websocketize(target,arg) {
             parameters for the GUI's reaction.  The action should be the name of a command
             in this target's command library, which takes a single parameter as its argument, which
             will be passed the value of the key-value pair.
-			This will by default execute the received function for any data_context
-			that was not specified. However, if a data_context was specified in the wbsocket
-			message, then it will only execute that command if the pxi_dc matches that
-			data_context. Note, the variable name, 'pxi_dc' is a bit of a misnomer because
-			it isn't necessarily the "PXI's" data_context- CP 2014-10-20
             */
             if (typeof e.data == "string") {
                 // if data is a string, it is assumed to be JSON form
                 var obj = jQuery.parseJSON(e.data);
                 // following should call requested functions :
-				var dc_present = false;
                 for (var action in obj) {
-					//console.log('command: ' + action);
-                    if(action == "data_context"){
-						var dc_present = true;
-						if (obj[action] != document.getElementById('pxi_dc').value){
-							return;
-						}
-					}
-                }
-                for (var action in obj) {
-                    if(action == "data_context"){
-						continue;
-					}
                     var thearg = obj[action];
-					try{
-						eval("this.owner.commandLibrary." + action + '(thearg)');
-					}
-					catch(err){
-						this.owner.commandLibrary.server_console("Error:"+action);
-						console.log("Error:"+action);
-						console.log(err);
-					}
+                    eval("this.owner.commandLibrary." + action + '(thearg)');
                 }
             } else { // the data is of binary form - this is not currently used
                 var arr = new Uint8Array(e.data);
@@ -178,7 +133,7 @@ function websocketize(target,arg) {
                 }
                 console.log("Binary message received on websocket: " + hex);
             }
-    }
+        }
 };
 
 function CommandLibrary(arg) {
@@ -193,44 +148,35 @@ function CommandLibrary(arg) {
     this.server_console = server_console;
 
     function shotnumber(sn) {
-		console.log('shotnumber');
-        arg.running_shot = sn;
+        arg.running_shot = sn - 1;
         arg.shotnumber_browse = arg.running_shot + Number($("#toolbar").contents().find("#shotnumber_browse_input").val());
-        mes = "Exp. Control - Shot " + (sn) + " Running";
+        mes = "Exp. Control - Shot " + (sn - 1) + " Running";
         document.title = mes;
         this.server_console(mes);
-		var pxi_dc;
-		pxi_dc = document.getElementById('pxi_dc').value;
-        $("#toolbar").contents().find("#toolpanel_statusbar").html("Shot " + (sn) + " Running");
+        $("#toolbar").contents().find("#toolpanel_statusbar").html("Shot " + (sn - 1) + " Running");
         if (!arg.shotnumber_lock) {
-			console.log('sending request_xtsm');
-            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + arg.shotnumber_browse + '"}');
+            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","shotnumber":"' + arg.shotnumber_browse + '"}');
         }
     };
     this.shotnumber = shotnumber;
 
     function parsed_active_xtsm(time) {
-        //this.server_console("experiment parsed.");
+        this.server_console("experiment parsed.");
     };
     this.parsed_active_xtsm = parsed_active_xtsm;
 
     function xtsm_change(shotnumber) {
-        //console.log("In function xtsm_change. shotnumber_browser:" +  arg.shotnumber_browse + "shotnumber: " + shotnumber);
         this.server_console("xtsm for shotnumber " + shotnumber + " changed.");
         if (!(arg.shotnumber_lock) && (arg.shotnumber_browse === shotnumber)) {
-			var pxi_dc;
-			pxi_dc = document.getElementById('pxi_dc').value;
-			console.log('sending request_xtsm');
-            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + arg.shotnumber_browse + '"}');
+            console.log("getting in response to xtsm change");
+            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","shotnumber":"' + arg.shotnumber_browse + '"}');
         }
     };
     this.xtsm_change = xtsm_change;
 
-    function xtsm_return(pay) {
-		console.log('inside xtsm_return');
-        pay = jQuery.parseJSON(pay);
+    function xtsm_return(payload) {
+        var pay = jQuery.parseJSON(payload);
         if (arg.shotnumber_browse === pay['shotnumber']) {
-			console.log('updating XTSM. '+ 'shotnumber: ' +  pay['shotnumber']);
             arg.xml_string = pay['xtsm'];
             arg.update_editor();
             arg.refresh_tree();
@@ -242,90 +188,19 @@ function CommandLibrary(arg) {
     function receive_live_content(payload) {
         var content_id;
         payload = jQuery.parseJSON(payload);
-        for (content_id in payload) {
-			//console.log('inside receive_live_content');
-			//console.log('calling update_livedata with: content_id: ' + content_id + "payload[content_id]: " + payload[content_id]);
-			arg.update_livedata(content_id, payload[content_id]);
-		};
+        for (content_id in payload) { arg.update_livedata(content_id, payload[content_id]); };
     };
     this.receive_live_content = receive_live_content;
 
     function live_content_changed(payload) {
         //payload = jQuery.parseJSON(payload);
-		return; //CP 2014-11-1
-		var pxi_dc;
-		pxi_dc = document.getElementById('pxi_dc').value;
         if ($("[content_id='" + payload['content_id'] + "']").length > 0) {
-            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_content","content_id":"' + payload['content_id'] + '","' + data_context + '":"' + pxi_dc + '"}');
+            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_content","content_id":"' + payload['content_id'] + '"}');
         };
     };
     this.live_content_changed = live_content_changed;
 
-	/*Added ws by Craig 2014-10-28*/
-	function parse_preview_ws(arg) {
-		/*
-		asks server to test-parse active XTSM via Ajax request, return xtsm 
-		*/
-		var pxi_dc;
-		pxi_dc = document.getElementById('pxi_dc').value;
-		if (pxi_dc === '') {
-			alert('You must enter a PXI Data Context in order to post an active experiment!');
-			return;
-		}
-		// Send request for test-parse.
-		message = JSON.stringify({'IDLSocket_ResponseFunction':'testparse_active_xtsm','data_context': pxi_dc,'terminator':'die'});
-		this.owner.sendText(message);
-	};
-    this.parse_preview_ws = parse_preview_ws;
 
-	
-	function post_active_xtsm_ws(arg) {
-		/*
-		Sends active XTSM code to server, along with the name of the data context of the
-		 PXI system which will run that code. 
-		Note: This requires two Ajax requests, as the 'set_global_variable...' command only sets one variable per request.
-		
-		Also compresses the html parser div if the option is checked.
-		*/
-
-		var _active_xtsm, pxi_dc;
-		_active_xtsm = arg.xml_string;
-		pxi_dc = document.getElementById('pxi_dc').value;
-		if (pxi_dc === '') {
-			alert('You must enter a PXI Data Context in order to post an active experiment!');
-			return;
-		}
-		// Send active XTSM object.
-		message = JSON.stringify({'IDLSocket_ResponseFunction':'post_active_xtsm','data_context': pxi_dc,'_active_xtsm': _active_xtsm,'terminator':'die'});
-		this.owner.sendText(message);
-
-		if (document.getElementById("compress_on_post_button").checked) {
-			toggle_menu("parser_menu", "parser_operations");
-		}
-	};
-    this.post_active_xtsm_ws = post_active_xtsm_ws;
-	
-
-	function retrieve_active_xtsm_ws(arg) {
-		/*
-		Retrieves active XTSM code from server.
-		Then replaces the active XTSM in the code editor with the data retrieved.
-		*/
-
-		var pxi_dc;
-		pxi_dc = document.getElementById('pxi_dc').value;
-		if (pxi_dc === '') {
-			alert('You must enter a PXI Data Context in order to retrieve an active experiment!');
-			return;
-		}
-		message = JSON.stringify({'IDLSocket_ResponseFunction':'get_global_variable_from_socket','data_context': pxi_dc,'variablename': '_active_xtsm','terminator':'die'});
-		this.owner.sendText(message);
-		if (document.getElementById("compress_on_post_button").checked) {
-			toggle_menu("parser_menu", "parser_operations");
-		}
-	};
-	this.retrieve_active_xtsm_ws = retrieve_active_xtsm_ws;
-	
 };
 
 function replaceHtml(el, html) {
@@ -787,9 +662,8 @@ function post_active_xtsm(arg) {
 	// Send active XTSM object.
 	transferdata = [];
 	transferdata[0] = '--' + boundary + '\n\rContent-Disposition: form-data; name="IDLSocket_ResponseFunction"\n\r\n\r' + 'set_global_variable_from_socket' + '\n\r--' + boundary + '--\n\r';
-	transferdata[1] = '--' + boundary + '\n\rContent-Disposition: form-data; name="data_context"\n\r\n\r' + pxi_dc + '\n\r--' + boundary + '--\n\r';
-	transferdata[2] = '--' + boundary + '\n\rContent-Disposition: form-data; name="_active_xtsm"\n\r\n\r' + _active_xtsm + '\n\r--' + boundary + '--\n\r';
-	transferdata[3] = '--' + boundary + '\n\rContent-Disposition: form-data; name="terminator"\n\r\n\r' + 'die' + '\n\r--' + boundary + '--\n\r';
+	transferdata[1] = '--' + boundary + '\n\rContent-Disposition: form-data; name="_active_xtsm"\n\r\n\r' + _active_xtsm + '\n\r--' + boundary + '--\n\r';
+	transferdata[2] = '--' + boundary + '\n\rContent-Disposition: form-data; name="terminator"\n\r\n\r' + 'die' + '\n\r--' + boundary + '--\n\r';
 	transferdata = transferdata.join("");
 	//alert(transferdata);
 	$.ajax({
@@ -807,8 +681,7 @@ function post_active_xtsm(arg) {
 	transferdata = [];
 	transferdata[0] = '--' + boundary + '\n\rContent-Disposition: form-data; name="IDLSocket_ResponseFunction"\n\r\n\r' + 'set_global_variable_from_socket' + '\n\r--' + boundary + '--\n\r';
 	transferdata[1] = '--' + boundary + '\n\rContent-Disposition: form-data; name="pxi_data_context"\n\r\n\r' + pxi_dc + '\n\r--' + boundary + '--\n\r';
-	transferdata[2] = '--' + boundary + '\n\rContent-Disposition: form-data; name="data_context"\n\r\n\r' + pxi_dc + '\n\r--' + boundary + '--\n\r';
-	transferdata[3] = '--' + boundary + '\n\rContent-Disposition: form-data; name="terminator"\n\r\n\r' + 'die' + '\n\r--' + boundary + '--\n\r';
+	transferdata[2] = '--' + boundary + '\n\rContent-Disposition: form-data; name="terminator"\n\r\n\r' + 'die' + '\n\r--' + boundary + '--\n\r';
 	transferdata = transferdata.join("");
 	//alert(transferdata);
 	$.ajax({
@@ -1568,9 +1441,7 @@ function Hdiode_code_tree(html_div, sources) {
         }
         this.owner.shotnumber_input.setAttribute("value", newval);
         // here we will request new xtsm no matter what the status of the browser lock is; obviously the user wants new data.
-		var pxi_dc;
-		pxi_dc = document.getElementById('pxi_dc').value;
-        document.getElementById("server_push_output_textarea").sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + this.owner.shotnumber_browse.toString() + '"}');
+        document.getElementById("server_push_output_textarea").sendText('{"IDLSocket_ResponseFunction":"request_xtsm","shotnumber":"' + this.owner.shotnumber_browse.toString() + '"}');
     }
     this.update_shotnumber_browse = update_shotnumber_browse;
 
@@ -1598,8 +1469,7 @@ function Hdiode_code_tree(html_div, sources) {
 
     function post_active_xtsma(e) {
         // The global function post_active_xtsm should be moved here
-		ws_function.commandLibrary.post_active_xtsm_ws(this.owner);//Craig 2014-10-28
-        //post_active_xtsm(this.owner);
+        post_active_xtsm(this.owner);
     }
     this.post_active_xtsma = post_active_xtsma;
 
@@ -1704,15 +1574,12 @@ function Hdiode_code_tree(html_div, sources) {
     function load_livedata(event) {
         // the onload listener for live_data elements - generates a request for previously
         // unrequested live_data elements, or returns locally archived data
-		return; //CP 2014-11-1
         var ed, cid;
         cid = event.data.args[0].replace(/["']{1}/gi, "");
         ed = event.data.container;
         if (!ed.live_gui_data) {ed.live_gui_data = {}; };
         if (!ed.live_gui_data[cid]) {
-			var pxi_dc;
-			pxi_dc = document.getElementById('pxi_dc').value;
-            ed.to_server('{"IDLSocket_ResponseFunction":"request_content","content_id":"' + cid + '","data_context":"' + pxi_dc + '"}');
+            ed.to_server('{"IDLSocket_ResponseFunction":"request_content","content_id":"' + cid + '"}');
         } else {
             this.parentNode.innerHTML = ed.live_gui_data[cid]; };
     }
@@ -1720,7 +1587,6 @@ function Hdiode_code_tree(html_div, sources) {
 
     function update_livedata(content_id,data) {
         // updates live data stack and html elements if they are displayed
-		return;//CP 2014-11-1
         if (!this.live_gui_data) { this.live_gui_data = {}; };
         this.live_gui_data[content_id] = data;
         $("[content_id='" + content_id + "']").html(data);  // sets all current matching content's innerHTML
@@ -1729,15 +1595,12 @@ function Hdiode_code_tree(html_div, sources) {
 
     function flush_livedata() {
         // flushes the unused live data items from local storage to allow garbage collector to free memory
-		return; //CP 2014-11-1
         var item;
         for (item in this.live_gui_data) {
             // scan editor tree for live_data id's - if they are not present, deallocate storage and inform server of disinterest
             if ($("[content_id=" + item + "]").size() == 0) {
                 delete this.live_gui_data[item];
-				var pxi_dc;
-				pxi_dc = document.getElementById('pxi_dc').value;
-                this.to_server('{"IDLSocket_ResponseFunction":"derequest_content","content_id":"' + item + '","data_context":"' + pxi_dc + '"}');
+                this.to_server('{"IDLSocket_ResponseFunction":"derequest_content","content_id":"' + item + '"}');
                 };
             };
     }
@@ -2275,15 +2138,6 @@ function main() {
 	arg.load_file("transforms/default.xsd", 'xsd_string');
 	
 	/*Controls html page elements outside of the code tree*/
-	
-	//Server Push
-	document.getElementById("server_push_menu").onclick = function () { toggle_menu("server_push_menu", "server_push_output_div"); };
-	// websocketize(document.getElementById("server_push_output_div"));
-	var ta = document.getElementById("server_push_output_div").appendChild(document.createElement("textarea"));
-	ta.id = "server_push_output_textarea";
-    textarea_console(ta,arg);
-	
-	
 	//File Operations
 	document.getElementById("file_menu").onclick = function () {toggle_menu("file_menu", "file_operations"); };
 	document.getElementById("file_type").onchange = function () {populate_folders(); document.getElementById('save_file').value = default_save_name(); };
@@ -2295,13 +2149,18 @@ function main() {
 	//Parser
 	document.getElementById("parser_menu").onclick = function () {toggle_menu("parser_menu", "parser_operations"); };
 	document.getElementById("parse_preview_button").onclick = function () {parse_preview(arg); }; //DNWY [Does Not Work Yet]
-	//document.getElementById("post_xtsm_button").onclick = function () {post_active_xtsm(arg); };
-	document.getElementById("post_xtsm_button").onclick = function () {ws_function.commandLibrary.post_active_xtsm_ws(arg); };//CP 2014-10-28
+	document.getElementById("post_xtsm_button").onclick = function () {post_active_xtsm(arg); };
 	document.getElementById("retrieve_xtsm_button").onclick = function () {retrieve_active_xtsm(arg); };
 	document.getElementById("pxi_dc").onfocus = function () {document.getElementById("pxi_dc").value = ''; }; //Clears text field upon focus.
 	document.getElementById("disable_python_socket_button").onclick = function () {disable_python_socket(); };
 	document.getElementById("launch_python_button").onclick = function () {launch_python(); };
 	document.getElementById("test_pythontransferspeed_button").onclick = function () {test_pythontransferspeed(); };
+	//Server Push
+	document.getElementById("server_push_menu").onclick = function () { toggle_menu("server_push_menu", "server_push_output_div"); };
+	// websocketize(document.getElementById("server_push_output_div"));
+	var ta = document.getElementById("server_push_output_div").appendChild(document.createElement("textarea"));
+	ta.id = "server_push_output_textarea";
+    textarea_console(ta,arg);
 	//Python Console
 	document.getElementById("python_menu").onclick = function () {toggle_menu("python_menu", "python_operations"); };
 	document.getElementById("python_submit_code_button").onclick = function () {execute_python(); };

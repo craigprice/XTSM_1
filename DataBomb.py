@@ -4,12 +4,12 @@ Created on Fri Mar 21 19:53:48 2014
 
 This module contains class definitions to handle data input from experiment
 hardware - it allows the XTSM server to attach incoming data 'databombs' to
-a list,  filestream them raw to disk, unpack their contents, notify listeners
+a list,  stream them raw to disk, unpack their contents, notify listeners
 of their arrival, and create copies and links to the data for other elements
 
 This is managed through two primary classes and their subclasses: 
 
-    DataBombCatcher
+    DataBombList
         FileStream
         DataBomb
     DataListenerManager
@@ -32,125 +32,9 @@ keyed by the MAC address of the host computer.  to add an entry for a new
 computer, find the MAC address using import uuid / print uuid.getnode()
 """
 
-class DataBomb(xstatus_ready.xstatus_ready):
-    """
-    The databomb class is meant to implement a socket-based drop of data into
-    the XTSM webserver.  Data should arrive as an HTTP post request, with a single
-    argument as payload, in the form of a messagepack formatted binary string.
-    (The messagepack may contained as many named variables as needed).  The 
-    databomb class contains methods for unpacking, and will strip data identifying
-    the generator.  This data is used to notify listeners the data is present
-    using the DataListenerManager and DataListenerManager.DataListener classes.
-    Furthermore, databombs can be automatically streamed to disk as they arrive
-    as a means of (vertical) raw data storage.
-    """
-    def __init__(self,messagepack):
-        print "in class Databomb, function __init__"
-        if not isinstance(messagepack, str):#Expecting a messagepacked byte string
-            pdb.set_trace()
-        self.packed_data = messagepack
-        self.databomb_init_time = time.time()
-        self.raw_links = []
-        self.databomb = 0
-        self.notify_data = {}
-        self.uuid = str(uuid.uuid1())
-        
-    def unpack(self):
-        """
-        Unpacks bytes from messagepack into key-value pair data
-        in a dictionary; extract sender.  Looks for some optional special fields:
-            sender: a string labeling the sender; choosing a unique id is sender's responsibility            
-            shotnumber: an integer representing the shotnumber
-            repnumber: an integer representing the repetition number
-            onunpack: a string of python commands to execute on unpack
-        """
-        print "in class DataBomb, function unpack"
-        #pdb.set_trace()
-        self.data = msgpack.unpackb(self.packed_data)
-        self.shotnumber = self.data['shotnumber']
-        notify_data_elms=['sender','shotnumber','repnumber','server_machine','server_IP_address']
-        for elm in notify_data_elms:        
-            try: 
-                self.notify_data.update({elm:self.data[elm]})
-            except KeyError:
-                pass
-        try: 
-            self.unpack_instructions=self.data['onunpack']
-            try: 
-                rbuffer = StringIO()
-                sys.stdout = rbuffer
-                exec(self.unpack_instructions,self.data)
-                if self.data.has_key('__builtins__'): 
-                    del self.data['__builtins__']
-                sys.stdout = sys.__stdout__ 
-                self.data.update({"onunpack_response":rbuffer.getvalue()})
-            except:
-                self.data.update({"onunpack_error":True})
-        except KeyError:
-            pass
-        
-    def stream_to_disk(self, data, filestream):
-        """
-        streams bytes out to file object for raw-receipt-storage 
-        appends a header to identify the bomb by its uuid, followed by timestamp,
-        then raw data in its messagepack byte stream -
-        entire object should be unpackable using messagepack unpackb routine
-        twice - first to extract 'data' element, then to unpack data
-        """   
-        print "In class DataBomb, function stream_to_disk"
-        to_disk = {'databomb_id': str(self.uuid),
-                  'time_packed': str(time.time()),
-                  'len_of_packed_data': str(len(self.packed_data)),
-                  'shotnumber': self.shotnumber,
-                  'packed_data': self.packed_data }
-        prefix = 'DB_SN'+str(self.shotnumber)+'_'
-        header = {i:to_disk[i] for i in to_disk if i!='packed_data'}
-        comments = str(header)
-        extension = '.msgp'
-        path = filestream.write_file(msgpack.packb(to_disk, use_bin_type=True),
-                                     comments=comments,
-                                     prefix=prefix,
-                                     extension=extension)
-        self.raw_links.append(path)
-        print "Path:", self.raw_links
-        
-        
-    def deploy_fragments(self,listenerManagers):
-        """
-        sends individual data elements to destination in XTSM generators;
-        intended to establish links to saved raw data, append to horizontal
-        stacks as requested in xtsm, and initiate analyses - listeners should
-        already have been installed in a manager by the XTSM elements, and
-        this deployment should trigger them
-        """
-        print "in class DataBomb, function deploy_fragments"
-        #print "Listeners:", 
-        #pdb.set_trace()
-        if not hasattr(listenerManagers,'__iter__'):
-            listenerManagers = [listenerManagers]
-        for fragment in [a for a in self.data.keys() if not self.notify_data.has_key(a)]:
-            for listenerManager in listenerManagers:
-                self.notify_data.update({"fragmentName":fragment})   
-                data = {fragment:self.data[fragment]}
-                datalinks = {fragment:[f+"["+fragment+"]" for f in self.raw_links]}
-                listenerManager.notify_data_present(self.notify_data,data,datalinks)
-        try: 
-            del self.notify_data["fragmentName"]
-        except KeyError:
-            pass
-        
-    def deploy(self,filestream,listenerManagers):
-        """
-        streams data to disk, unpacks and deploys fragments
-        """
-        print "in class DataBomb, function deploy"
-        self.unpack()#Make first to extract shotnumber for file ID
-        self.stream_to_disk(self.packed_data, filestream)
-        self.deploy_fragments(listenerManagers)
-                
 
 #This class contains all the Databombs that have been received
-class DataBombCatcher(xstatus_ready.xstatus_ready):
+class DataBombList(xstatus_ready.xstatus_ready):
     """
     A class to define a list of dataBombs, and organize their deployment
     
@@ -166,11 +50,11 @@ class DataBombCatcher(xstatus_ready.xstatus_ready):
         self.databombs={}
         self.dataListenerManagers = DataListenerManager()
         params = {'file_root_selector':'raw_buffer_folders'}
-        self.filestream = InfiniteFileStream.Filestream(params)
+        self.stream = InfiniteFileStream.FileStream(params)
         #self.stream=self.FileStream(params={'file_root_selector':'raw_buffer_folders'})
 
     def __flush__(self):
-        self.filestream.__flush__()
+        self.stream.__flush__()
         
     def _close(self):
         pass
@@ -180,8 +64,8 @@ class DataBombCatcher(xstatus_ready.xstatus_ready):
         adds a bomb to the list - the bomb input is expected to be of the 
         messagepack format.  Returns unique identifier assigned to bomb
         """
-        if bomb.__class__!=DataBomb: 
-            try: bomb=DataBomb(bomb)
+        if bomb.__class__!=self.DataBomb: 
+            try: bomb=self.DataBomb(bomb)
             except: 
                 raise self.BadBombError
                 return
@@ -195,22 +79,22 @@ class DataBombCatcher(xstatus_ready.xstatus_ready):
             'next' - deploys one based on a First-In-First-Out (FIFO) model
             uuid - deploys by the unique identifier assigned to the bomb on add
         """
-        print "In class DataBombCatcher, function deploy"
-        print "criteria:", criteria
+        #print "In class DataBombList, function deploy"
+        #print "criteria:", criteria
         if not hasattr(self,'dataListenerManagers'): self.dataListenerManagers=[]
         def all_c(o):
             for bomb in o.databombs:
-                bomb.deploy(o.filestream,self.dataListenerManagers)
+                bomb.deploy(o.stream,self.dataListenerManagers)
             o.databombs=[]
         def next_c(o):
-            ind=min([(bomb.databomb_init_time,bomb.uuid) for bomb in o.databombs])[1]
-            o.databombs[ind].deploy(o.filestream,self.dataListenerManagers)
+            ind=min([(bomb.timestamp,bomb.uuid) for bomb in o.databombs])[1]
+            o.databombs[ind].deploy(o.stream,self.dataListenerManagers)
             del o.databombs[ind]
         ops={ 'all': all_c, 'next':next_c }
         try: ops[criteria](self)
         except KeyError: 
             try: 
-                self.databombs[criteria].deploy(self.filestream,self.dataListenerManagers)
+                self.databombs[criteria].deploy(self.stream,self.dataListenerManagers)
                 del self.databombs[criteria]
             except KeyError: raise self.UnknownBombError
 
@@ -220,7 +104,187 @@ class DataBombCatcher(xstatus_ready.xstatus_ready):
     class UnknownBombError(Exception):
         pass
 
+    class FileStream(InfiniteFileStream.FileStream):
+        pass
+#        """
+#        A custom file stream object for data bombs; wraps io module to create
+#        an infinite output stream to a series of files of approximately one
+#        'chunksize' length.  As data is written in, this stream will automatically
+#        close files that exceed the chunksize and open another.  the write method
+#        will return the name data was written into - no chunk of data passed in 
+#        a single call to write will be segmented into multiple files
+#        """
+#        def __init__(self, params={}):
+#            today=datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
+#            defaultparams={ 'timecreated':time.time()
+#                            , 'chunksize': 100000000, 'byteswritten' : 0}
+#            try: defaultparams.update({'location_root':file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+today+'/'})
+#            except KeyError: raise self.UnknownDestinationError
+#            for key in params.keys(): defaultparams.update({key:params[key]})
+#            for key in defaultparams.keys(): setattr(self,key,defaultparams[key])   
+#            self.location=self.location_root+str(uuid.uuid1())+'.msgp'
+#            try: self.stream=io.open(self.location,'ab')
+#            except IOError: 
+#                os.makedirs(self.location_root)
+#                self.stream=io.open(self.location,'ab')
+#            self.filehistory=[self.location]
+#
+#        class UnknownDestinationError(Exception):
+#            pass
+#
+#        def __del__(self):
+#            """
+#            This will assure file stream is closed when object is destroyed,
+#            and will output a log file 
+#            """
+#            self.stream.close()
+#            self.output_log()
+#
+#        def output_log(self):
+#            """
+#            outputs a log of recently written files
+#            """
+#            logstream=io.open(self.location_root+'DBFS_LOG.txt','a')
+#            timeheader=datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + " through "+datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+#            logstream.write(unicode("\nThis is a log of file writes from the DataBomb module:\nThis module has written the files below from the time period\n"
+#                                    + timeheader + "\n" + '\n'.join(self.filehistory)))
+#            logstream.close()
+#            
+#        def write(self,bytestream, preventFrag=False):
+#            """
+#            writes bytes to the io stream - if the total bytes written by this
+#            and previous calls since last chunk started exceeds chunksize, 
+#            opens a new file for the next chunk after writing the current request
+#            
+#            returns the file location of the chunk written.
+#            """
+#            self.byteswritten+=len(bytestream)
+#            self.stream.write(bytestream)
+#            loc=self.location
+#            if ((self.byteswritten > self.chunksize) and (not preventFrag)): 
+#                self.chunkon()
+#            return loc
+#            
+#        def chunkon(self):
+#            """
+#            this method creates a file for the next chunk of data
+#            """
+#            self.stream.close()
+#            self.location=self.location_root+str(uuid.uuid1())+'.msgp'            
+#            self.stream=io.open(self.location,'ab')
+#            self.filehistory.append(self.location)
+#            self.byteswritten=0
 
+    class DataBomb(xstatus_ready.xstatus_ready):
+        """
+        The databomb class is meant to implement a socket-based drop of data into
+        the XTSM webserver.  Data should arrive as an HTTP post request, with a single
+        argument as payload, in the form of a messagepack formatted binary string.
+        (The messagepack may contained as many named variables as needed).  The 
+        databomb class contains methods for unpacking, and will strip data identifying
+        the generator.  This data is used to notify listeners the data is present
+        using the DataListenerManager and DataListenerManager.DataListener classes.
+        Furthermore, databombs can be automatically streamed to disk as they arrive
+        as a means of (vertical) raw data storage.
+        """
+        def __init__(self,messagepack):
+            #print "in class Databomb, function __init__"
+            if not isinstance(messagepack, str):#Expecting a messagepacked byte string
+                pdb.set_trace()
+            self.messagepack=messagepack
+            self.timestamp=time.time()
+            self.raw_links = []
+            self.notify_data={}
+            self.uuid='DB'+uuid.uuid1().__str__()
+            
+        def unpack(self):
+            """
+            Unpacks bytes from messagepack into key-value pair data
+            in a dictionary; extract sender.  Looks for some optional special fields:
+                sender: a string labeling the sender; choosing a unique id is sender's responsibility            
+                shotnumber: an integer representing the shotnumber
+                repnumber: an integer representing the repetition number
+                onunpack: a string of python commands to execute on unpack
+            """
+            #print "in class DataBomb, function unpack"
+            #pdb.set_trace()
+            self.data=msgpack.unpackb(self.messagepack)
+            notify_data_elms=['sender','shotnumber','repnumber','server_machine','server_IP_address']
+            for elm in notify_data_elms:        
+                try: 
+                    self.notify_data.update({elm:self.data[elm]})
+                except KeyError:
+                    pass
+            try: 
+                self.unpack_instructions=self.data['onunpack']
+                try: 
+                    rbuffer = StringIO()
+                    sys.stdout = rbuffer
+                    exec(self.unpack_instructions,self.data)
+                    if self.data.has_key('__builtins__'): 
+                        del self.data['__builtins__']
+                    sys.stdout = sys.__stdout__ 
+                    self.data.update({"onunpack_response":rbuffer.getvalue()})
+                except:
+                    self.data.update({"onunpack_error":True})
+            except KeyError:
+                pass
+            
+        def stream_to_disk(self,stream):
+            """
+            streams bytes out to file object for raw-receipt-storage 
+            appends a header to identify the bomb by its uuid, followed by timestamp,
+            then raw data in its messagepack byte stream -
+            entire object should be unpackable using messagepack unpackb routine
+            twice - first to extract 'data' element, then to unpack data
+            """   
+            #print "In class DataBomb, function stream_to_disk"
+            to_disk = {'id': str(self.uuid),
+                      'time_packed': str(time.time()),
+                      'len_of_data': str(len(self.messagepack)),
+                      'packed_databomb': self.messagepack }
+            stream.write(msgpack.packb(to_disk, use_bin_type=True), keep_stream_open=False) 
+            #idheader = msgpack.packb('id' + str(self.uuid))
+            #timeheader = msgpack.packb('time_packed_' + str(time.time())
+            #dataheader = '\xdb' + struct.pack('>L',len(self.messagepack)))
+            #head_path = '\x83' + idheader + timeheader + dataheader
+            trailing_id = "[" + str(self.uuid) + "]"
+            self.raw_links.append(stream.location + trailing_id)
+            #print "Path:", self.raw_links
+            
+            
+        def deploy_fragments(self,listenerManagers):
+            """
+            sends individual data elements to destination in XTSM generators;
+            intended to establish links to saved raw data, append to horizontal
+            stacks as requested in xtsm, and initiate analyses - listeners should
+            already have been installed in a manager by the XTSM elements, and
+            this deployment should trigger them
+            """
+            #print "in class DataBomb, function deploy_fragments"
+            #print "Listeners:", 
+            #pdb.set_trace()
+            if not hasattr(listenerManagers,'__iter__'):
+                listenerManagers = [listenerManagers]
+            for fragment in [a for a in self.data.keys() if not self.notify_data.has_key(a)]:
+                for listenerManager in listenerManagers:
+                    self.notify_data.update({"fragmentName":fragment})   
+                    data = {fragment:self.data[fragment]}
+                    datalinks = {fragment:[f+"["+fragment+"]" for f in self.raw_links]}
+                    listenerManager.notify_data_present(self.notify_data,data,datalinks)
+            try: 
+                del self.notify_data["fragmentName"]
+            except KeyError:
+                pass
+            
+        def deploy(self,stream,listenerManagers):
+            """
+            streams data to disk, unpacks and deploys fragments
+            """
+            #print "in class DataBomb, function deploy"
+            self.stream_to_disk(stream)
+            self.unpack()
+            self.deploy_fragments(listenerManagers)
         
 
 class DataListenerManager(xstatus_ready.xstatus_ready):
@@ -249,7 +313,7 @@ class DataListenerManager(xstatus_ready.xstatus_ready):
         onattach - callback method after data has been attached to listener
         onclose - callback after item is destroyed 
         """
-        print "class DataListenerManager, function spawn"
+        #print "class DataListenerManager, function spawn"
         defaultparams={'listen_for':{'sender':'',
                                      'shotnumber':-1,
                                      'server_machine':'',
@@ -574,7 +638,7 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             self.destinations=destinations
             
         def dispatch(self,destinations_=None):
-            print "DataBomber, dispatch"
+            #print "DataBomber, dispatch"
             """
             sends the payload to the specified destination(s) 
             (as well as any provided at initialization)
@@ -598,22 +662,10 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
             if not flag:
                 #self.destinations.append("10.1.1.112")#Make this general - to the active_parser - perhaps by adding a Parameter field in the head, next to the shotnumber and building the scope (??)
                 self.destinations.append("10.1.1.124")
-            if self.server.ip == '10.1.1.178':
-                data_context = 'PXI'#Change for generality CP
-            if self.server.ip == '10.1.1.124':
-                data_context = 'PXI'#Change for generality CP
-            if self.server.ip == '10.1.1.112':
-                data_context = 'PXI_emulator'#Change for generality CP
             self.destinations = [x for x in self.destinations if x is not None]
-            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':data_context,'databomb':self.packed_data}, use_bin_type=True)#self.packed_data
+            packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb','data_context':'default:10.1.1.136','databomb':self.packed_data}, use_bin_type=True)
             for dest in self.destinations:
                 dest = "10.1.1.124"
-                if self.server.ip == '10.1.1.178':
-                    dest = "10.1.1.124"
-                if self.server.ip == '10.1.1.124':
-                    dest = "10.1.1.124"
-                if self.server.ip == '10.1.1.112':
-                    dest = "10.1.1.112"
                 if dest == None:
                     print "No destination"
                     continue
@@ -630,3 +682,5 @@ class DataBombDispatcher(xstatus_ready.xstatus_ready):
                 except:
                     raise
 
+
+                

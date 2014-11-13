@@ -20,36 +20,6 @@ Ideally, the user does not need to be aware where the data currently resides.
 import numpy,uuid,operator,os,time
 import tables, pdb
 
-class DataHeap():
-    
-    def __init__(self, options={}):
-        """
-        constructor for datastore - should open or create an hdf5 file on disk
-        to attach to - filepath should provide the path
-        """
-        #path = "c:\\wamp\\vortex\\Python Interpreter\\glds"
-        path = "c:\\wamp\\www\\data_storage"
-        self.options={"filepath":path + '\\' + str(uuid.uuid4()) + ".h5", 
-                 "title":"Untitled" }
-        self.options.update(options)
-        self.id=str(uuid.uuid4())
-        file_name = self.options["filepath"]
-        self.h5=tables.open_file(file_name,
-                                 mode="a",
-                                 title=self.options["title"],
-                                 driver="H5FD_SEC2",
-                                 NODE_CACHE_SLOTS=0)
-        #pdb.set_trace()
-        try:
-            self.fileaccessgroup=self.h5.get_node("/","fa")    
-            self.fatable=self.h5.get_node("/fa","access")    
-        except tables.NoSuchNodeError:    
-            self.fileaccessgroup=self.h5.create_group('/','fa','fileaccessgroup')
-            self.fatable = self.h5.create_table(self.fileaccessgroup, 'access', self.AccessRecord , "Acess Records")
-        self.handles=[]        
-        self.__record_action__("file opened")
-    
-
 class glab_datastore():
     """
     This class wraps the pytables module to provide a data storage vehicle

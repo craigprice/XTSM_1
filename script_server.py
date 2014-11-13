@@ -8,7 +8,6 @@ from twisted.internet.protocol import DatagramProtocol
 import uuid
 import glab_instrument
 import twisted.internet.error
-import StringIO
 
 from twisted.internet import task
 
@@ -16,94 +15,49 @@ last_connection_time = time.time()
 time_last_check = time.time()
 time_now = time.time()
 
-DEBUG = True
-
 class MyServerProtocol(WebSocketServerProtocol):
-    
-    def onConnect(self, request):
-        print("Client connecting: {0}".format(request.peer))
-        
-    def onOpen(self):
-        print("WebSocket connection open.")
-        
-    def onMessage(self, payload_, isBinary):
-        if isBinary:
-            print("Binary message received: {0} bytes".format(len(payload_)))
-        else:
-            print("Text message received: {0}".format(payload_.decode('utf8')))
-        print "This is inside the Script Server"
-        try:
-            payload = simplejson.loads(payload_)
-        except simplejson.JSONDecodeError:
-            if DEBUG: print "JSONDecodeError"
-            if DEBUG and len(payload) < 10000: print payload
-            msg = {'Not_Command_text_message':"The server is expecting JSON, not simple text",'terminator':'die'}
-            self.transport.write(simplejson.dumps(msg, ensure_ascii = False).encode('utf8'))
-            if DEBUG: print "The server is expecting JSON, not simple text"
-            pdb.set_trace()
-            if DEBUG: print payload_
-            server_shutdown()
-        if 'Not_Command_text_message' in payload:
-            if DEBUG: print payload['Not_Command_text_message']
-            return
-        if DEBUG: print "payload:"
-        if DEBUG and not len(payload) < 10000: print payload
-        
-        '''
-        code_locals = {}
-        #self.sendMessage("Done!", isBinary)
-        # echo back message verbatim
-        print "payload:"
-        print payload
-        print "compile...."
-        #payload = "self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self,'create_example_pollcallback':True})})"
-        try:
-            code = compile(payload, '<string>', 'exec')
-        except:
-            print "compile unsuccessful"
-            code_locals.update({'output_from_script':'None','terminator':'die'})
-            data = simplejson.dumps(code_locals)
-            self.sendMessage(data, isBinary=False)
-            
-        print "compile successful"
-        exec code in code_locals
-        print payload
-        print code_locals
-        data = simplejson.dumps(code_locals['output_from_script'])
-        print data
-        self.sendMessage(data, isBinary=False)
-        '''
-        
-        self.commands = payload
-        self._execute()
-        
-        #output of script is now in self.data
-        data = simplejson.dumps(self.data)
-        self.sendMessage(data,isBinary=False)
-        
-        
-    def onClose(self, wasClean, code, reason):
-        print("WebSocket connection closed: {0}".format(reason))
-        server_shutdown()
 
-    def _execute(self):#Copied from objectify
-        script = self.commands['script_body']
-        context = self.commands['context']
-        old_stdout = sys.stdout
-        try:
-            capturer = StringIO.StringIO()
-            sys.stdout = capturer
-            t0=time.time()
-            exec script in globals(),context
-            t1=time.time()
-            context.update({"_starttime":t0,"_exectime":(t1-t0),"_script_console":capturer.getvalue()})
-        except Exception as e: 
-            context.update({'_SCRIPT_ERROR':e})
-            print '_SCRIPT_ERROR'
-#          del context['__builtin__']  # removes the backeffect of exec on context to add builtins
-        sys.stdout = old_stdout
-        self.data = [context]
-        ###
+   def onConnect(self, request):
+      print("Client connecting: {0}".format(request.peer))
+
+   def onOpen(self):
+      print("WebSocket connection open.")
+
+   def onMessage(self, payload, isBinary):
+      if isBinary:
+         print("Binary message received: {0} bytes".format(len(payload)))
+      else:
+         print("Text message received: {0}".format(payload.decode('utf8')))
+         
+         
+      print "This is inside the Script Server"
+      code_locals = {}
+      #self.sendMessage("Done!", isBinary)
+
+      # echo back message verbatim
+      print "payload:"
+      print payload
+      print "compile...."
+      #payload = "self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self,'create_example_pollcallback':True})})"
+      try:
+          code = compile(payload, '<string>', 'exec')
+      except:
+          print "compile unsuccessful"
+          code_locals.update({'output_from_script':'None','terminator':'die'})
+          data = simplejson.dumps(code_locals)
+          self.sendMessage(data, isBinary=False)
+          
+      print "compile successful"
+      exec code in code_locals
+      print payload
+      print code_locals
+      data = simplejson.dumps(code_locals['output_from_script'])
+      print data
+      self.sendMessage(data, isBinary=False)
+
+   def onClose(self, wasClean, code, reason):
+      print("WebSocket connection closed: {0}".format(reason))
+      server_shutdown()
 
 class MulticastProtocol(DatagramProtocol):
     """
@@ -143,7 +97,7 @@ class MulticastProtocol(DatagramProtocol):
 
 
 def server_shutdown():
-    print "----------------Shutting Down ScriptServer Now!----------------"
+    print "------------------Shutting Down ScriptServer Now!------------------"
     reactor.callLater(0.01, reactor.stop)
        
 def check_for_main_server():
@@ -152,7 +106,7 @@ def check_for_main_server():
     time_last_check = time_now
     time_now = time.time()
     #print time_last_check, time_now, last_connection_time
-    if (time_now - last_connection_time) > 1100000 and (time_now - time_last_check) < 11:
+    if (time_now - last_connection_time) > 11 and (time_now - time_last_check) < 11:
         server_shutdown()
         
 
