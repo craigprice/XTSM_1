@@ -182,7 +182,12 @@ class Live_Content_Manager(XTSM_Server_Objects.XTSM_Server_Object, dict):
         """
         returns size, in bytes, of the live content storage
         """
-        return sum([len(s) for s in self.content.values])
+        val = self.content.values
+        try:
+            s = sum([len(s) for s in val])
+        except TypeError:
+            s = 0
+        return s
     
     def __setitem__(self,item,val):
         """
