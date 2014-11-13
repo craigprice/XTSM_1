@@ -555,7 +555,7 @@ class CommandProtocol(protocol.Protocol):
         # the header MUST arrive in the first fragment
         # append the new data 
         self.alldata += data
-        print data, "time_constant:", time.time() - time_constant
+        #print data, "time_constant:", time.time() - time_constant
         if u"?console" in data: self.provide_console()
         #requests = 0   #For use with priorities
         if not hasattr(self,'mlength'):
@@ -2038,9 +2038,9 @@ class CommandLibrary():
                 raise
         #min_scale = 65536
         
-        max_scale_zoom = 200
+        max_scale_zoom = 500
         min_scale_zoom = -100
-        max_scale_full = 500
+        max_scale_full = 700
         min_scale_full = -100       
         
         if dc.dict.has_key('ImageScaleZoomMax'):
@@ -2808,11 +2808,12 @@ class GlabPythonManager():
                         q4="Data:Start 1",
                         q5="Data:Stop 500",
                         q6="wfmpre?" ,
-                        q7="curve?",filename='NewScopeTrace',tdiv=10,vdiv=10, fit='NoFit'):
+                        q7="curve?",filename='C:\\Users\\Gemelke_Lab\\Documents\\ScopeTrace\\NewScopeTrace',tdiv=10,vdiv=10, fit='NoFit'):
         '''
         This function pull trace back from Textronix TDS460A. 
         fit= 'SPG', fit with single peak gaussian function, return peak hight, width, and area under peak;
         fit= 'DPG', fit with double peak gaussian function, return peak hight, width, and area under peak;
+        tdiv timedivision in ms; vdiv voltage perdivision in mV.
         
         '''
     
@@ -2825,7 +2826,7 @@ class GlabPythonManager():
         if DEBUG: print "Scope communication took", e2-e1, "sec"
         
         ystr = response["curve?"]
-        if DEBUG: print "Data:", ystr
+        #if DEBUG: print "Data:", ystr
             
 
         print "Scope communication took", e2-e1,"s"
@@ -2839,6 +2840,11 @@ class GlabPythonManager():
         if fit=='NoFit':
             fig,ax=plt.subplots()
             ax.plot(xdata,ydata)
+            ax.set_ylabel('Voltage (mV)')
+            ax.set_xlabel('Time (ms)')
+            ax.grid(True)
+            ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.])
+            ax.xaxis.set_ticks(np.linspace(0,10*tdiv,11))
             plt.show(block=False)
             plt.savefig(filename)
             print "Figure saved. No fitting performed."
@@ -2858,13 +2864,14 @@ class GlabPythonManager():
             ax.plot(xdata,ydata)
             
             #popt,popv = curve_fit(func, xdata, ydata, (-12.,12.,15.,25.,6.,5.,50.))
-            popt,popv = curve_fit(gaussian, xdata, ydata, (-10,10.,1.,50.))  
+            popt,popv = curve_fit(gaussian, xdata, ydata, (-15,10.,60.,50.))  
             fit = gaussian(xdata, *popt)
             ax.plot(xdata, fit, 'r--')
             ax.text(0, 2*vdiv,'Fitting: Single Gaussian. \n'
                     + 'width = '+str(popt[1])+' ms ;\n amplitude = '+str(popt[2])+' mV ; \n center = '+str(popt[3])+'ms.\n'+'FWHM = '+str(2.3548*popt[1])+'ms.')
             ax.set_title('Time of Flight')
             ax.grid(True)
+            ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.]) # set the plot range, [xmin, xmax,ymin,ymax]
             ax.set_ylabel('Log Amp Output Voltage (mV)')
             ax.set_xlabel('Time (ms)')
             plt.show(block=False)
@@ -2886,7 +2893,7 @@ class GlabPythonManager():
             ax.plot(xdata,ydata)
             
             #popt,popv = curve_fit(func, xdata, ydata, (-12.,12.,15.,25.,6.,5.,50.))
-            popt,popv = curve_fit(two_gaussian, xdata[15:], ydata[15:], (-10,10.,1.,50,4.,1.,80.)) 
+            popt,popv = curve_fit(two_gaussian, xdata[15:], ydata[15:], (-10,10.,10.,45,4.,3.,80.)) 
             fit = two_gaussian(xdata[15:], *popt)
             ax.plot(xdata[15:], fit, 'r--')
             ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.])
