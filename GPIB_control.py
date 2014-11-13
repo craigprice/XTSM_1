@@ -86,6 +86,8 @@ import numpy
 
 import getopt
 import pdb
+
+DEBUG = True
     
 def usage(progname):
   print __doc__ % vars()
@@ -182,7 +184,45 @@ class PrologixGpibEthernet:
         self._write(line + "\n")
         
 
+''' '''
+def init_GPIB(self):
+    '''
+    if ip address is not found, run the program "GPIB Configuator" and look
+    at ip. Or run "NetFinder" from Prologix
+    '''
+    self.GPIB_adapter = GPIB_control.PrologixGpibEthernet('10.1.1.113')
+    
+    read_timeout = 1.0
+    if DEBUG: print "Setting adapter read timeout to %f seconds" % read_timeout
+    self.GPIB_adapter.settimeout(read_timeout)
+    
+    gpib_address = int(7)#Scope over Rb exp
+    if DEBUG: print "Using device GPIB address of %d" % gpib_address
+    self.GPIB_device = GPIB_control.GpibDevice(self.GPIB_adapter, gpib_address)
+    if DEBUG: print "Finished initialization of GPIB controller"
+    
+    
 
+def get_scope_field(self,q1="Data:Source CH1",
+                    q2="Data:Encdg: ASCII",
+                    q3="Data:Width 2",
+                    q4="Data:Start 1",
+                    q5="Data:Stop 500",
+                    q6="wfmpre?" ,
+                    q7="curve?"):
+
+
+    e1 = time.time()
+    if not hasattr(self,'GPIB_device'):
+        if DEBUG: print "GPIB device not ready"
+        return
+    response = self.GPIB_device.converse([q1,q2,q3,q4,q5,q6,q7])
+    e2 = time.time()
+    if DEBUG: print "Scope communication took", e2-e1, "sec"
+    
+    ystr = response["curve?"]
+    if DEBUG: print "Data:", ystr
+''' '''
 
 # Interface to specific GPIB device on GPIB bus
 class GpibDevice:

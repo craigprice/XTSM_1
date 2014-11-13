@@ -58,7 +58,7 @@ class Princeton_CCD(glab_instrument.Glab_Instrument):
         self.defaults={"EXP_TIMING_MODE":3,
                        "EXP_EXPOSURE":0.1, 
                        "EXP_ACCUMS":1, 
-                       "EXP_SEQUENTS":2,
+                       "EXP_SEQUENTS":3,
                        "EXP_ANALOG_GAIN":1}        
         
         # first check if winview is already running; kill it if so

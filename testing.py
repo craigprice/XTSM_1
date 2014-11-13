@@ -1,82 +1,145 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Oct 06 09:23:00 2014
 
-import GPIB_control
+@author: Gemelke_Lab
+"""
+
+'''This works
+import msgpack
+f = open('c:/wamp/www/raw_buffers/DBFS/2014-10-06/temp15.msgp','ab')
+msg = {'1':7,'3':5,'23451':3,'345':3453}
+m = msgpack.packb(msg, use_bin_type=True)
+f.write(m)
+f.close()
+f = open('c:/wamp/www/raw_buffers/DBFS/2014-10-06/temp15.msgp','rb')
+um = msgpack.unpackb(m, encoding='utf-8')
+print um
+'''
+'''
+import msgpack
+f = open('c:/wamp/www/raw_buffers/DBFS/2014-10-06/temp16.msgp','ab')
+msg = {'1':7,'3':5,'23451':3,'345':3453}
+m = msgpack.packb(msg, use_bin_type=True)
+f.write(m)
+f.close()
+f = open('c:/wamp/www/raw_buffers/DBFS/2014-10-06/temp16.msgp','rb')
+unpacker = msgpack.Unpacker(f,use_list=False, encoding='utf-8')
+#um = msgpack.unpackb(m, encoding='utf-8')
+print unpacker
+'''
+
+
+'''
+print unpacker.read_map_header()
+key = unpacker.unpackb()
+print key
+key = unpacker.unpackb()
+print key
+key = unpacker.unpackb()
+print key
+key = unpacker.unpackb()
+print key
+'''
+
+
+import zlib
+import msgpack
 import time
-DEBUG = True
-class gpib:
-        
-    def init_GPIB(self,address):
-        '''
-        if ip address is not found, run the program "GPIB Configuator" and look
-        at ip. Or run "NetFinder" from Prologix
-        '''
-        self.GPIB_adapter = GPIB_control.PrologixGpibEthernet('10.1.1.113')
-        
-        read_timeout = 5.0
-        if DEBUG: print "Setting adapter read timeout to %f seconds" % read_timeout
-        self.GPIB_adapter.settimeout(read_timeout)
-        
-        gpib_address = int(13)#Analyzer
-        if DEBUG: print "Using device GPIB address of %d" % gpib_address
-        self.GPIB_device = GPIB_control.GpibDevice(self.GPIB_adapter, gpib_address)
-        if DEBUG: print "Finished initialization of GPIB controller"
-        
-        
-    
-    def get_scope_field(self,q1="Data:Source CH1",
-                        q2="Data:Encdg: ASCII",
-                        q3="Data:Width 2",
-                        q4="Data:Start 1",
-                        q5="Data:Stop 500",
-                        q6="wfmpre?" ,
-                        q7="curve?",filename='NewScopeTrace',tdiv=10,vdiv=10):
-    
-    
-        e1 = time.time()
-        if not hasattr(self,'GPIB_device'):
-            if DEBUG: print "GPIB device not ready"
-            return
-        response = self.GPIB_device.converse([q1,q2,q3,q4,q5,q6,q7])
-        e2 = time.time()
-        if DEBUG: print "Scope communication took", e2-e1, "sec"
-        
-        ystr = response["curve?"]
-        if DEBUG: print "Data:", ystr
-            
-    
-        print "Scope communication took", e2-e1,"s"
-        #pdb.set_trace()
-        ydata=[int(s) for s in ystr.split(',')]
+import InfiniteFileStream
+import msgpack_numpy
+msgpack_numpy.patch()#This patch actually changes the behavior of "msgpack"
+#specifically, it changes how, "encoding='utf-8'" functions when unpacking
 
-        
-    def get_spectrum_analyzer_trace(self):
-    
-        e1 = time.time()
-        if not hasattr(self,'GPIB_device'):
-            if DEBUG: print "GPIB device not ready"
-            return
-        
-        q1 = 'FA?'#Specifies start frequency
-        q2 = 'FB?'#Specifies stop frequency.
-        q3 = 'RL?'#Adjusts the range level.
-        q4 = 'RB?'#Specifies resolution bandwidth
-        q5 = 'VB?'#Specifies video bandwidth.
-        q6 = 'ST?'#Sweep Time
-        q7 = 'LG?'#Log Scale
-        q8 = 'AUNITS?'#Specifies amplitude units for input, output, and display
-        #q9 = 'TDF B'#Specifies transfer in Binary format
-        q9 = 'TDF P'#Specifies transfer in ASCII decimal values in real-number parameter format
-        q10 = 'TRA?'
-        e1 = time.time()
-        response = g.GPIB_device.converse([q1,q2,q3,q4,q5,q6,q7,q8,q9])
-        e2 = time.time()
-        print response
-        if DEBUG: print "communication took", e2-e1, "sec"
-        
-        
-        e1 = time.time()
-        response = g.GPIB_device.converse([q10])
-        e2 = time.time()
-        print response
-        if DEBUG: print "communication took", e2-e1, "sec"
-        
-        
+#stream = InfiniteFileStream.FileStream({'file_root_selector':'xtsm_feed'})
+
+#file = 'C:\wamp\www\raw_buffers\DBFS\2014-10-09\f2da7991-501f-11e4-91bf-0010187736b5.msgp'
+
+#databomb = {'data':[[4,4,4,4],[4,357,357,573]]}
+#messagepack = msgpack.packb(databomb, use_bin_type=True)
+#msgpack.packb(to_disk, use_bin_type=True)
+to_disk = {'id': str(5),
+           'time_packed': str(time.time()),
+                      'len_of_data': str(len('messagepack')),
+                      'packed_databomb':' messagepack' }
+#encoder = zlib.compressobj()
+#data = encoder.compress('to_disk')
+#data = data + encoder.flush()
+#stream.write(data, keep_stream_open=False) 
+#encoder = zlib.compressobj()
+#data = encoder.compress('azfsgSF')
+#data = data + encoder.flush()
+#stream.write(data, keep_stream_open=False) 
+#location = stream.location
+#stream.__flush__()
+
+#data = data + encoder.compress(" of ")
+#data = data + encoder.flush()
+#data = data + encoder.compress("brian")
+#data = data + encoder.flush()
+
+#print stream.location
+#f = open(stream.location,'rb')
+#data = f.read()
+#print data
+#print repr(data)
+#print repr(zlib.decompress(data))
+
+
+'''
+import zlib
+encoder = zlib.compressobj()
+data = encoder.compress("life")
+data = data + encoder.compress(" of ")
+data = data + encoder.compress("brian")
+data = data + encoder.flush()
+print repr(data)
+print repr(zlib.decompress(data))
+'''
+
+"""Compress a file using a compressor object."""
+import zlib, bz2, os, cStringIO
+
+'''
+source= file( srcName, "r" )
+dest= file( dstName, "w" )
+block= source.read( 2048 )
+while block:
+    cBlock= compObj.compress( block )
+    dest.write(cBlock)
+    block= source.read( 2048 )
+cBlock= compObj.flush()
+dest.write( cBlock )
+source.close()
+dest.close()
+'''
+bytestream = msgpack.packb({'to_disk':3}, use_bin_type=True)
+filename = 'C:\\wamp\\www\\raw_buffers\\DBFS\\2014-10-09\\test'+str(time.time())+'.txt'
+f = open(filename,'ab')
+c = zlib.compressobj()
+cBlock = c.compress( bytestream )
+f.write(cBlock)
+cBlock = c.compress( bytestream )
+f.write(cBlock)
+cBlock = c.flush()
+f.write(cBlock)
+f.close()
+
+
+f = open(filename,'rb')
+c= zlib.decompressobj()
+cBlock= c.decompress(f.read() )
+print cBlock
+output = cStringIO.StringIO(cBlock)
+unpacker = msgpack.Unpacker(output,use_list=False)
+print unpacker.next()
+print cBlock 
+print unpacker.next()
+
+
+
+#compDecomp( compObj1, "../python.xml", "python.xml.gz" )
+#print "source", os.stat("../python.xml").st_size/1024, "k"
+#print "dest", os.stat("python.xml.gz").st_size/1024, "k"
+
+
