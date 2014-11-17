@@ -103,6 +103,7 @@ import commands
 import sync
 #import objgraph
 #from IPy import IP
+from scipy.optimize import curve_fit
 
 def tracefunc(frame, event, arg, indent=[0]):
       global DEBUG_LINENO, TRACE_IGNORE
@@ -178,7 +179,7 @@ class MulticastProtocol(DatagramProtocol):
             return
         if 'shotnumber_started' in datagram.keys():
             #dc.get('_exp_sync').shotnumber = datagram['shotnumber_started']
-            return
+            #return
             self.server.pxi_time = float(datagram['time'])
             self.server.pxi_time_server_time = float(datagram['time']) - float(time.time())#Make this so that it synchronizes the clocks CP
             self.server.active_parser_ip = datagram['server_ip_in_charge']#Make this so that it synchronizes the clocks CP
@@ -1556,6 +1557,7 @@ class GlabPythonManager():
         dc = sync.DataContext(dc_name, self.server)
         self.dataContexts.update({dc_name:dc})
         self.command_queue.add(commands.ServerCommand(self.server, self.connection_manager.add_script_server))
+        self.command_queue.add(commands.ServerCommand(self.server, self.connection_manager.add_data_gui_server))
         self.command_queue.add(commands.ServerCommand(self.server, self.server_ping))
         self.ping_data={"server_id":self.id,
                             "server_name":self.name,
@@ -1579,43 +1581,229 @@ class GlabPythonManager():
         """
         reactor.run()
 
-    def init_GPIB(self):
+    def init_GPIB(self, device_address=7):
         '''
         if ip address is not found, run the program "GPIB Configuator" and look
         at ip. Or run "NetFinder" from Prologix
         '''
         self.GPIB_adapter = GPIB_control.PrologixGpibEthernet('10.1.1.113')
         
-        read_timeout = 1.0
+        read_timeout = 10.0
         if DEBUG: print "Setting adapter read timeout to %f seconds" % read_timeout
         self.GPIB_adapter.settimeout(read_timeout)
         
-        gpib_address = int(7)#Scope over Rb exp
+        gpib_address = int(device_address)#Scope over Rb exp tektronix 460A
+        #gpib_address = int(7)#Scope over Rb exp tektronix 460A
         if DEBUG: print "Using device GPIB address of %d" % gpib_address
         self.GPIB_device = GPIB_control.GpibDevice(self.GPIB_adapter, gpib_address)
         if DEBUG: print "Finished initialization of GPIB controller"
         
         
-
+    
     def get_scope_field(self,q1="Data:Source CH1",
                         q2="Data:Encdg: ASCII",
                         q3="Data:Width 2",
                         q4="Data:Start 1",
                         q5="Data:Stop 500",
                         q6="wfmpre?" ,
-                        q7="curve?"):
-
-
+                        q7="curve?",filename='C:\\Users\\Gemelke_Lab\\Documents\\ScopeTrace\\NewScopeTrace',tdiv=10,vdiv=10, fit='NoFit'):
+        '''
+        This function pull trace back from Textronix TDS460A. 
+        fit= 'SPG', fit with single peak gaussian function, return peak hight, width, and area under peak;
+        fit= 'DPG', fit with double peak gaussian function, return peak hight, width, and area under peak;
+        tdiv timedivision in ms; vdiv voltage perdivision in mV.
+        
+        '''
+    
         e1 = time.time()
         if not hasattr(self,'GPIB_device'):
             if DEBUG: print "GPIB device not ready"
             return
-        response = self.GPIB_device.converse([q1,q2,q3,q4,q5,q6,q7])
+        response = self.GPIB_device.converse([q1,q2,q3,"BAUD 9600", q4,q5,q6,q7])
         e2 = time.time()
         if DEBUG: print "Scope communication took", e2-e1, "sec"
         
         ystr = response["curve?"]
-        if DEBUG: print "Data:", ystr
+        #if DEBUG: print "Data:", ystr
+            
+
+        print "Scope communication took", e2-e1,"s"
+        #pdb.set_trace()
+        ydata=np.array([float(s) for s in ystr.split(',')])
+
+        xdata=np.multiply(np.arange(len(ydata),dtype=np.float),(tdiv*10.0)/500.0) #xdata converted for 10ms/div scale
+    
+        ydata=np.multiply(ydata,(vdiv*5.0)/2.**15.) #ydata converted for 5mV/div scale, five devisions corresponding to 0~2**15
+    
+        if fit=='NoFit':
+            fig,ax=plt.subplots()
+            ax.plot(xdata,ydata)
+            ax.set_ylabel('Voltage (mV)')
+            ax.set_xlabel('Time (ms)')
+            ax.grid(True)
+            ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.])
+            ax.xaxis.set_ticks(np.linspace(0,10*tdiv,11))
+            plt.show(block=False)
+            plt.savefig(filename)
+            print "Figure saved. No fitting performed."
+        
+        elif fit == 'MolassesTOF':
+            def molasses_tof(x,offset,t,a,c):
+                '''
+                t= kb T /M ; a, amplitude; c, center of peak; offset
+                '''
+                SIG0=10.**-3
+                G=9.8
+                T0 = 94.* 10**-3
+                return offset + a/np.sqrt(SIG0**2 + t * ((x-c)/1000.)**2) * np.exp(-(G*(T0**2 - ((x-c)/1000.)**2)**2/(8*(SIG0**2+t* ((x-c)/1000.)**2))))
+                
+            fig,ax=plt.subplots()
+            ax.plot(xdata,ydata)
+            
+            #popt,popv = curve_fit(func, xdata, ydata, (-12.,12.,15.,25.,6.,5.,50.))
+            popt,popv = curve_fit(molasses_tof, xdata, ydata, (-32,10.**-4,1,40.))  
+            fit = molasses_tof(xdata, *popt)
+            ax.plot(xdata, fit, 'r--')
+            ax.text(0, 2*vdiv,'Fitting: Single Gaussian. \n'
+                    + 'temp = '+str(popt[1]*0.0105)+' K ;\n amplitude = '+str(popt[2])+' mV ; \n center = '+str(popt[3])+'ms.\n')
+            ax.set_title('Time of Flight')
+            ax.grid(True)
+            ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.]) # set the plot range, [xmin, xmax,ymin,ymax]
+            ax.set_ylabel('Log Amp Output Voltage (mV)')
+            ax.set_xlabel('Time (ms)')
+            plt.show(block=False)
+            plt.savefig(filename)
+        
+            
+        
+        elif fit=='SPG':
+            def gaussian(x,offset,w,a,c):
+                
+                '''
+                Define single peak gaussian function, parameters are listed below:
+                x, variable; offset; w, 1/sqrt(e) width ; a amplitude of the peak; c, peak center.
+                FWHM=2.3548*w
+                '''
+                return offset + a*np.exp(-(x-c)**2./(2.*w**2.))
+            
+            
+            fig,ax=plt.subplots()
+            ax.plot(xdata,ydata)
+            
+            #popt,popv = curve_fit(func, xdata, ydata, (-12.,12.,15.,25.,6.,5.,50.))
+            popt,popv = curve_fit(gaussian, xdata, ydata, (-15,10.,60.,50.))  
+            fit = gaussian(xdata, *popt)
+            ax.plot(xdata, fit, 'r--')
+            ax.text(0, 2*vdiv,'Fitting: Single Gaussian. \n'
+                    + 'width = '+str(popt[1])+' ms ;\n amplitude = '+str(popt[2])+' mV ; \n center = '+str(popt[3])+'ms.\n'+'FWHM = '+str(2.3548*popt[1])+'ms.')
+            ax.set_title('Time of Flight')
+            ax.grid(True)
+            ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.]) # set the plot range, [xmin, xmax,ymin,ymax]
+            ax.set_ylabel('Log Amp Output Voltage (mV)')
+            ax.set_xlabel('Time (ms)')
+            plt.show(block=False)
+            plt.savefig(filename)
+        
+        elif fit=='DPG':
+            # define the double peak Gaussian fitting function.
+            def two_gaussian(x,offset,w1,a1,c1,w2,a2,c2):
+                
+                '''
+                Define two peak gaussian function, parameters are listed below:
+                x, variable; offset; w1(w2), 1/sqrt(e) width of first(second) peak; a1(a2) amplitude of the first(second) peak; c1 (c2) peak center.
+                FWHM=2.3548*w
+                '''
+                return offset + a1*np.exp(-(x-c1)**2./(2.*w1**2.)) + a2*np.exp(-(x-c2)**2./(2.*w2**2.))
+            
+            
+            fig,ax=plt.subplots()
+            ax.plot(xdata,ydata)
+            
+            #popt,popv = curve_fit(func, xdata, ydata, (-12.,12.,15.,25.,6.,5.,50.))
+            popt,popv = curve_fit(two_gaussian, xdata[15:], ydata[15:], (-10,10.,10.,45,4.,3.,80.)) 
+            fit = two_gaussian(xdata[15:], *popt)
+            ax.plot(xdata[15:], fit, 'r--')
+            ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.])
+            ax.set_title('Time of Flight')
+            ax.xaxis.set_ticks(np.linspace(0,10*tdiv,11))
+            ax.grid(True)
+            ax.text(0, 2*vdiv,'Fitting: Two Gaussian. \n'
+                    + 'width1 = '+str(popt[1])+' ms ;\n amplitude1 = '+str(popt[2])+' mV ; \n center1 = '+str(popt[3])+'ms.\n'+ 'FWHM = '+str(2.3548*popt[1])+'ms.')
+            ax.text(6*tdiv,2*vdiv,'width2 = '+str(popt[4])+' ms ;\n amplitude2 = '+str(popt[5])+' mV ; \n center2 = '+str(popt[6])+'ms.\n'
+                    + 'FWHM = '+str(2.3548*popt[4])+'ms.\n'+'Area: '+str(popt[4]*popt[5]/2.)+'mV*ms.')
+            ax.set_ylabel('Log Amp Output Voltage (mV)')
+            ax.set_xlabel('Time (ms)')
+        
+           
+            plt.show(block=False)
+            plt.savefig(filename)
+           
+        # plt.plot(range(len(ydata)),func(range(len(ydata)), 1,1) )
+        ydatasave=str(ydata).translate(None,'[]\n')
+        savefile=open(filename,'w')
+        savefile.write(ydatasave)
+        savefile.close()
+        print "ASCII data saved"
+        print "Figure saved"
+        
+
+    def get_spectrum_analyzer_trace(self,filename='C:\\Users\\Gemelke_Lab\\Documents\\SpectrumAnalyzerTrace\\newtrace'):
+    
+        e1 = time.time()
+        if not hasattr(self,'GPIB_device'):
+            if DEBUG: print "GPIB device not ready"
+            return
+        
+        q1 = 'FA?'#Specifies start frequency
+        q2 = 'FB?'#Specifies stop frequency.
+        q3 = 'RL?'#Adjusts the reference level.
+        q4 = 'RB?'#Specifies resolution bandwidth
+        q5 = 'VB?'#Specifies video bandwidth.
+        q6 = 'ST?'#Sweep Time
+        q7 = 'LG?'#Log Scale
+        q8 = 'AUNITS?'#Specifies amplitude units for input, output, and display
+        #q9 = 'TDF B'#Specifies transfer in Binary format
+        q9 = 'TDF P'#Specifies transfer in ASCII decimal values in real-number parameter format
+        q10 = 'TRA?' # read the trace from analyzer display
+        e1 = time.time()
+        params = self.GPIB_device.converse([q1,q2,q3,q4,q5,q6,q7,q8,q9])
+        e2 = time.time()
+        print params
+        if DEBUG: print "communication took", e2-e1, "sec"
+        
+        
+        e1 = time.time()
+        response = self.GPIB_device.converse([q10])
+        e2 = time.time()
+        ystr=response['TRA?']
+        ydata=np.array([float(s) for s in ystr.split(',')])
+        xdata=np.linspace(float(params['FA?']),float(params['FB?']),601)
+        
+        fig, ax=plt.subplots()
+        ax.plot(xdata,ydata)
+        ax.set_ylabel(str(params['AUNITS?']))
+        ax.set_xlabel('Frequency (Hz)')
+        ax.grid(True)
+        ax.axis([float(params['FA?']),float(params['FB?']),-100.,0])
+        ax.xaxis.set_ticks(np.linspace(float(params['FA?']),float(params['FB?']),11))
+        ax.yaxis.set_ticks(np.linspace(-100,0,11))
+        ax.text(0,-10,'Refrence Level:'+str(params['RL?'])+'\n Rsolution Bandwidth:'+str(params['RB?']))
+        plt.show(block=False)
+        plt.savefig(filename)
+        print "Figure saved. No fitting performed."
+                
+        ydatasave=str(ydata).translate(None,'[]\n')
+        savefile=open(filename,'w')
+        savefile.write(ydatasave)
+        savefile.close()
+        print "ASCII data saved"
+        print "Figure saved"
+        
+        if DEBUG: print "communication took", e2-e1, "sec"
+        
+        
+        
+       
 
 
     def server_shutdown(self):

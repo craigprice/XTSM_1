@@ -1,145 +1,60 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Oct 06 09:23:00 2014
+import pylab
+import numpy
+import scipy.optimize
 
-@author: Gemelke_Lab
-"""
+def gaussian(height, center_x, center_y, width_x, width_y):
+    """Returns a gaussian function with the given parameters"""
+    width_x = float(width_x)
+    width_y = float(width_y)
+    return lambda x,y: height*numpy.exp(
+                -(((center_x-x)/width_x)**2+((center_y-y)/width_y)**2)/2)
+       
+def moments(data):
+    """Returns (height, x, y, width_x, width_y)
+    the gaussian parameters of a 2D distribution by calculating its
+    moments """
+    total = data.sum()
+    X, Y = numpy.indices(data.shape)
+    x = (X*data).sum()/total
+    y = (Y*data).sum()/total
+    col = data[:, int(y)]
+    width_x = numpy.sqrt(abs((numpy.arange(col.size)-y)**2*col).sum()/col.sum())
+    row = data[int(x), :]
+    width_y = numpy.sqrt(abs((numpy.arange(row.size)-x)**2*row).sum()/row.sum())
+    height = data.max()
+    return height, x, y, width_x, width_y
+   
+def fitgaussian(data):
+    """Returns (height, x, y, width_x, width_y)
+    the gaussian parameters of a 2D distribution found by a fit"""
+    params = moments(data)
+    errorfunction = lambda p: numpy.ravel(gaussian(*p)(*numpy.indices(data.shape)) -
+                            data)
+    p, success = scipy.optimize.leastsq(errorfunction, params)
+    return p
+    
 
-'''This works
-import msgpack
-f = open('c:/wamp/www/raw_buffers/DBFS/2014-10-06/temp15.msgp','ab')
-msg = {'1':7,'3':5,'23451':3,'345':3453}
-m = msgpack.packb(msg, use_bin_type=True)
-f.write(m)
-f.close()
-f = open('c:/wamp/www/raw_buffers/DBFS/2014-10-06/temp15.msgp','rb')
-um = msgpack.unpackb(m, encoding='utf-8')
-print um
-'''
-'''
-import msgpack
-f = open('c:/wamp/www/raw_buffers/DBFS/2014-10-06/temp16.msgp','ab')
-msg = {'1':7,'3':5,'23451':3,'345':3453}
-m = msgpack.packb(msg, use_bin_type=True)
-f.write(m)
-f.close()
-f = open('c:/wamp/www/raw_buffers/DBFS/2014-10-06/temp16.msgp','rb')
-unpacker = msgpack.Unpacker(f,use_list=False, encoding='utf-8')
-#um = msgpack.unpackb(m, encoding='utf-8')
-print unpacker
-'''
+# Create the gaussian data
+Xin, Yin = numpy.mgrid[0:201, 0:201]
+data = gaussian(3, 100, 100, 20, 40)(Xin, Yin) + numpy.random.random(Xin.shape)
 
+pylab.matshow(data, cmap=pylab.cm.gist_earth_r)
 
-'''
-print unpacker.read_map_header()
-key = unpacker.unpackb()
-print key
-key = unpacker.unpackb()
-print key
-key = unpacker.unpackb()
-print key
-key = unpacker.unpackb()
-print key
-'''
-
-
-import zlib
-import msgpack
-import time
-import InfiniteFileStream
-import msgpack_numpy
-msgpack_numpy.patch()#This patch actually changes the behavior of "msgpack"
-#specifically, it changes how, "encoding='utf-8'" functions when unpacking
-
-#stream = InfiniteFileStream.FileStream({'file_root_selector':'xtsm_feed'})
-
-#file = 'C:\wamp\www\raw_buffers\DBFS\2014-10-09\f2da7991-501f-11e4-91bf-0010187736b5.msgp'
-
-#databomb = {'data':[[4,4,4,4],[4,357,357,573]]}
-#messagepack = msgpack.packb(databomb, use_bin_type=True)
-#msgpack.packb(to_disk, use_bin_type=True)
-to_disk = {'id': str(5),
-           'time_packed': str(time.time()),
-                      'len_of_data': str(len('messagepack')),
-                      'packed_databomb':' messagepack' }
-#encoder = zlib.compressobj()
-#data = encoder.compress('to_disk')
-#data = data + encoder.flush()
-#stream.write(data, keep_stream_open=False) 
-#encoder = zlib.compressobj()
-#data = encoder.compress('azfsgSF')
-#data = data + encoder.flush()
-#stream.write(data, keep_stream_open=False) 
-#location = stream.location
-#stream.__flush__()
-
-#data = data + encoder.compress(" of ")
-#data = data + encoder.flush()
-#data = data + encoder.compress("brian")
-#data = data + encoder.flush()
-
-#print stream.location
-#f = open(stream.location,'rb')
-#data = f.read()
-#print data
-#print repr(data)
-#print repr(zlib.decompress(data))
+params = fitgaussian(data)
+fit = gaussian(*params)
+   
+pylab.contour(fit(*numpy.indices(data.shape)), cmap=pylab.cm.copper)
+ax = pylab.gca()
+(height, x, y, width_x, width_y) = params
 
 
-'''
-import zlib
-encoder = zlib.compressobj()
-data = encoder.compress("life")
-data = data + encoder.compress(" of ")
-data = data + encoder.compress("brian")
-data = data + encoder.flush()
-print repr(data)
-print repr(zlib.decompress(data))
-'''
+t = pylab.text(0.95, 0.05, """
+x : %.1f
+y : %.1f
+width_x : %.1f
+width_y : %.1f""" %(x, y, width_x, width_y),
+fontsize=16, horizontalalignment='right',
+verticalalignment='bottom', transform=ax.transAxes)
+print t.text()
 
-"""Compress a file using a compressor object."""
-import zlib, bz2, os, cStringIO
-
-'''
-source= file( srcName, "r" )
-dest= file( dstName, "w" )
-block= source.read( 2048 )
-while block:
-    cBlock= compObj.compress( block )
-    dest.write(cBlock)
-    block= source.read( 2048 )
-cBlock= compObj.flush()
-dest.write( cBlock )
-source.close()
-dest.close()
-'''
-bytestream = msgpack.packb({'to_disk':3}, use_bin_type=True)
-filename = 'C:\\wamp\\www\\raw_buffers\\DBFS\\2014-10-09\\test'+str(time.time())+'.txt'
-f = open(filename,'ab')
-c = zlib.compressobj()
-cBlock = c.compress( bytestream )
-f.write(cBlock)
-cBlock = c.compress( bytestream )
-f.write(cBlock)
-cBlock = c.flush()
-f.write(cBlock)
-f.close()
-
-
-f = open(filename,'rb')
-c= zlib.decompressobj()
-cBlock= c.decompress(f.read() )
-print cBlock
-output = cStringIO.StringIO(cBlock)
-unpacker = msgpack.Unpacker(output,use_list=False)
-print unpacker.next()
-print cBlock 
-print unpacker.next()
-
-
-
-#compDecomp( compObj1, "../python.xml", "python.xml.gz" )
-#print "source", os.stat("../python.xml").st_size/1024, "k"
-#print "dest", os.stat("python.xml.gz").st_size/1024, "k"
-
-
+pylab.show()

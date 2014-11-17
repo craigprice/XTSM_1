@@ -53,7 +53,7 @@ import numpy
 
 import collections
 import sync
-
+from scipy.optimize import curve_fit
 DEBUG = True
       
 NUM_RETAINED_XTSM=10
@@ -515,7 +515,7 @@ class CommandLibrary():
                     
         # get the experiment synchronization object; set the shotnumber
         exp_sync = dc.get('_exp_sync')
-        exp_sync.shotnumber = params['shotnumber']
+        exp_sync.shotnumber = int(params['shotnumber'])
         sn = exp_sync.shotnumber
         
         # turn the active_xtsm string into an object
@@ -638,11 +638,12 @@ class CommandLibrary():
         #pdb.set_trace()
         if DEBUG: print "timingstringOutput, at time:", float(time.time()) - 1412863872
         msg = simplejson.dumps({"sending":"timingstring"}, ensure_ascii = False).encode('utf8')
-        params['request']['protocol'].sendMessage(msg)
         if params.has_key('socket_type'):
+            #Right now just for PXI_emulator
             if params['socket_type'] == 'Websocket':
                 pass
             else:
+                params['request']['protocol'].sendMessage(msg)
                 params['request']['protocol'].transport.loseConnection()
         else:
             #Actually sending the timingstrings to the PXI system
@@ -744,7 +745,7 @@ class CommandLibrary():
         #raw_databomb = msgpack.unpackb(params['databomb'])
         #self.server.databombs_for_data_gui.update({str(raw_databomb['shotnumber']):params['databomb']})
         
-        #self.temp_plot(params, bomb_id,dc)
+        self.temp_plot(params, bomb_id,dc)
         #pdb.set_trace()
         
   
@@ -792,8 +793,8 @@ class CommandLibrary():
             
 
         pix = 512
-        frame1 = np.asarray(np.random.rand(pix,pix).tolist())
-        frame2 = np.asarray(np.random.rand(pix,pix).tolist())
+        frame1 = numpy.asarray(numpy.random.rand(pix,pix).tolist())
+        frame2 = numpy.asarray(numpy.random.rand(pix,pix).tolist())
 
         app = QtGui.QApplication([])
         win = QtGui.QMainWindow()
@@ -801,10 +802,10 @@ class CommandLibrary():
         imv = pg.ImageView()
         win.setCentralWidget(imv)
         win.show()
-        img = np.random.normal(size=(pix, pix)) * 20 + 100
+        img = numpy.random.normal(size=(pix, pix)) * 20 + 100
         img = frame1
-        img = img[np.newaxis,:,:]
-        data = np.asarray([frame1,frame2])
+        img = img[numpy.newaxis,:,:]
+        data = numpy.asarray([frame1,frame2])
         imv.setImage(data)
         
         if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
@@ -828,17 +829,17 @@ class CommandLibrary():
         if num_pics != 0:
             if num_pics == 1:
                 print "one frame"
-                corrected_image = np.subtract(np.asarray(raw_img_data[0],dtype=int), rdn.darkavg)
+                corrected_image = numpy.subtract(numpy.asarray(raw_img_data[0],dtype=int), rdn.darkavg)
             elif num_pics == 2:
                 print "two frames"
                 #corrected_image = np.subtract(np.asarray(raw_img_data[1],dtype=int),
                 #                              np.asarray(raw_img_data[0],dtype=int))
-                corrected_image= np.subtract(np.asarray(raw_img_data[1],dtype=int), rdn.darkavg)               
+                corrected_image= numpy.subtract(numpy.asarray(raw_img_data[1],dtype=int), rdn.darkavg)               
             elif num_pics == 3:
                 #print "three frames"prindd
 #                corrected_image = np.log(np.divide(np.asarray(raw_img_data[1],dtype=float),
 #                                              np.asarray(raw_img_data[2],dtype=float)))
-                 corrected_image = np.subtract(np.asarray(raw_img_data[1],dtype=float),np.asarray(raw_img_data[2],dtype=float))
+                 corrected_image = numpy.subtract(numpy.asarray(raw_img_data[1],dtype=numpy.float),numpy.asarray(raw_img_data[2],dtype=numpy.float))
                  msg = {'shotnumber':raw_databomb['shotnumber'], 'data':corrected_image }
                  packed_message = msgpack.packb(msg , use_bin_type=True)
                  self.server.databomblist.append(packed_message) #add by Jz to create a list of databombs for imageviewer
@@ -850,9 +851,9 @@ class CommandLibrary():
                 raise
         #min_scale = 65536
         
-        max_scale_zoom = 500
+        max_scale_zoom = 5000
         min_scale_zoom = -100
-        max_scale_full = 700
+        max_scale_full = 7000
         min_scale_full = -100       
         
         if dc.dict.has_key('ImageScaleZoomMax'):
@@ -867,8 +868,8 @@ class CommandLibrary():
         
         #bottom_left_coord = (120,345)
         #top_right_coord = (340,180)
-        bottom_left_coord = (450,0)#(x,y)
-        top_right_coord = (450,100)
+        bottom_left_coord = (300,150)#(x,y)
+        top_right_coord = (350,100)
         #bottom_left_coord = (260,165)
         #top_right_coord = (271,185)
         region_of_interest = corrected_image[top_right_coord[1]:bottom_left_coord[0],
@@ -877,11 +878,11 @@ class CommandLibrary():
         #                                     120:350]#second number is how far accross
         #pdb.set_trace()
         self.server.ALL_DATABOMBS.update({str(raw_databomb['shotnumber']):[raw_img_data[0],raw_img_data[1],raw_img_data[2]]})
-        cax = ax.imshow(np.asarray(raw_img_data[1],dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale_full, vmax=max_scale_full, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
+        cax = ax.imshow(numpy.asarray(raw_img_data[1],dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale_full, vmax=max_scale_full, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
         cbar = fig.colorbar(cax)
         
         ax2 = fig.add_subplot(232)
-        cax2 = ax2.imshow(np.asarray(raw_img_data[2],dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale_full, vmax=max_scale_full,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
+        cax2 = ax2.imshow(numpy.asarray(raw_img_data[2],dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale_full, vmax=max_scale_full,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
 
         ax3 = fig.add_subplot(233)
         cax3 = ax3.imshow(corrected_image, cmap = mpl.cm.Greys_r,vmin=min_scale_zoom, vmax=max_scale_zoom,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
@@ -986,9 +987,9 @@ class CommandLibrary():
        
         max_scale=1200
         #max_scale=np.amax(corrected_image)
-        min_scale=np.amin(corrected_image)
+        min_scale=numpy.amin(corrected_image)
         #min_scale=0
-        cax = ax.imshow(np.asarray(corrected_image,dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
+        cax = ax.imshow(numpy.asarray(corrected_image,dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
         cbar = fig.colorbar(cax)
         
         path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()

@@ -29,19 +29,21 @@ import pyqtgraph.dockarea
 from pyqtgraph.dockarea.Dock import DockLabel
 import pyqtgraph.console
 
-   
 import msgpack
 import msgpack_numpy
 msgpack_numpy.patch()#This patch actually changes the behavior of "msgpack"
 #specifically, it changes how, "encoding='utf-8'" functions when unpacking    
+import pylab
+import numpy
+import scipy.optimize
     
 DEBUG = True
-
+    
 class CCDImage(tables.IsDescription):
     short_256_description = tables.StringCol(256)
     shotnumber = tables.Int64Col()
     image_number = tables.Int64Col()
-    ccd_array = tables.Int64Col(shape=(512,512))
+    ccd_array = tables.FloatCol(shape=(512,512))
 
 class ScopeTrace(tables.IsDescription):
     short_256_description = tables.StringCol(256)
@@ -55,7 +57,7 @@ class DataStorage():
         self.filename = 'filename'
         path = 'C:\\wamp\\www\\psu_data\\data_storage\\'
         today = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
-        location_root = path + str(today)
+        location_root = path + str(today) + '\\'
         filename = location_root + str(self.id) + '.h5'
         
         try:
@@ -73,7 +75,7 @@ class DataStorage():
                                  NODE_CACHE_SLOTS=0)
                              
         self.group = self.h5file.create_group('/','data_group','CCD Scope data')
-        self.table = self.h5file.create_table(self.group, 'ccd_data', CCDImage , "CCD Data")        
+        self.table = self.h5file.create_table(self.group, 'ccd_data', CCDImage , "CCD Data")  
         
 
 
@@ -146,40 +148,158 @@ class CommandLibrary():
                 g = self.factory.gui
                 g.imgstack = numpy.concatenate((g.imgstack,m), axis=0)
                 
-                new_image = self.data_storeage.table.row
+                new_image = self.data_storage.table.row
                 new_image['short_256_description'] = 'Background'
                 new_image['shotnumber'] = int(db['shotnumber'])
                 new_image['image_number'] = 1
                 new_image['ccd_array'] = m[0]
                 new_image.append()
                 
-                new_image = self.data_storeage.table.row
+                new_image = self.data_storage.table.row
                 new_image['short_256_description'] = 'With Atoms'
                 new_image['shotnumber'] = int(db['shotnumber'])
                 new_image['image_number'] = 2
                 new_image['ccd_array'] = m[1]
                 new_image.append()                
                 
-                new_image = self.data_storeage.table.row
+                new_image = self.data_storage.table.row
                 new_image['short_256_description'] = 'After Atoms'
                 new_image['shotnumber'] = int(db['shotnumber'])
                 new_image['image_number'] = 3
                 new_image['ccd_array'] = m[2]
                 new_image.append()
                 
-                new_image = self.data_storeage.table.row
+                new_image = self.data_storage.table.row
                 new_image['short_256_description'] = 'Corrected Image'
                 new_image['shotnumber'] = int(db['shotnumber'])
                 new_image['image_number'] = 0
-                new_image['ccd_array'] = m[1]-m[3]
+                corrected_image = numpy.divide(numpy.asarray(m[1],dtype=numpy.float),numpy.asarray(m[2],dtype=numpy.float))
+                new_image['ccd_array'] = corrected_image
                 new_image.append()
                 
-                self.data_storeage.table.flush()
+                new_image = self.data_storage.table.row
+                new_image['short_256_description'] = 'Corrected Image - log'
+                new_image['shotnumber'] = int(db['shotnumber'])
+                new_image['image_number'] = 0
+                log_corr = numpy.log(corrected_image)
+                new_image['ccd_array'] = numpy.log(corrected_image)
+                new_image.append()
+                
+                self.data_storage.table.flush()
                 
                 
                 table = self.data_storage.h5file.root.data_group.ccd_data
-                imgstack = [x['ccd_array'] for x in table.iterrows() if x['short_256_description'] == 'Corrected Image']
-                g.plot(imgstack)
+                g.imgstack = numpy.concatenate((g.imgstack,[corrected_image]), axis=0)
+                g.imgstack = numpy.concatenate((g.imgstack,[log_corr]), axis=0)
+                #imgstack = [x['ccd_array'] for x in table.iterrows() ]#if x['short_256_description'] == 'Corrected Image']
+                g.plot(g.imgstack)
+                
+               
+                def gaussian_jz(x,
+                             offset,w,a,c):
+                    
+                    '''
+                    Define single peak gaussian function, parameters are listed below:
+                    x, variable; offset; w, 1/sqrt(e) width ; a amplitude of the peak; c, peak center.
+                    FWHM=2.3548*w
+                    '''
+                    return offset + a*numpy.exp(-(x-c)**2./(2.*w**2.))
+            
+
+
+
+
+                def gaussian(height, center_x, center_y, width_x, width_y):
+                    """Returns a gaussian function with the given parameters"""
+                    width_x = float(width_x)
+                    width_y = float(width_y)
+                    return lambda x,y: height*numpy.exp(
+                                -(((center_x-x)/width_x)**2+((center_y-y)/width_y)**2)/2)
+                    
+                def moments(data):
+                    """Returns (height, x, y, width_x, width_y)
+                    the gaussian parameters of a 2D distribution by calculating its
+                    moments """
+                    total = data.sum()
+                    X, Y = numpy.indices(data.shape)
+                    x = (X*data).sum()/total
+                    y = (Y*data).sum()/total
+                    col = data[:, int(y)]
+                    width_x = numpy.sqrt(abs(abs((numpy.arange(col.size)-y)**2*col).sum()/col.sum()))
+                    row = data[int(x), :]
+                    width_y = numpy.sqrt(abs(abs((numpy.arange(row.size)-x)**2*row).sum()/row.sum()))
+                    height = data.max()
+                    return height, x, y, width_x, width_y
+                 
+                def fitgaussian(data):
+                    """Returns (height, x, y, width_x, width_y)
+                    the gaussian parameters of a 2D distribution found by a fit"""
+                    params = moments(data)
+                    print params
+                    errorfunction = lambda p: numpy.ravel(gaussian(*p)(*numpy.indices(data.shape)) -data)
+                    p, success = scipy.optimize.leastsq(errorfunction, params)
+                    print p
+                    print success
+                    return p
+                    
+                
+                
+                (height, center_x, center_y, width_x, width_y) = fitgaussian(corrected_image)
+                fit = gaussian(*(height, center_x, center_y, width_x, width_y))
+            
+                #scipy.integrate.dblquad()
+            
+                
+                t = pylab.text(0.95, 0.05, """
+                x : %.1f
+                y : %.1f
+                width_x : %.1f
+                width_y : %.1f""" %(center_x, center_y, width_x, width_y),
+                fontsize=16, horizontalalignment='right',
+                verticalalignment='bottom')
+                print t.get_text()
+                conversion_to_um = 5.2
+                print 'Fitting: Double Gaussian.'
+                print 'height =', float(height), 'counts'
+                print 'center_x =', float(center_x), 'pixels', float(center_x) * conversion_to_um, 'micron'
+                print 'center_y =', float(center_y), 'pixels', float(center_y) * conversion_to_um, 'micron'
+                print 'sigma - width_x =', float(width_x), 'pixels', float(width_x) * conversion_to_um, 'micron'
+                print 'sigma - width_y =', float(width_y), 'pixels', float(width_y) * conversion_to_um, 'micron'
+                print 'FWHM - width_x =', float(2.3548*width_x), 'pixels', float(2.3548*width_x) * conversion_to_um, 'micron'
+                print 'FWHM - width_y =', float(2.3548*width_y), 'pixels', float(2.3548*width_y) * conversion_to_um, 'micron'
+                print "Atoms, 2D = ", float(height) * float(width_x) * float(width_y) * 303 * pow(10,-6) * 0.7,'\n'
+                
+            
+
+                    
+            
+                #popt,popv = curve_fit(func, xdata, ydata, (-12.,12.,15.,25.,6.,5.,50.))
+                try:
+                    ydata = corrected_image[center_x]
+                    g._dock_1D_plot.plot.plot(corrected_image[center_x])
+                    center = center_x
+                except IndexError:
+                    ydata = corrected_image[234]
+                    g._dock_1D_plot.plot.plot(corrected_image[243])
+                    center = 243
+                    
+                xdata = numpy.asarray(list(xrange(len(ydata))))
+                popt,popv = scipy.optimize.curve_fit(gaussian_jz, xdata, ydata, (0.0,20.0,3000.0,230.0))  
+                fit = gaussian_jz(xdata, *popt)
+                
+                g._dock_1D_plot.plot.plot(fit)
+                
+                print 'Fitting: Single Gaussian along x =', center
+                print 'width =', float(popt[1]) * conversion_to_um, 'micron'
+                print 'amplitude =', float(popt[2]), 'counts'
+                print 'center =', float(popt[3]) * conversion_to_um, 'micron'
+                print 'FWHM =', float(2.3548*popt[1]) * conversion_to_um, 'micron'
+                print "Atoms, 1D (squared) = ", float(popt[2]) * float(popt[1]) * float(popt[1]) * 303 * pow(10,-6) * 0.7
+                
+            
+                
+                #g._dock_1D_plot.curve.setData(y=corrected_image[243])
+                g._dock_1D_plot.update()
                 
                 #imgs = m.shape[2]
                 #sns = numpy.asarray(numpy.full(imgs, int(db['shotnumber'])))
@@ -349,8 +469,11 @@ class docked_gui():
             """Move video frame ahead n frames (may be negative)"""
             if self.imv.axes['t'] is not None:
                 self.imv.setCurrentIndex(self.imv.currentIndex + n)
-                self._dock_image_view.label = DockLabel("Shotnumber = "+str(self.imgstack_shotnumbers[self.imv.currentIndex]), self._dock_image_view)
-                self._dock_image_view.updateStyle()
+                try:
+                    self._dock_image_view.label = DockLabel("Shotnumber = "+str(self.imgstack_shotnumbers[self.imv.currentIndex]), self._dock_image_view)
+                    self._dock_image_view.updateStyle()
+                except IndexError:
+                    pass
         self.imv.jumpFrames = jumpFrames
         
         def mouseMoved(evt):
@@ -362,10 +485,16 @@ class docked_gui():
                 index = (int(mousePoint.x()),int(mousePoint.y()))
                 x = "<span style='font-size: 12pt;color: blue'>x=%0.1f,   " % mousePoint.x()
                 y = "<span style='color: red'>y=%0.1f</span>,   " % mousePoint.y()
-                if index[0] > 0 and index[0] < len(self.imgstack[1]):
-                    if index[1] > 0 and index[1] < len(self.imgstack[2]):
+                if index[0] > 0 and index[0] < len(self.imgstack[1][0]):
+                    if index[1] > 0 and index[1] < len(self.imgstack[2][0]):
                         #Fix the next line so that the z axis is for the image that is displayed
-                        z = "<span style='color: green'>z=%0.1f</span>" % self.imgstack[self.imv.currentIndex, index[0], index[1]]
+                        try:
+                            z = "<span style='color: green'>z=%0.1f</span>" % self.imgstack[self.imv.currentIndex, index[0], index[1]]
+                        except:
+                            z="<span style='color: green'>z=Error</span>"
+                            print "index:", index
+                            print "len(self.imgstack[1][0]:", len(self.imgstack[1][0])
+                            print "self.imv.currentIndex:", self.imv.currentIndex
                         self.curs_pos_label.setText(x+y+z)
         
         
