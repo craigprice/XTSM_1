@@ -90,14 +90,40 @@
             </xsl:element>
           </xsl:element>
         </input>
-        <xsl:element name="xsl:call-template">
-          <xsl:attribute name="name"><xsl:text>gen_input_field</xsl:text></xsl:attribute>
-        </xsl:element>
-        <xsl:element name="xsl:call-template">
-          <xsl:attribute name="name">
-            <xsl:text>toolpanel</xsl:text>
-          </xsl:attribute>
-        </xsl:element>
+        <xsl:choose>
+          <xsl:when test="*/*/xtsm_viewer:fieldtype[@value = 'textarea']">
+            <xsl:element name="xsl:call-template">
+              <xsl:attribute name="name">
+                <xsl:text>toolpanel</xsl:text>
+              </xsl:attribute>
+            </xsl:element>
+
+            <xsl:element name="xsl:call-template">
+              <xsl:attribute name="name">
+                <xsl:text>gen_input_textarea</xsl:text>
+              </xsl:attribute>
+              <xsl:element name="xsl:with-param">
+                <xsl:attribute name="name">
+                  <xsl:text>editmode</xsl:text>
+                </xsl:attribute>
+                <xsl:value-of select="*/*/xtsm_viewer:editmode/@value" />
+              </xsl:element>
+          </xsl:element>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:element name="xsl:call-template">
+              <xsl:attribute name="name">
+                <xsl:text>gen_input_field</xsl:text>
+              </xsl:attribute>
+            </xsl:element>
+            <xsl:element name="xsl:call-template">
+              <xsl:attribute name="name">
+                <xsl:text>toolpanel</xsl:text>
+              </xsl:attribute>
+            </xsl:element>
+          </xsl:otherwise>
+        </xsl:choose>
+
 		  </div></li>
     </xsl:element>
   </xsl:template>
@@ -135,7 +161,7 @@
           <img src="../images/seqicon_downarrow.png" height="15px" align="right" alt="⇓" xtsm_viewer_event="onclick:modifyElement_update_editor('move','-1');"/>
           <img src="../images/seqicon_clone.png" height="15px" align="right" alt="c" xtsm_viewer_event="onclick:modifyElement_update_editor('clone');"/>
           <img src="../images/seqicon_x.png" height="15px" align="right" alt="X" xtsm_viewer_event="onclick:modifyElement_update_editor('delete');"/>
-          <img src="../images/seqicon_code.png" height="15px" align="right" alt="&lt;..&gt;" xtsm_viewer_event="onclick:toggleProp_update_editor('editMode');"/>
+          <img src="../images/seqicon_code.png" height="15px" align="right" alt="&lt;..&gt;" xtsm_viewer_event="onclick:modifyElement_update_editor('editmode','0_xml_python');"/>
           <img src="../images/seqicon_plus.png" height="15px" align="right" alt="+" xtsm_viewer_event="onclick:spawn_child_menu();"/>
         </xsl:element>
 
@@ -403,6 +429,89 @@
         </xsl:element>
       </xsl:element>
 
+        <xsl:element name="xsl:template">
+          <xsl:attribute name="name">
+            <xsl:text>gen_input_textarea</xsl:text>
+          </xsl:attribute>
+          <xsl:element name="xsl:param">
+            <xsl:attribute name="name">
+              <xsl:text>editmode</xsl:text>
+            </xsl:attribute>
+          </xsl:element>
+          <xsl:element name="xsl:value-of">
+            <xsl:attribute name="select">name()</xsl:attribute>
+          </xsl:element>
+          <xsl:text>:</xsl:text>
+          <xsl:element name="xsl:call-template">
+            <xsl:attribute name="name">repeat</xsl:attribute>
+            <xsl:element name="xsl:with-param">
+              <xsl:attribute name="name">count</xsl:attribute>
+              <xsl:attribute name="select">20- string-length(name(.))</xsl:attribute>
+            </xsl:element>
+            <xsl:element name="xsl:with-param" >
+              <xsl:attribute name="name">output</xsl:attribute>
+              <xsl:text>.</xsl:text>
+            </xsl:element>
+          </xsl:element>
+          <textarea cols="60" rows="8">
+            <xsl:element name="xsl:if">
+              <xsl:attribute name="test">$editmode='python'</xsl:attribute>
+              <xsl:element name="xsl:attribute">
+                <xsl:attribute name="name">codemirrorize</xsl:attribute>
+                  <xsl:text>python</xsl:text>
+              </xsl:element>
+            </xsl:element>
+              <xsl:element name="xsl:attribute">
+              <xsl:attribute name="name">
+                <xsl:text>name</xsl:text>
+              </xsl:attribute>
+              <xsl:element name="xsl:value-of">
+                <xsl:attribute name="select">
+                  <xsl:text>name()</xsl:text>
+                </xsl:attribute>
+              </xsl:element>
+              <xsl:text>_</xsl:text>
+              <xsl:element name="xsl:value-of">
+                <xsl:attribute name="select">
+                  <xsl:text>count(preceding-sibling::*[name(.) = name(current())])+1</xsl:text>
+                </xsl:attribute>
+              </xsl:element>
+            </xsl:element>
+            <xsl:element name="xsl:attribute">
+              <xsl:attribute name="name">
+                <xsl:text>xtsm_viewer_event</xsl:text>
+              </xsl:attribute>
+              <xsl:text>onblur:updateElementEscaped_update_editor('');</xsl:text>
+              <xsl:for-each select="/*//xtsm_viewer:autocomplete/../../..">
+                <xsl:element name="xsl:if">
+                  <xsl:attribute name="test">
+                    name()='<xsl:value-of select="@name"/>'
+                  </xsl:attribute>
+                  <xsl:text>onkeydown:autocomplete('</xsl:text>
+                  <xsl:value-of select=".//xtsm_viewer:autocomplete/@value"/>
+                  <xsl:text>');</xsl:text>
+                </xsl:element>
+              </xsl:for-each>
+            </xsl:element>
+            <xsl:element name="xsl:choose">
+              <xsl:element name="xsl:when">
+                <xsl:attribute name="test">
+                  <xsl:text>text()[normalize-space(.)]!=''</xsl:text>
+                </xsl:attribute>
+                <xsl:element name="xsl:value-of">
+                  <xsl:attribute name="select">
+                    <xsl:text>child::node()</xsl:text>
+                  </xsl:attribute>
+                </xsl:element>
+              </xsl:element>
+              <xsl:element name="xsl:otherwise">
+                <xsl:text>.</xsl:text>
+              </xsl:element>
+              </xsl:element>
+          </textarea>
+        </xsl:element>
+
+
         <!--template for child division contents-->
         <xsl:element name="xsl:template">
           <xsl:attribute name="name"><xsl:text>child_div</xsl:text></xsl:attribute>
@@ -462,7 +571,7 @@
         <ul>
           <xsl:element name="xsl:choose">
             <xsl:element name="xsl:when">
-              <xsl:attribute name="test"><xsl:text>@editmode='codemirror'</xsl:text></xsl:attribute>
+              <xsl:attribute name="test"><xsl:text>@editmode='xml' or @editmode='python'</xsl:text></xsl:attribute>
               <li>
                 <textarea cols="80" rows="10">
                   <xsl:element name="xsl:copy-of">
