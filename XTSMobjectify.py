@@ -28,7 +28,7 @@ import sync
 
 #from IPy import IP
 
-DEBUG = True
+DEBUG = False
 
 XO_IGNORE=['PCDATA']  # ignored elements on XML_write operations
 
@@ -488,7 +488,7 @@ class XTSM_core(object):
         except KeyError: return False
         return True
 
-    def write_xml(self, out=None, tablevel=0, whitespace='True', CDATA_ESCAPE=False):
+    def write_xml(self, out=None, tablevel=0, whitespace='True'):
         """
         Serialize an _XO_ object back into XML to stream out; if no argument 'out' supplied, returns string
         If tablevel is supplied, xml will be indented by level.  If whitespace is set to true, original whitespace
@@ -510,7 +510,6 @@ class XTSM_core(object):
                 if (attr in XO_IGNORE): continue 
                 out.write(' ' + attr + '="' + self.__dict__[attr] + '"')
         out.write('>')
-        if CDATA_ESCAPE: out.write("<![CDATA[")
         # write nodes in original order using _XO_ class _seq list
         if self._seq:            
             for node in self._seq:
@@ -527,7 +526,6 @@ class XTSM_core(object):
                         firstsub=False
                     node.write_xml(out,0 if (tablevel==0) else (tablevel+1),whitespace)
                     newline=True
-        if CDATA_ESCAPE: out.write("]]>")
         # close XML tag
         if newline:
             out.write(tablevel*"  ")

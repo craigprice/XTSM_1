@@ -238,13 +238,32 @@ class GpibDevice:
         self._gpib_adapter.select(self._gpib_addr)
         self._gpib_adapter.write(line)    
 
+    
     def converse(self,commands):
         responses={}
         if isinstance(commands, basestring): commands=[commands]
-        for command in commands:       
+        i = 0
+        for command in commands:   
+            
             self.write(command)
             responses.update({command:self.read()})
+            i = i + 1
         return responses
+    
+    
+    
+    
+    
+#    def converse(self,commands, timeouts):
+#        responses={}
+#        if isinstance(commands, basestring): commands=[commands]
+#        i = 0
+#        for command in commands:   
+#            self._gpib_adapter.settimeout(timeouts[i])
+#            self.write(command)
+#            responses.update({command:self.read()})
+#            i = i + 1
+#        return responses
 
 def main(argv):
     progname = argv[0]

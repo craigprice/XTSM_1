@@ -431,8 +431,13 @@ class CommandLibrary():
             if DEBUG: print msg
             return
         try:
-            sn = int(params['shotnumber'])
+            try:
+                sn = int(params['shotnumber'])
+            except ValueError:
+                print "Error: Bad Shotnumber", params
+                return
             xtsm = exp_sync.compiled_xtsm[sn].XTSM
+            print sn
             #pdb.set_trace()
             msg = {"xtsm":xtsm.write_xml(),"shotnumber":sn,"data_context":params['data_context']}
             #xtsm = exp_sync.compiled_xtsm[int(params['shotnumber'])].XTSM
@@ -609,9 +614,10 @@ class CommandLibrary():
                 #And - if there gets to be lots of code, it can be put into the "Roper_CCD" class as a function to call.
         '''    
         
+        if DEBUG: print "xtsm_return, sn:", sn
         message = {"data_context": dc.name,
                    "xtsm_return":
-                   simplejson.dumps({"shotnumber":str(sn),
+                   simplejson.dumps({"shotnumber":int(sn),
                    "xtsm":xtsm_object.XTSM.write_xml()},
                      ensure_ascii = False).encode('utf8')}
         message = simplejson.dumps(message, ensure_ascii = False).encode('utf8')
@@ -625,7 +631,7 @@ class CommandLibrary():
         def _changed_xtsm(changedelm):
             message = {"data_context": dc.name,
                        "xtsm_return":
-                       simplejson.dumps({"shotnumber":str(sn),
+                       simplejson.dumps({"shotnumber":int(sn),
                        "xtsm":xtsm_object.XTSM.write_xml()},
                          ensure_ascii = False).encode('utf8')}
             message = simplejson.dumps(message, ensure_ascii = False).encode('utf8')
@@ -641,10 +647,11 @@ class CommandLibrary():
         if params.has_key('socket_type'):
             #Right now just for PXI_emulator
             if params['socket_type'] == 'Websocket':
+                params['request']['protocol'].sendMessage(msg)
                 pass
             else:
-                params['request']['protocol'].sendMessage(msg)
-                params['request']['protocol'].transport.loseConnection()
+                pass
+                #params['request']['protocol'].transport.loseConnection()
         else:
             #Actually sending the timingstrings to the PXI system
             params['request']['protocol'].transport.write(timingstringOutput)

@@ -182,6 +182,13 @@ class MulticastProtocol(DatagramProtocol):
             #return
             self.server.pxi_time = float(datagram['time'])
             self.server.pxi_time_server_time = float(datagram['time']) - float(time.time())#Make this so that it synchronizes the clocks CP
+
+            msg = {"data_context": 'PXI',
+                   "shotnumber":datagram['shotnumber_started']}
+            msg = simplejson.dumps(msg, ensure_ascii = False).encode('utf8')
+            self.server.broadcast(msg)             
+            if DEBUG: print datagram
+            
             self.server.active_parser_ip = datagram['server_ip_in_charge']#Make this so that it synchronizes the clocks CP
             self.server.active_parser_port = datagram['server_port_in_charge']#Make this so that it synchronizes the clocks CP
             dc = self.server.command_library.__determineContext__({'data_context':'PXI'})       
@@ -189,11 +196,13 @@ class MulticastProtocol(DatagramProtocol):
                  exp_sync = sync.Experiment_Sync_Group(self.server, dc.name)
                  dc.update({'_exp_sync':exp_sync})
             dc.get('_exp_sync').shotnumber = int(datagram['shotnumber_started'])
-            if DEBUG: print "Shot started:", datagram['shotnumber_started'], "pxi_time:", self.server.pxi_time, "time.time():", float(time.time())
+            print "Shot started:", datagram['shotnumber_started'], "pxi_time:", self.server.pxi_time, "time.time():", float(time.time())
             return
             
         
         if 'fake_shotnumber_started' in datagram.keys():
+            if self.server.ip == '10.1.1.124':
+                return
             print datagram
             msg = {"data_context": datagram['data_context'],
                    "shotnumber":datagram['fake_shotnumber_started']}
@@ -1321,8 +1330,10 @@ class Keyboard_Input(basic.LineReceiver):
         err=False
         if not hasattr(self,"dc"):
             self.dc={"self":self.server}
+        print "dc:", self.dc
         try: exec(line,self.dc)
         except Exception as e: err=e
+        except KeyboardInterrupt : pass
         # remove backeffect on dictionary
         if self.dc.has_key('__builtins__'): 
             del self.dc['__builtins__']
@@ -1588,7 +1599,7 @@ class GlabPythonManager():
         '''
         self.GPIB_adapter = GPIB_control.PrologixGpibEthernet('10.1.1.113')
         
-        read_timeout = 10.0
+        read_timeout = 1.0  
         if DEBUG: print "Setting adapter read timeout to %f seconds" % read_timeout
         self.GPIB_adapter.settimeout(read_timeout)
         
@@ -1600,36 +1611,81 @@ class GlabPythonManager():
         
         
     
-    def get_scope_field(self,q1="Data:Source CH1",
+    
+    def get_scope_field(self,
+                        q1="Data:Source CH1",
                         q2="Data:Encdg: ASCII",
+                        #q2="Data:Encdg: SRIbinary",#least significant byte first, signed int
                         q3="Data:Width 2",
                         q4="Data:Start 1",
                         q5="Data:Stop 500",
-                        q6="wfmpre?" ,
-                        q7="curve?",filename='C:\\Users\\Gemelke_Lab\\Documents\\ScopeTrace\\NewScopeTrace',tdiv=10,vdiv=10, fit='NoFit'):
+                        #q6="RS232:BAUD 19200",
+                        q7="wfmpre?",
+                        #q12="wavfrm?",
+                        #q8="*OPC?",
+                        q9="curve?",
+                        #q10="*OPC?",
+                        #q11="*WAI",
+                        filename='C:\\Users\\Gemelke_Lab\\Documents\\ScopeTrace\\NewScopeTrace',
+                        tdiv=10,
+                        vdiv=10,
+                        fit='NoFit'):
         '''
         This function pull trace back from Textronix TDS460A. 
         fit= 'SPG', fit with single peak gaussian function, return peak hight, width, and area under peak;
         fit= 'DPG', fit with double peak gaussian function, return peak hight, width, and area under peak;
         tdiv timedivision in ms; vdiv voltage perdivision in mV.
-        
         '''
     
         e1 = time.time()
         if not hasattr(self,'GPIB_device'):
             if DEBUG: print "GPIB device not ready"
             return
-        response = self.GPIB_device.converse([q1,q2,q3,"BAUD 9600", q4,q5,q6,q7])
-        e2 = time.time()
-        if DEBUG: print "Scope communication took", e2-e1, "sec"
+     
+        self.GPIB_device.write(q1)
+#        e2 = time.time()
+#        print 'q1 takes', e2-e1
         
-        ystr = response["curve?"]
+        self.GPIB_device.write(q2)
+#        e3 = time.time()
+#        print 'q2 takes', e3-e2
+        
+        self.GPIB_device.write(q3)
+#        e4 = time.time()
+#        print 'q3 takes', e4-e3
+        
+        self.GPIB_device.write(q4)
+#        e5 = time.time()
+#        print 'q4 takes', e5-e4       
+        
+        self.GPIB_device.write(q5)
+#        e6 = time.time()
+#        print 'q5 takes', e6-e5
+        
+#        self.GPIB_device.write(q6)
+#        e7 = time.time()
+#        print 'q6 takes', e7-e6    
+        
+        response1=self.GPIB_device.converse(q7)
+        response2=self.GPIB_device.converse(q9)
+        e2 = time.time()
+#        print 'q7,q9 takes', e8-e7
+        #print response2
+
+
+        ystr = response2["curve?"].split(',')
+        ystr[0]= ystr[0].split(' ')[1] # separate the word 'CURV' in the first element
+
         #if DEBUG: print "Data:", ystr
-            
+        
+        
+#        if sys.byteorder != "little": # What does this line means, what is 'little'????
+#            print "Error: byte order on this computer not expected. Expected python to be little"
+#            pdb.set_trace()
 
         print "Scope communication took", e2-e1,"s"
         #pdb.set_trace()
-        ydata=np.array([float(s) for s in ystr.split(',')])
+        ydata=np.array(ystr,dtype=np.float)
 
         xdata=np.multiply(np.arange(len(ydata),dtype=np.float),(tdiv*10.0)/500.0) #xdata converted for 10ms/div scale
     
@@ -1645,7 +1701,7 @@ class GlabPythonManager():
             ax.xaxis.set_ticks(np.linspace(0,10*tdiv,11))
             plt.show(block=False)
             plt.savefig(filename)
-            print "Figure saved. No fitting performed."
+            print "Figure saved. No fitting is performed."
         
         elif fit == 'MolassesTOF':
             def molasses_tof(x,offset,t,a,c):
@@ -1666,6 +1722,7 @@ class GlabPythonManager():
             ax.plot(xdata, fit, 'r--')
             ax.text(0, 2*vdiv,'Fitting: Single Gaussian. \n'
                     + 'temp = '+str(popt[1]*0.0105)+' K ;\n amplitude = '+str(popt[2])+' mV ; \n center = '+str(popt[3])+'ms.\n')
+            
             ax.set_title('Time of Flight')
             ax.grid(True)
             ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.]) # set the plot range, [xmin, xmax,ymin,ymax]
@@ -1696,6 +1753,9 @@ class GlabPythonManager():
             ax.plot(xdata, fit, 'r--')
             ax.text(0, 2*vdiv,'Fitting: Single Gaussian. \n'
                     + 'width = '+str(popt[1])+' ms ;\n amplitude = '+str(popt[2])+' mV ; \n center = '+str(popt[3])+'ms.\n'+'FWHM = '+str(2.3548*popt[1])+'ms.')
+            print 'amplitude = ', popt[2], 'mV'
+            print 'FWHM = ' , 2.3548*popt[1], 'ms'
+            
             ax.set_title('Time of Flight')
             ax.grid(True)
             ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.]) # set the plot range, [xmin, xmax,ymin,ymax]
@@ -1730,10 +1790,12 @@ class GlabPythonManager():
             ax.text(0, 2*vdiv,'Fitting: Two Gaussian. \n'
                     + 'width1 = '+str(popt[1])+' ms ;\n amplitude1 = '+str(popt[2])+' mV ; \n center1 = '+str(popt[3])+'ms.\n'+ 'FWHM = '+str(2.3548*popt[1])+'ms.')
             ax.text(6*tdiv,2*vdiv,'width2 = '+str(popt[4])+' ms ;\n amplitude2 = '+str(popt[5])+' mV ; \n center2 = '+str(popt[6])+'ms.\n'
-                    + 'FWHM = '+str(2.3548*popt[4])+'ms.\n'+'Area: '+str(popt[4]*popt[5]/2.)+'mV*ms.')
+                    + 'FWHM = '+str(2.3548*popt[4])+'ms.\n'+'Area: '+str(2.3548*popt[4]*popt[5])+'mV*ms.')
             ax.set_ylabel('Log Amp Output Voltage (mV)')
             ax.set_xlabel('Time (ms)')
-        
+            print 'FWHM=', 2.3548*popt[4], 'ms'
+            print 'Amplitude=', popt[5], 'mV'
+            print 'Area=', 2.3548*popt[4]*popt[5], 'mV*ms'
            
             plt.show(block=False)
             plt.savefig(filename)
@@ -1787,7 +1849,7 @@ class GlabPythonManager():
         ax.axis([float(params['FA?']),float(params['FB?']),-100.,0])
         ax.xaxis.set_ticks(np.linspace(float(params['FA?']),float(params['FB?']),11))
         ax.yaxis.set_ticks(np.linspace(-100,0,11))
-        ax.text(0,-10,'Refrence Level:'+str(params['RL?'])+'\n Rsolution Bandwidth:'+str(params['RB?']))
+        ax.text(float(params['FA?']),-10,'Refrence Level:'+str(params['RL?'])+'\n Rsolution Bandwidth:'+str(params['RB?']))
         plt.show(block=False)
         plt.savefig(filename)
         print "Figure saved. No fitting performed."
@@ -2249,6 +2311,8 @@ debug=True
 active_xtsm = ''
 
 theBeast=GlabPythonManager()
-theBeast.run()
-
+try:
+    theBeast.run()
+except KeyboardInterrupt:
+    pass
 

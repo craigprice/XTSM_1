@@ -1574,8 +1574,8 @@ function Hdiode_code_tree(html_div, sources) {
         // here we will request new xtsm no matter what the status of the browser lock is; obviously the user wants new data.
 		var pxi_dc;
 		pxi_dc = document.getElementById('pxi_dc').value;
-		var get_shotnumber = newval + this.owner.running_shot.value;
-		console.log("request_xtsm " + "this.owner.shotnumber_browse " + this.owner.shotnumber_browse + " this.owner.running_shot " + this.owner.running_shot + ", " + get_shotnumber.toString() + ", " + newval);
+		var get_shotnumber = newval + parseInt(this.owner.running_shot);
+		console.log("request_xtsm " + "this.owner.shotnumber_browse " + this.owner.shotnumber_browse + " this.owner.running_shot " + this.owner.running_shot + ", " + get_shotnumber + ", " + newval);
         document.getElementById("server_push_output_textarea").sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + get_shotnumber + '"}');
     }
     this.update_shotnumber_browse = update_shotnumber_browse;
