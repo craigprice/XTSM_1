@@ -115,10 +115,10 @@ function websocketize(target,arg) {
     target.socket.onopen = onopencall;
     target.socket.onclose = onclosecall;
 	if (typeof reconimg_ws === 'undefined') {
-		reconimg_ws = target.parentNode.parentNode.insertBefore(document.createElement('img'), target.parentNode);
-		reconimg_ws.src = "../images/seqicon_refresh.png";
-		reconimg_ws.height = 15;
-		reconimg_ws.onclick = target.ReopenSocket;
+    var reconimg = target.parentNode.parentNode.insertBefore(document.createElement('img'), target.parentNode);
+    reconimg.src = "../images/seqicon_refresh.png";
+    reconimg.height = 15;
+    reconimg.onclick = target.ReopenSocket;
 	}
 
     target.log = function (message) {
@@ -194,18 +194,18 @@ function CommandLibrary(arg) {
 
     function shotnumber(sn) {
 		console.log('shotnumber');
-        arg.running_shot = sn;
+        arg.running_shot = sn - 1;
         //arg.shotnumber_browse = arg.running_shot + Number($("#toolbar").contents().find("#shotnumber_browse_input").val());
         arg.shotnumber_browse = Number($("#toolbar").contents().find("#shotnumber_browse_input").val());//CP 2014-11-19
-        mes = "Exp. Control - Shot " + (sn) + " Running";
+        mes = "Exp. Control - Shot " + (sn - 1) + " Running";
         document.title = mes;
         this.server_console(mes);
 		var pxi_dc;
 		pxi_dc = document.getElementById('pxi_dc').value;
-        $("#toolbar").contents().find("#toolpanel_statusbar").html("Shot " + (sn) + " Running");
+        $("#toolbar").contents().find("#toolpanel_statusbar").html("Shot " + (sn - 1) + " Running");
         if (!arg.shotnumber_lock) {
 			console.log('sending request_xtsm');
-            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + arg.shotnumber_browse + arg.running_shot + '"}');
+            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","shotnumber":"' + arg.shotnumber_browse + '"}');
         }
     };
     this.shotnumber = shotnumber;
@@ -223,7 +223,7 @@ function CommandLibrary(arg) {
 			var pxi_dc;
 			pxi_dc = document.getElementById('pxi_dc').value;
 			console.log('sending request_xtsm');
-            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + arg.shotnumber_browse + arg.running_shot + '"}');
+            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","shotnumber":"' + arg.shotnumber_browse + '"}');
         }
     };
     this.xtsm_change = xtsm_change;
@@ -234,8 +234,7 @@ function CommandLibrary(arg) {
 		console.log('arg.shotnumber_browse ' + arg.shotnumber_browse);
 		console.log("pay['shotnumber'] "+pay['shotnumber']);
 		console.log("arg.running_shot "+arg.running_shot);
-        //if ((arg.shotnumber_browse === pay['shotnumber']) && (!arg.shotnumber_lock)) { TODO: still update the xtsm when looking at past shots
-        if ((arg.shotnumber_browse === 0) && (!arg.shotnumber_lock)) {
+        if (arg.shotnumber_browse === pay['shotnumber']) {
 			console.log('updating XTSM. '+ 'shotnumber: ' +  pay['shotnumber']);
             arg.xml_string = pay['xtsm'];
             arg.update_editor();
@@ -1516,7 +1515,7 @@ function Hdiode_code_tree(html_div, sources) {
         this.textarea.value = this.xml_string;
         //Tool Panel
         this.toolpanel = document.createElement("IFRAME");
-        this.toolpanel.setAttribute("style", "position: fixed; right: 10px; top: 10px; z-index:999;background-color:#ffcccc;");
+        this.toolpanel.setAttribute("style", "position: fixed; right: 10px; bottom: 10px; z-index:999;background-color:#ffcccc;");
         this.toolpanel.setAttribute("id", "toolbar");
         document.body.appendChild(this.toolpanel);
         this.toolpaneldoc = document.getElementById("toolbar").contentDocument;
