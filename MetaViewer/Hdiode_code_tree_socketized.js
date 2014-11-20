@@ -195,7 +195,8 @@ function CommandLibrary(arg) {
     function shotnumber(sn) {
 		console.log('shotnumber');
         arg.running_shot = sn;
-        arg.shotnumber_browse = arg.running_shot + Number($("#toolbar").contents().find("#shotnumber_browse_input").val());
+        //arg.shotnumber_browse = arg.running_shot + Number($("#toolbar").contents().find("#shotnumber_browse_input").val());
+        arg.shotnumber_browse = Number($("#toolbar").contents().find("#shotnumber_browse_input").val());//CP 2014-11-19
         mes = "Exp. Control - Shot " + (sn) + " Running";
         document.title = mes;
         this.server_console(mes);
@@ -204,7 +205,7 @@ function CommandLibrary(arg) {
         $("#toolbar").contents().find("#toolpanel_statusbar").html("Shot " + (sn) + " Running");
         if (!arg.shotnumber_lock) {
 			console.log('sending request_xtsm');
-            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + arg.shotnumber_browse + '"}');
+            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + arg.shotnumber_browse + arg.running_shot + '"}');
         }
     };
     this.shotnumber = shotnumber;
@@ -221,7 +222,7 @@ function CommandLibrary(arg) {
 			var pxi_dc;
 			pxi_dc = document.getElementById('pxi_dc').value;
 			console.log('sending request_xtsm');
-            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + arg.shotnumber_browse + '"}');
+            this.owner.sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + arg.shotnumber_browse + arg.running_shot + '"}');
         }
     };
     this.xtsm_change = xtsm_change;
@@ -229,7 +230,10 @@ function CommandLibrary(arg) {
     function xtsm_return(pay) {
 		console.log('inside xtsm_return');
         pay = jQuery.parseJSON(pay);
-        if (arg.shotnumber_browse === pay['shotnumber']) {
+		console.log('arg.shotnumber_browse ' + arg.shotnumber_browse);
+		console.log("pay['shotnumber'] "+pay['shotnumber']);
+		console.log("arg.running_shot "+arg.running_shot);
+        if ((arg.shotnumber_browse === 0) && (!arg.shotnumber_lock)) {
 			console.log('updating XTSM. '+ 'shotnumber: ' +  pay['shotnumber']);
             arg.xml_string = pay['xtsm'];
             arg.update_editor();
@@ -1511,7 +1515,7 @@ function Hdiode_code_tree(html_div, sources) {
         this.textarea.value = this.xml_string;
         //Tool Panel
         this.toolpanel = document.createElement("IFRAME");
-        this.toolpanel.setAttribute("style", "position: fixed; right: 10px; bottom: 10px; z-index:999;background-color:#ffcccc;");
+        this.toolpanel.setAttribute("style", "position: fixed; right: 10px; top: 10px; z-index:999;background-color:#ffcccc;");
         this.toolpanel.setAttribute("id", "toolbar");
         document.body.appendChild(this.toolpanel);
         this.toolpaneldoc = document.getElementById("toolbar").contentDocument;
@@ -1570,7 +1574,9 @@ function Hdiode_code_tree(html_div, sources) {
         // here we will request new xtsm no matter what the status of the browser lock is; obviously the user wants new data.
 		var pxi_dc;
 		pxi_dc = document.getElementById('pxi_dc').value;
-        document.getElementById("server_push_output_textarea").sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + this.owner.shotnumber_browse.toString() + '"}');
+		var get_shotnumber = newval + this.owner.running_shot.value;
+		console.log("request_xtsm " + "this.owner.shotnumber_browse " + this.owner.shotnumber_browse + " this.owner.running_shot " + this.owner.running_shot + ", " + get_shotnumber.toString() + ", " + newval);
+        document.getElementById("server_push_output_textarea").sendText('{"IDLSocket_ResponseFunction":"request_xtsm","data_context":"' + pxi_dc + '","shotnumber":"' + get_shotnumber + '"}');
     }
     this.update_shotnumber_browse = update_shotnumber_browse;
 
