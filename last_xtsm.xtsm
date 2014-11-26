@@ -1,0 +1,2114 @@
+<XTSM expanded="1" Note="Variables Parsed by IDL at Sun Aug 05 18:52:03 2012 in 84.908000 s.">
+  
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>700</Value>
+    <Name>ImageScaleFullMax</Name>
+  </Parameter>
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>0</Value>
+    <Name>ImageScaleFullMin</Name>
+  </Parameter>
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>100</Value>
+    <Name>ImageScaleZoomMax</Name>
+  </Parameter>
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>-100</Value>
+    <Name>ImageScaleZoomMin</Name>
+  </Parameter>
+  <head expanded="1">
+    <PreParseInstructions expanded="0">
+      <ParserCommand expanded="1">
+        <Name/>
+        <Value/>
+        <Value/>
+      </ParserCommand>
+    </PreParseInstructions>
+    <PostParseInstructions expanded="0">
+      <ParserCommand expanded="0">
+        <Description>Combine timing strings from timing groups with the delay train. You must list names of groups to combine (each in a seperate "value" field), including the delay train group. These groups must have the same number of updates. You can optionally include integer values for a byte-length-per-value, along with filler position and filler length, the latter two of which can be repeated indefinitely. For more info, see the parser's Command_Library.</Description>
+        <Name>combine_with_delaytrain</Name>
+        <Value>RIO01/sync</Value>
+        <Value>RIO01/delaytrain</Value>
+        <Value>8</Value>
+        <Value>1</Value>
+        <Value>3</Value>
+      </ParserCommand>
+    </PostParseInstructions>
+    <ChannelMap expanded="0">
+      <TimingGroupData expanded="0">
+        <Description expanded="1">PXIe-6536 Digital Output Board - 32 channels digital @ 200ns resolution.  Used to clock all analog output groups except two output channels on the PXIe-6124 multifunction card, remaining 29 outputs are for general purpose use in experiment</Description>
+        <Name expanded="1">PXI1Slot2/port0:3</Name>
+        <ClockedBy expanded="1">/PXI1Slot2/PXI_Trig7</ClockedBy>
+        <GroupNumber expanded="1">2</GroupNumber>
+        <ChannelCount expanded="1">32</ChannelCount>
+        <DACCalibration expanded="1"/>
+        <Range expanded="1">5</Range>
+        <ResolutionBits expanded="1">1</ResolutionBits>
+        <ClockPeriod expanded="1">0.0002</ClockPeriod>
+        <ParserInstructions expanded="1">
+          <RepresentAsInteger expanded="1">yes</RepresentAsInteger>
+        </ParserInstructions>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PFI1</ChannelName>
+        <Comments expanded="1">Sample clock from pxie-6536 to slot6 pxi-6733 - physically wired from output 0 to PFI1</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PFI2</ChannelName>
+        <Comments expanded="1">Sample clock to slot7 pxi-6723 - physically wired from output to PFI2</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PFI3</ChannelName>
+        <Comments expanded="1">Sample clock to slot8 pxi-6733 - physically wired from output to PFI3</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">2</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO03</Name>
+        <ChannelName expanded="1">FingerCCDTrigger</ChannelName>
+        <Comments expanded="1">Digital Output port 0 line 3</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">3</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO04</Name>
+        <ChannelName expanded="1">ScopeTrigger</ChannelName>
+        <Comments expanded="1">Digital Output port 0 line 4</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">4</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO05</Name>
+        <ChannelName expanded="1">DetectionShutter</ChannelName>
+        <Comments expanded="1">Delay time of 2 ms. 220us to open.</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">5</TimingGroupIndex>
+        <ConnectsTo expanded="1">Shutter 3 on rack mounted shutter control box</ConnectsTo>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO07</Name>
+        <ChannelName expanded="1">MOTShutter</ChannelName>
+        <Comments expanded="1">No light after 0.23ms. 1.18ms delay time.</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">7</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO06</Name>
+        <ChannelName expanded="1">FingerMolassesShutter</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">6</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO08</Name>
+        <ChannelName expanded="1">VerticalLatticeShutter</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">8</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO09</Name>
+        <ChannelName expanded="1">SRCLatticeShutter</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">9</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO10</Name>
+        <ChannelName expanded="1">RSCOptPumpShutter</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">10</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">RSCDepumpShutter</ChannelName>
+        <Comments expanded="1">Shutter delay time: 1.9 ms, rising time: 400 us</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">11</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">MOTRepumperShutter</ChannelName>
+        <Comments expanded="1">1.7ms delay to begin closing. 2.3ms delay to extinguish light</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">12</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">UHVCCDTrigger</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">13</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">UHVCameraShutter</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">15</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">1</HoldingValue>
+        <InitialValue expanded="1">1</InitialValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">UHVCoilSwitch</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">24</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">1</HoldingValue>
+        <InitialValue expanded="1">1</InitialValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">UHVCoilSwitchNorth</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">25</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">1</HoldingValue>
+        <InitialValue expanded="1">1</InitialValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">RIO01/sync</Name>
+        <Description expanded="1">FPGA - based synchronous commands - upper half of the FPGA .vi; master clock source for experiment.  PXI-7951R, slot 5</Description>
+        <ClockedBy expanded="1">RIO_DelayTrain</ClockedBy>
+        <ClockPeriod expanded="1">0.0000125</ClockPeriod>
+        <GroupNumber expanded="1">6</GroupNumber>
+        <ChannelCount expanded="1">8</ChannelCount>
+        <DACCalibration expanded="1"/>
+        <Range expanded="1">5</Range>
+        <ResolutionBits expanded="1">1</ResolutionBits>
+        <ParserInstructions expanded="1">
+          <RepresentAsInteger expanded="1">yes</RepresentAsInteger>
+          <SparseControlArray expanded="1">no</SparseControlArray>
+          <Pulser expanded="1">yes</Pulser>
+        </ParserInstructions>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PXI_Trig7</ChannelName>
+        <Comments expanded="1">Analog Output Sample Clock Signal - clocks the PXIe 6124 analog output sample clock</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">6</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PXI_Trig6</ChannelName>
+        <Comments expanded="1">Multifunction Analog Input Sample Clock Signal - clocks the PXIe 6124 analog input sample clock</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">6</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PXI_Trig5</ChannelName>
+        <Comments expanded="1">Multifunction Analog Output Sample Clock Signal - clocks the PXIe 6124 analog output sample clock</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">6</TimingGroup>
+        <TimingGroupIndex expanded="1">2</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">FractionalNClockTrain</ChannelName>
+        <Comments expanded="1">Triggers update of fractional-N synthesizer dividers for oscillator control </Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">6</TimingGroup>
+        <TimingGroupIndex expanded="1">3</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">RIO01/delaytrain</Name>
+        <Description expanded="1">FPGA - based delay train generator - upper half of the FPGA .vi; master clock source for experiment.  PXI-7951R, slot 5</Description>
+        <DelayTrain expanded="1">yes</DelayTrain>
+        <ClockedBy expanded="1">self</ClockedBy>
+        <ClockPeriod expanded="1">0.00001250</ClockPeriod>
+        <GroupNumber expanded="1">0</GroupNumber>
+        <ChannelCount expanded="1">1</ChannelCount>
+        <DACCalibration expanded="1"/>
+        <Range expanded="1">5</Range>
+        <ResolutionBits expanded="1">32</ResolutionBits>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">RIO_DelayTrain</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">0</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">PXI1Slot3/ao0:1</Name>
+        <Description expanded="1">PXI-6124 - 2 output analog board, -10/+10V 16-bit output resolution, timing resolution 400ns</Description>
+        <ClockedBy expanded="1">/PXI1Slot2/PXI_Trig5</ClockedBy>
+        <GroupNumber expanded="1">1</GroupNumber>
+        <ChannelCount expanded="1">2</ChannelCount>
+        <DACCalibration expanded="1">3244.9</DACCalibration>
+        <Range expanded="1">20</Range>
+        <ResolutionBits expanded="1">16</ResolutionBits>
+        <ActiveClockEdge expanded="1">rise</ActiveClockEdge>
+        <ClockPeriod expanded="1">0.0004</ClockPeriod>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">GuideBeamSine</ChannelName>
+        <Comments expanded="1">Channel 0 of Multifunction AO.</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">1</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">GuideBeamCosine</ChannelName>
+        <Comments expanded="1">Channel 1 of Multifunction AO</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">1</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">PXI1Slot6/ao0:31</Name>
+        <Description expanded="1">PXI-6723 - 32 output analog board, -10/+10V 13-bit output resolution, timing resolution 20us </Description>
+        <ClockedBy expanded="1">/PXI1Slot2/PFI1</ClockedBy>
+        <GroupNumber expanded="1">3</GroupNumber>
+        <ChannelCount expanded="1">32</ChannelCount>
+        <DACCalibration expanded="1">401.5</DACCalibration>
+        <Range expanded="1">20</Range>
+        <ResolutionBits expanded="1">13</ResolutionBits>
+        <ActiveClockEdge expanded="1">rise</ActiveClockEdge>
+        <ClockPeriod expanded="1">0.02</ClockPeriod>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO0</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO1</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO2</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">2</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO3</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">3</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO4</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">4</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO5</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">5</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO6</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">6</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO7</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">7</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SYMOTRepumperAmplitude</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">8</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SYMOTAmplitude</ChannelName>
+        <Comments expanded="1">1/e fall time = 3us. Light begins to shut off 18.5us after control signal sent.</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">9</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Finger Molasses AOM Amplitude</Name>
+        <ChannelName expanded="1">SYUHVMOTAmplitude</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">10</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">SrcMOTCoil</ChannelName>
+        <Comments expanded="1">Turn off time 170us. Delay time 40us.</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">11</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">4.5</InitialValue>
+        <HoldingValue expanded="1">4.5</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">SRCCompCoilNorthSouth</ChannelName>
+        <Comments expanded="1">Connect to control input of Compensation coil controller. Generate field along x direction. 92 mG/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">12</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 169 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">0.7</InitialValue>
+        <HoldingValue expanded="1">0.7</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">SRCCompCoilUpDown</ChannelName>
+        <Comments expanded="1">Generate field along vertical direction. 125 mG/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">13</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 171 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">2.1</InitialValue>
+        <HoldingValue expanded="1">2.1</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">SRCCompCoilEastWest</ChannelName>
+        <Comments expanded="1">Generate field towards the window. 173 mG/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">14</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 170 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">-0.5031</InitialValue>
+        <HoldingValue expanded="1">-0.5031</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">UHVCompCoilNorthSouth</ChannelName>
+        <Comments expanded="1">Generate field towards the window,for finger holding value at 1.33</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">15</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 168 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">-3.5</InitialValue>
+        <HoldingValue expanded="1">3.345</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">UHVCompCoilUpDown</ChannelName>
+        <Comments expanded="1">Generate field towards the window, holding for finger -4</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">16</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 167 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">-9.5</InitialValue>
+        <HoldingValue expanded="1">-1.8</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">UHVCompCoilEastWest</ChannelName>
+        <Comments expanded="1">Generate field towards the window, holding for figner -1.5</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">17</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 164 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">4</InitialValue>
+        <HoldingValue expanded="1">-0.703</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SYDetectionAOM</ChannelName>
+        <Comments expanded="1">Generate field towards the window</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">18</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">D1LaserAOM</ChannelName>
+        <Comments expanded="1">Generate field towards the window</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">19</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">UHVCoilCurrentControl</ChannelName>
+        <Comments expanded="1">2A/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">20</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">2.5</InitialValue>
+        <HoldingValue expanded="1">2.5</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SYLatticeOpticalPumping</ChannelName>
+        <Comments expanded="1">Falling Time: 17 us ; Rising Time: 3 ms. contrast: 1000:1</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">21</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SYLatticeDepumping</ChannelName>
+        <Comments expanded="1">Rising Time:150 us ; Falling Time: 6 us;  Contrast:1000:1</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">22</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">GuideBeamUpAmp</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">23</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">-0.04</InitialValue>
+        <HoldingValue expanded="1">-0.04</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">GuideBeamDownAmp</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">24</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">PXI1Slot7/ao0:7</Name>
+        <Description expanded="1">PXI-6723 - 8 output analog board, -10/+10V 16-bit output resolution, timing resolution 2us </Description>
+        <ClockedBy expanded="1">/PXI1Slot2/PFI2</ClockedBy>
+        <GroupNumber expanded="1">4</GroupNumber>
+        <ChannelCount expanded="1">8</ChannelCount>
+        <DACCalibration expanded="1">3276.8</DACCalibration>
+        <Range expanded="1">20</Range>
+        <ResolutionBits expanded="1">16</ResolutionBits>
+        <ActiveClockEdge expanded="1">rise</ActiveClockEdge>
+        <ClockPeriod expanded="1">0.002</ClockPeriod>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">MOTVCOTuning</ChannelName>
+        <Comments expanded="1">73 MHz/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">RepVCOTuning</ChannelName>
+        <Comments expanded="1">120 MHz/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">VerticalLatticeAOM</ChannelName>
+        <Comments expanded="1">Channel 2 of AO (Slot 7). Rising time:3.5us ; Falling: 5 us ; Contrast:1000:1</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">2</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">9.9</InitialValue>
+        <HoldingValue expanded="1">9.9</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SRCLatticeAOM</ChannelName>
+        <Comments expanded="1">Channel 3 of AO (Slot 7)</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">3</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">9.9</InitialValue>
+        <HoldingValue expanded="1">9.9</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot7/AO4</ChannelName>
+        <Comments expanded="1">Channel 1 of AO (Slot 7)</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">4</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot7/AO5</ChannelName>
+        <Comments expanded="1">Channel 1 of AO (Slot 7)</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">5</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot7/AO6</ChannelName>
+        <Comments expanded="1">Channel 1 of AO (Slot 7)</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">6</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot7/AO7</ChannelName>
+        <Comments expanded="1">Channel 7 of AO (Slot 7)</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">7</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">PXI1Slot8/ao0:7</Name>
+        <Description expanded="1">PXI-6723 - 8 output analog board, -10/+10V 16-bit output resolution, timing resolution 2us </Description>
+        <ClockedBy expanded="1">/PXI1Slot2/PFI3</ClockedBy>
+        <GroupNumber expanded="1">5</GroupNumber>
+        <ChannelCount expanded="1">8</ChannelCount>
+        <DACCalibration expanded="1">3276.8</DACCalibration>
+        <Range expanded="1">20</Range>
+        <ResolutionBits expanded="1">16</ResolutionBits>
+        <ActiveClockEdge expanded="1">rise</ActiveClockEdge>
+        <ClockPeriod expanded="1">0.002</ClockPeriod>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO0</ChannelName>
+        <Comments expanded="1">Channel 0 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO1</ChannelName>
+        <Comments expanded="1">Channel 1 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO2</ChannelName>
+        <Comments expanded="1">Channel 2 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">2</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO3</ChannelName>
+        <Comments expanded="1">Channel 3 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">3</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <ChannelName expanded="1">/PXI1Slot8/AO4</ChannelName>
+        <Comments expanded="1">Channel 0 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">4</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO5</ChannelName>
+        <Comments expanded="1">Channel 5 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">5</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO6</ChannelName>
+        <Comments expanded="1">Channel 6 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">6</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO7</ChannelName>
+        <Comments expanded="1">Channel 7 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">7</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+    </ChannelMap>
+    <Instrument lock="1" expanded="1">
+      <ServerIPAddress>10.1.1.178</ServerIPAddress>
+      <OnInstrument>CCD</OnInstrument>
+    </Instrument>
+  </head>
+  <body lock="1" expanded="1" disable="0">
+    <SequenceSelector _parseValue="RSCTOFSeq">'RSCTOFSeq'</SequenceSelector>
+    <Sequence expanded="0">
+      <Name>MolassesTOFSeq</Name>
+      <StartTime>0</StartTime>
+      <EndTime>2000</EndTime>
+      <SubSequence expanded="1">
+        <StartTime expanded="0">0</StartTime>
+        <Name expanded="0">MOT Subsequence</Name>
+        <Description expanded="0">Load MOT in the source and drop to the finger</Description>
+        <Edge expanded="0">
+          <Name expanded="0">NS Compensation </Name>
+          <OnChannel expanded="0">SRCCompCoilNorthSouth</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">0.7</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">EW Compensation </Name>
+          <OnChannel expanded="0">SRCCompCoilEastWest</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">-0.503</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">UD Compensation </Name>
+          <OnChannel expanded="0">SRCCompCoilUpDown</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">2.1</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOTBeamOn_Shutter</Name>
+          <OnChannel expanded="0">MOTShutter</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">1</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOTCoilON</Name>
+          <OnChannel expanded="0">SrcMOTCoil</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">4.4</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOTBeamON</Name>
+          <OnChannel expanded="0">SYMOTAmplitude</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">10</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">RepBeamON</Name>
+          <OnChannel expanded="0">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">10</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOTVCOTuningVoltage</Name>
+          <OnChannel expanded="0">MOTVCOTuning</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">0</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOTVCOTuningVoltage</Name>
+          <OnChannel expanded="0">RepVCOTuning</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">0</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOTVCOTuningVoltage</Name>
+          <OnChannel expanded="0">MOTRepumperShutter</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">1</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1">
+        <StartTime expanded="0">414</StartTime>
+        <Name expanded="0">Compression Subsequence</Name>
+        <Description expanded="0">Compress MOT in the source</Description>
+        <Interval expanded="0">
+          <Name/>
+          <OnChannel>SrcMOTCoil0</OnChannel>
+          <StartTime>0</StartTime>
+          <EndTime>5</EndTime>
+          <Value>0.25*TI+4.5</Value>
+          <Burst>
+            <Pulses/>
+            <Period/>
+            <DutyHigh/>
+            <Amplitude/>
+          </Burst>
+          <TResolution>0.1</TResolution>
+          <VResolution>0.001</VResolution>
+          <Description/>
+          <Comments/>
+        </Interval>
+        <Edge expanded="1">
+          <Name expanded="0">RepBeamON</Name>
+          <OnChannel expanded="0">SYMOTRepumperAmplitude0</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">0.1</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1">
+        <StartTime expanded="0">420</StartTime>
+        <Name expanded="0">Molasses Subsequence</Name>
+        <Description expanded="0"/>
+        <Edge expanded="0">
+          <Name expanded="0">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0">SRCCompCoilNorthSouth</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">0.711</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0">SRCCompCoilEastWest</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">-0.5031</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0">SRCCompCoilUpDown</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">2.3</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">10</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0">SYMOTAmplitude</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">-0.04</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">Detune for molasses</Name>
+          <OnChannel expanded="0">MOTVCOTuning</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">.05</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOT Coil Off</Name>
+          <OnChannel expanded="0">SrcMOTCoil</OnChannel>
+          <Time expanded="0">0.04</Time>
+          <Value expanded="0">-1</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">Molasses Beam On AOM</Name>
+          <OnChannel expanded="0">SYMOTAmplitude</OnChannel>
+          <Time expanded="0">0</Time>
+          <Value expanded="0">10</Value>
+        </Edge>
+        <Interval expanded="0">
+          <OnChannel>MOTVCOTuning</OnChannel>
+          <StartTime>2</StartTime>
+          <EndTime>2.4</EndTime>
+          <Value>0.05+5.375*TI</Value>
+          <VResolution>0.002</VResolution>
+          <TResolution>0.004</TResolution>
+        </Interval>
+        <Edge expanded="0">
+          <Name expanded="0">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0">SYMOTAmplitude</OnChannel>
+          <Time expanded="0">3</Time>
+          <Value expanded="0">1</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0">SYMOTAmplitude</OnChannel>
+          <Time expanded="0">5</Time>
+          <Value expanded="0">-0.04</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0">5</Time>
+          <Value expanded="0">-0.04</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0">MOTShutter</OnChannel>
+          <Time expanded="0">5</Time>
+          <Value expanded="0">0</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0">MOTRepumperShutter</OnChannel>
+          <Time expanded="0">4</Time>
+          <Value expanded="0">0</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1">
+        <StartTime expanded="0">425</StartTime>
+        <Name expanded="0">Detection Subsequence</Name>
+        <Description expanded="0">Detect atoms by time of flight</Description>
+        <Edge expanded="0">
+          <Name expanded="0">MOT Laser to resonance</Name>
+          <OnChannel expanded="0">MOTRepumperShutter</OnChannel>
+          <Time expanded="0">34</Time>
+          <Value expanded="0">1</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">MOT Laser to resonance</Name>
+          <OnChannel expanded="0">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0">36</Time>
+          <Value expanded="0">10</Value>
+        </Edge>
+        <Interval expanded="0">
+          <OnChannel>MOTVCOTuning</OnChannel>
+          <StartTime>36</StartTime>
+          <EndTime>36.5</EndTime>
+          <Value>(-0.32-2.2)/0.5 *TI+2.2</Value>
+          <VResolution>0.002</VResolution>
+          <TResolution>0.004</TResolution>
+        </Interval>
+        <Edge expanded="0">
+          <Name expanded="0">TOF Detection Beam Off AOM</Name>
+          <OnChannel expanded="0">SYDetectionAOM</OnChannel>
+          <Time expanded="0">36</Time>
+          <Value expanded="0">-0.04</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">NS Compensation </Name>
+          <OnChannel expanded="0">SRCCompCoilNorthSouth</OnChannel>
+          <Time expanded="0">34</Time>
+          <Value expanded="0">5</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">TOF Detection Shutter Open</Name>
+          <OnChannel expanded="0">DetectionShutter</OnChannel>
+          <Time expanded="0">44</Time>
+          <Value expanded="0">1</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">TOF Detection Beam On AOM</Name>
+          <OnChannel expanded="0">SYDetectionAOM</OnChannel>
+          <Time expanded="0">46</Time>
+          <Value expanded="0">1.5</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">TOF Scope Trigger</Name>
+          <OnChannel expanded="0">ScopeTrigger</OnChannel>
+          <Time expanded="0">100</Time>
+          <Value expanded="0">1</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">TOF Scope Trigger</Name>
+          <OnChannel expanded="0">UHVCCDTrigger</OnChannel>
+          <Time expanded="0">100</Time>
+          <Value expanded="0">1</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">TOF Detection Beam Off AOM</Name>
+          <OnChannel expanded="0">SYDetectionAOM</OnChannel>
+          <Time expanded="0">196</Time>
+          <Value expanded="0">-0.04</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">TOF Detection Shutter Closed</Name>
+          <OnChannel expanded="0">DetectionShutter</OnChannel>
+          <Time expanded="0">294</Time>
+          <Value expanded="0">0</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">NS Compensation (No change)</Name>
+          <OnChannel expanded="0">SRCCompCoilNorthSouth</OnChannel>
+          <Time expanded="0">296</Time>
+          <Value expanded="0">0.711</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">TOF Detection Beam On AOM</Name>
+          <OnChannel expanded="0">SYDetectionAOM</OnChannel>
+          <Time expanded="0">296</Time>
+          <Value expanded="0">10</Value>
+        </Edge>
+        <Edge expanded="0">
+          <Name expanded="0">Close Repumper shutter</Name>
+          <OnChannel expanded="0">MOTRepumperShutter</OnChannel>
+          <Time expanded="0">296</Time>
+          <Value expanded="0">0</Value>
+        </Edge>
+      </SubSequence>
+    </Sequence>
+    <Sequence expanded="1" guid="f1a70230-7056-11e4-b231-0010187736b5">
+      <Name guid="f1a70231-7056-11e4-a92b-0010187736b5">RSCTOFSeq</Name>
+      <StartTime guid="f1a72940-7056-11e4-9160-0010187736b5">0</StartTime>
+      <EndTime guid="f1a72941-7056-11e4-890d-0010187736b5">2500</EndTime>
+      <SubSequence expanded="1" guid="f1a72942-7056-11e4-a365-0010187736b5">
+        <StartTime expanded="0" guid="f1a72943-7056-11e4-919e-0010187736b5">0</StartTime>
+        <Name expanded="0" guid="f1a72944-7056-11e4-9cda-0010187736b5">MOT Subsequence</Name>
+        <Description expanded="0" guid="f1a72945-7056-11e4-bac4-0010187736b5">Load MOT in the source and drop to the finger</Description>
+        <Edge expanded="0" guid="f1a72946-7056-11e4-aebb-0010187736b5">
+          <Name expanded="0" guid="f1a72947-7056-11e4-bebc-0010187736b5">NS Compensation </Name>
+          <OnChannel expanded="0" guid="f1a72948-7056-11e4-b0e7-0010187736b5">SRCCompCoilNorthSouth</OnChannel>
+          <Time expanded="0" guid="f1a72949-7056-11e4-bbcb-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a7294a-7056-11e4-88f2-0010187736b5">8</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a7294b-7056-11e4-aeed-0010187736b5">
+          <Name expanded="0" guid="f1a7294c-7056-11e4-805d-0010187736b5">EW Compensation </Name>
+          <OnChannel expanded="0" guid="f1a7294d-7056-11e4-967c-0010187736b5">SRCCompCoilEastWest</OnChannel>
+          <Time expanded="0" guid="f1a7294e-7056-11e4-905a-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a7294f-7056-11e4-8a47-0010187736b5">-0.5031</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a72950-7056-11e4-9d94-0010187736b5">
+          <Name expanded="0" guid="f1a72951-7056-11e4-b531-0010187736b5">UD Compensation </Name>
+          <OnChannel expanded="0" guid="f1a72952-7056-11e4-8ff8-0010187736b5">SRCCompCoilUpDown</OnChannel>
+          <Time expanded="0" guid="f1a72953-7056-11e4-9feb-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a72954-7056-11e4-b8f1-0010187736b5">2.1+8</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a72955-7056-11e4-8ff1-0010187736b5">
+          <Name expanded="0" guid="f1a72956-7056-11e4-9b5c-0010187736b5">MOTBeamOn_Shutter</Name>
+          <OnChannel expanded="0" guid="f1a72957-7056-11e4-9780-0010187736b5">MOTShutter</OnChannel>
+          <Time expanded="0" guid="f1a72958-7056-11e4-bf39-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a75051-7056-11e4-aff6-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a75052-7056-11e4-b024-0010187736b5">
+          <Name expanded="0" guid="f1a75053-7056-11e4-9a09-0010187736b5">MOTCoilON</Name>
+          <OnChannel expanded="0" guid="f1a75054-7056-11e4-bf34-0010187736b5">SrcMOTCoil</OnChannel>
+          <Time expanded="0" guid="f1a75055-7056-11e4-bb0d-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a75056-7056-11e4-9e94-0010187736b5">4.4</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a75057-7056-11e4-80c3-0010187736b5">
+          <Name expanded="0" guid="f1a75058-7056-11e4-9a6d-0010187736b5">MOTBeamON</Name>
+          <OnChannel expanded="0" guid="f1a75059-7056-11e4-bc09-0010187736b5">SYMOTAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a7505a-7056-11e4-9aba-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a7505b-7056-11e4-b1a1-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a7505c-7056-11e4-b425-0010187736b5">
+          <Name expanded="0" guid="f1a7505d-7056-11e4-93d4-0010187736b5">RepBeamON</Name>
+          <OnChannel expanded="0" guid="f1a7505e-7056-11e4-8017-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a7505f-7056-11e4-b65e-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a75060-7056-11e4-9a57-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a75061-7056-11e4-ba4b-0010187736b5">
+          <Name expanded="0" guid="f1a75062-7056-11e4-88e1-0010187736b5">MOTVCOTuningVoltage</Name>
+          <OnChannel expanded="0" guid="f1a75063-7056-11e4-942e-0010187736b5">MOTVCOTuning</OnChannel>
+          <Time expanded="0" guid="f1a75064-7056-11e4-a752-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a75065-7056-11e4-8314-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a75066-7056-11e4-a846-0010187736b5">
+          <Name expanded="0" guid="f1a75067-7056-11e4-81fc-0010187736b5">MOTVCOTuningVoltage</Name>
+          <OnChannel expanded="0" guid="f1a77761-7056-11e4-8939-0010187736b5">RepVCOTuning</OnChannel>
+          <Time expanded="0" guid="f1a77762-7056-11e4-97fd-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a77763-7056-11e4-9db4-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a77764-7056-11e4-9a63-0010187736b5">
+          <Name expanded="0" guid="f1a77765-7056-11e4-9841-0010187736b5">MOTVCOTuningVoltage</Name>
+          <OnChannel expanded="0" guid="f1a77766-7056-11e4-920b-0010187736b5">MOTRepumperShutter</OnChannel>
+          <Time expanded="0" guid="f1a77767-7056-11e4-9b7e-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a77768-7056-11e4-b858-0010187736b5">1</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1" guid="f1a77769-7056-11e4-a763-0010187736b5">
+        <StartTime expanded="0" guid="f1a7776a-7056-11e4-8709-0010187736b5">390</StartTime>
+        <Name expanded="0" guid="f1a7776b-7056-11e4-8a92-0010187736b5">Compression Subsequence</Name>
+        <Description expanded="0" guid="f1a7776c-7056-11e4-9026-0010187736b5">Compress MOT in the source</Description>
+        <Interval guid="f1a7776d-7056-11e4-86da-0010187736b5" expanded="0">
+          <Name guid="f1a7776e-7056-11e4-829f-0010187736b5"/>
+          <OnChannel guid="f1a7776f-7056-11e4-a1ad-0010187736b5">SrcMOTCoil</OnChannel>
+          <StartTime guid="f1a77770-7056-11e4-a640-0010187736b5">0</StartTime>
+          <EndTime guid="f1a77771-7056-11e4-93e8-0010187736b5">15</EndTime>
+          <Value guid="f1a77772-7056-11e4-b606-0010187736b5">4.4+ (7-4.4)/15*TI</Value>
+          <Burst guid="f1a77773-7056-11e4-ae06-0010187736b5">
+            <Pulses guid="f1a77774-7056-11e4-a44f-0010187736b5"/>
+            <Period guid="f1a77775-7056-11e4-ba99-0010187736b5"/>
+            <DutyHigh guid="f1a77776-7056-11e4-9fad-0010187736b5"/>
+            <Amplitude guid="f1a77777-7056-11e4-94e5-0010187736b5"/>
+          </Burst>
+          <TResolution guid="f1a77778-7056-11e4-bd97-0010187736b5">0.025</TResolution>
+          <VResolution guid="f1a79e70-7056-11e4-b3cb-0010187736b5">0.001</VResolution>
+          <Description guid="f1a79e71-7056-11e4-9752-0010187736b5"/>
+          <Comments guid="f1a79e72-7056-11e4-a031-0010187736b5"/>
+        </Interval>
+        <Edge expanded="0" guid="f1a79e73-7056-11e4-beab-0010187736b5">
+          <Name expanded="0" guid="f1a79e74-7056-11e4-9c3f-0010187736b5">RepBeamON</Name>
+          <OnChannel expanded="0" guid="f1a79e75-7056-11e4-a849-0010187736b5">SYMOTAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a79e76-7056-11e4-8138-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a79e77-7056-11e4-b22c-0010187736b5">1.5</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a79e78-7056-11e4-bdee-0010187736b5">
+          <Name expanded="0" guid="f1a79e79-7056-11e4-b4a9-0010187736b5">RepBeamON</Name>
+          <OnChannel expanded="0" guid="f1a79e7a-7056-11e4-b7be-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a79e7b-7056-11e4-ab9b-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a79e7c-7056-11e4-9e53-0010187736b5">0.2</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1" guid="f1a79e7d-7056-11e4-9c1e-0010187736b5">
+        <StartTime expanded="0" guid="f1a79e7e-7056-11e4-a3e1-0010187736b5">420</StartTime>
+        <Name expanded="0" guid="f1a79e7f-7056-11e4-a350-0010187736b5">Molasses Subsequence</Name>
+        <Description guid="f1a79e80-7056-11e4-9b52-0010187736b5" expanded="0"/>
+        <Edge expanded="0" guid="f1a79e81-7056-11e4-b907-0010187736b5">
+          <Name expanded="0" guid="f1a79e82-7056-11e4-9320-0010187736b5">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0" guid="f1a79e83-7056-11e4-ae33-0010187736b5">SRCCompCoilNorthSouth</OnChannel>
+          <Time expanded="0" guid="f1a79e84-7056-11e4-a6f6-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a79e85-7056-11e4-97a6-0010187736b5">0.711</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a79e86-7056-11e4-82ca-0010187736b5">
+          <Name expanded="0" guid="f1a79e87-7056-11e4-882c-0010187736b5">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0" guid="f1a7c580-7056-11e4-943b-0010187736b5">SRCCompCoilUpDown</OnChannel>
+          <Time expanded="0" guid="f1a7c581-7056-11e4-8f1c-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a7c582-7056-11e4-ac7a-0010187736b5">2.5</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a7c583-7056-11e4-8098-0010187736b5">
+          <Name expanded="0" guid="f1a7c584-7056-11e4-ac28-0010187736b5">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0" guid="f1a7c585-7056-11e4-b0a2-0010187736b5">SRCCompCoilEastWest</OnChannel>
+          <Time expanded="0" guid="f1a7c586-7056-11e4-8fbf-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a7c587-7056-11e4-aa6b-0010187736b5">-0.5031</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a7c588-7056-11e4-a473-0010187736b5">
+          <Name expanded="0" guid="f1a7c589-7056-11e4-8d37-0010187736b5">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0" guid="f1a7c58a-7056-11e4-9b92-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a7c58b-7056-11e4-b516-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a7c58c-7056-11e4-9698-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a7c58d-7056-11e4-8041-0010187736b5">
+          <Name expanded="0" guid="f1a7c58e-7056-11e4-a8ad-0010187736b5">MOT Beam OFF AOM</Name>
+          <OnChannel expanded="0" guid="f1a7c58f-7056-11e4-98f5-0010187736b5">SYMOTAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a7c590-7056-11e4-9dd8-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a7c591-7056-11e4-a2a6-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a7c592-7056-11e4-acde-0010187736b5">
+          <Name expanded="0" guid="f1a7c593-7056-11e4-af00-0010187736b5">Detune for molasses</Name>
+          <OnChannel expanded="0" guid="f1a7c594-7056-11e4-91d4-0010187736b5">MOTVCOTuning</OnChannel>
+          <Time expanded="0" guid="f1a7c595-7056-11e4-aec2-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a7c596-7056-11e4-873b-0010187736b5">.05</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a7c597-7056-11e4-b5bb-0010187736b5">
+          <Name expanded="0" guid="f1a7c598-7056-11e4-91bf-0010187736b5">MOT Coil Off</Name>
+          <OnChannel expanded="0" guid="f1a7ec8f-7056-11e4-9f72-0010187736b5">SrcMOTCoil</OnChannel>
+          <Time expanded="0" guid="f1a7ec90-7056-11e4-a187-0010187736b5">0.04</Time>
+          <Value expanded="0" guid="f1a7ec91-7056-11e4-8f3b-0010187736b5">-1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a7ec92-7056-11e4-b190-0010187736b5">
+          <Name expanded="0" guid="f1a7ec93-7056-11e4-93d6-0010187736b5">Molasses Beam On AOM</Name>
+          <OnChannel expanded="0" guid="f1a7ec94-7056-11e4-b93c-0010187736b5">SYMOTAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a7ec95-7056-11e4-9074-0010187736b5">0.3</Time>
+          <Value expanded="0" guid="f1a7ec96-7056-11e4-9bf0-0010187736b5">10</Value>
+        </Edge>
+        <Interval expanded="0" guid="f1a7ec97-7056-11e4-a63f-0010187736b5">
+          <OnChannel guid="f1a7ec98-7056-11e4-8f33-0010187736b5">MOTVCOTuning</OnChannel>
+          <StartTime guid="f1a7ec99-7056-11e4-bd96-0010187736b5">2</StartTime>
+          <EndTime guid="f1a7ec9a-7056-11e4-aff3-0010187736b5">2.4</EndTime>
+          <Value guid="f1a7ec9b-7056-11e4-867d-0010187736b5">0.05+5.375*TI</Value>
+          <VResolution guid="f1a7ec9c-7056-11e4-a189-0010187736b5">0.002</VResolution>
+          <TResolution guid="f1a7ec9d-7056-11e4-8d1d-0010187736b5">0.004</TResolution>
+        </Interval>
+        <Edge expanded="0" guid="f1a7ec9e-7056-11e4-b9f3-0010187736b5">
+          <Name expanded="0" guid="f1a7ec9f-7056-11e4-930d-0010187736b5">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0" guid="f1a7eca0-7056-11e4-87c1-0010187736b5">SYMOTAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a7eca1-7056-11e4-9154-0010187736b5">3</Time>
+          <Value expanded="0" guid="f1a7eca2-7056-11e4-8f5b-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a7eca3-7056-11e4-ac83-0010187736b5">
+          <Name expanded="0" guid="f1a7eca4-7056-11e4-acc4-0010187736b5">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0" guid="f1a7eca5-7056-11e4-b261-0010187736b5">SYMOTAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a7eca6-7056-11e4-825d-0010187736b5">5</Time>
+          <Value expanded="0" guid="f1a8139e-7056-11e4-8e18-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8139f-7056-11e4-8df5-0010187736b5">
+          <Name expanded="0" guid="f1a813a0-7056-11e4-b2c1-0010187736b5">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0" guid="f1a813a1-7056-11e4-8429-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a813a2-7056-11e4-a17b-0010187736b5">3.8</Time>
+          <Value expanded="0" guid="f1a813a3-7056-11e4-9fc6-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a813a4-7056-11e4-af09-0010187736b5">
+          <Name expanded="0" guid="f1a813a5-7056-11e4-aedf-0010187736b5">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0" guid="f1a813a6-7056-11e4-95a4-0010187736b5">MOTShutter</OnChannel>
+          <Time expanded="0" guid="f1a813a7-7056-11e4-8b5c-0010187736b5">3.0</Time>
+          <Value expanded="0" guid="f1a813a8-7056-11e4-89ec-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a813a9-7056-11e4-a22b-0010187736b5">
+          <Name expanded="0" guid="f1a813aa-7056-11e4-a4df-0010187736b5">Molasses Beam OFF Shutter</Name>
+          <OnChannel expanded="0" guid="f1a813ab-7056-11e4-9206-0010187736b5">MOTRepumperShutter</OnChannel>
+          <Time expanded="0" guid="f1a813ac-7056-11e4-8d33-0010187736b5">2</Time>
+          <Value expanded="0" guid="f1a813ad-7056-11e4-96f0-0010187736b5">0</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1" guid="f1a813ae-7056-11e4-b26a-0010187736b5">
+        <StartTime expanded="0" guid="f1a813af-7056-11e4-a4d0-0010187736b5">420</StartTime>
+        <Name expanded="0" guid="f1a813b0-7056-11e4-a70e-0010187736b5">P1 Lattice Cooling Subsequence</Name>
+        <Description expanded="0" guid="f1a813b1-7056-11e4-ba00-0010187736b5">Raman Sideband cooling in the SRC</Description>
+        <Interval expanded="0" guid="f1a813b2-7056-11e4-b0c5-0010187736b5">
+          <OnChannel guid="f1a813b3-7056-11e4-a84f-0010187736b5">SRCCompCoilNorthSouth0</OnChannel>
+          <StartTime guid="f1a813b4-7056-11e4-9c45-0010187736b5">5</StartTime>
+          <EndTime guid="f1a813b5-7056-11e4-9382-0010187736b5">20</EndTime>
+          <Value guid="f1a813b6-7056-11e4-adf9-0010187736b5">1.8-(1.8-1.3)/15*TI</Value>
+          <TResolution guid="f1a83aae-7056-11e4-bf16-0010187736b5">0.004</TResolution>
+          <VResolution guid="f1a83aaf-7056-11e4-91f6-0010187736b5">0.002</VResolution>
+        </Interval>
+        <Interval expanded="0" guid="f1a83ab0-7056-11e4-9700-0010187736b5">
+          <OnChannel guid="f1a83ab1-7056-11e4-9671-0010187736b5">SRCCompCoilUpDown0</OnChannel>
+          <StartTime guid="f1a83ab2-7056-11e4-bf1b-0010187736b5">5</StartTime>
+          <EndTime guid="f1a83ab3-7056-11e4-bbe0-0010187736b5">20</EndTime>
+          <Value guid="f1a83ab4-7056-11e4-9d05-0010187736b5">2.2-(2.2-2.0)/15*TI</Value>
+          <TResolution guid="f1a83ab5-7056-11e4-ba05-0010187736b5">0.004</TResolution>
+          <VResolution guid="f1a83ab6-7056-11e4-a4fb-0010187736b5">0.002</VResolution>
+        </Interval>
+        <Interval expanded="0" guid="f1a83ab7-7056-11e4-8a20-0010187736b5">
+          <OnChannel guid="f1a83ab8-7056-11e4-917f-0010187736b5">SRCCompCoilEastWest0</OnChannel>
+          <StartTime guid="f1a83ab9-7056-11e4-8a30-0010187736b5">5</StartTime>
+          <EndTime guid="f1a83aba-7056-11e4-b58a-0010187736b5">20</EndTime>
+          <Value guid="f1a83abb-7056-11e4-b920-0010187736b5">-0.5-(-0.5-(-0.5))/15*TI</Value>
+          <TResolution guid="f1a83abc-7056-11e4-8387-0010187736b5">0.004</TResolution>
+          <VResolution guid="f1a83abd-7056-11e4-af98-0010187736b5">0.002</VResolution>
+        </Interval>
+        <Edge expanded="0" guid="f1a83abe-7056-11e4-b59a-0010187736b5">
+          <Name expanded="0" guid="f1a83abf-7056-11e4-8914-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a83ac0-7056-11e4-aaa1-0010187736b5">SRCCompCoilNorthSouth</OnChannel>
+          <Time expanded="0" guid="f1a83ac1-7056-11e4-86cc-0010187736b5">5</Time>
+          <Value expanded="0" guid="f1a83ac2-7056-11e4-846d-0010187736b5">1.7</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a83ac3-7056-11e4-a363-0010187736b5">
+          <Name expanded="0" guid="f1a83ac4-7056-11e4-ad37-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a83ac5-7056-11e4-a934-0010187736b5">SRCCompCoilUpDown</OnChannel>
+          <Time expanded="0" guid="f1a861c0-7056-11e4-9c46-0010187736b5">5</Time>
+          <Value expanded="0" guid="f1a861c1-7056-11e4-bfaf-0010187736b5">2.2</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a861c2-7056-11e4-b545-0010187736b5">
+          <Name expanded="0" guid="f1a861c3-7056-11e4-826c-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a861c4-7056-11e4-9184-0010187736b5">SRCCompCoilEastWest</OnChannel>
+          <Time expanded="0" guid="f1a861c5-7056-11e4-99b0-0010187736b5">5</Time>
+          <Value expanded="0" guid="f1a861c6-7056-11e4-8c14-0010187736b5">-0.5</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a861c7-7056-11e4-a101-0010187736b5">
+          <Name expanded="0" guid="f1a861c8-7056-11e4-a02e-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a861c9-7056-11e4-891e-0010187736b5">SRCLatticeAOM</OnChannel>
+          <Time expanded="0" guid="f1a861ca-7056-11e4-a3c3-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a861cb-7056-11e4-ae3a-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a861cc-7056-11e4-b6db-0010187736b5">
+          <Name expanded="0" guid="f1a861cd-7056-11e4-af6f-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a861ce-7056-11e4-98cd-0010187736b5">SYLatticeDepumping0</OnChannel>
+          <Time expanded="0" guid="f1a861cf-7056-11e4-9282-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a861d0-7056-11e4-8bde-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a861d1-7056-11e4-80b3-0010187736b5">
+          <Name expanded="0" guid="f1a861d2-7056-11e4-9c32-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a861d3-7056-11e4-a7fc-0010187736b5">SYLatticeOpticalPumping</OnChannel>
+          <Time expanded="0" guid="f1a861d4-7056-11e4-9f09-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a861d5-7056-11e4-a7c6-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a861d6-7056-11e4-bce0-0010187736b5">
+          <Name expanded="0" guid="f1a861d7-7056-11e4-beae-0010187736b5">Vertical Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a861d8-7056-11e4-95b6-0010187736b5">VerticalLatticeAOM</OnChannel>
+          <Time expanded="0" guid="f1a888cf-7056-11e4-8ef2-0010187736b5">0</Time>
+          <Value expanded="0" guid="f1a888d0-7056-11e4-aab1-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a888d1-7056-11e4-8fc8-0010187736b5">
+          <Name expanded="0" guid="f1a888d2-7056-11e4-bf3d-0010187736b5">SRC Lattice Shutter Open</Name>
+          <OnChannel expanded="0" guid="f1a888d3-7056-11e4-bc11-0010187736b5">SRCLatticeShutter</OnChannel>
+          <Time expanded="0" guid="f1a888d4-7056-11e4-a0ea-0010187736b5">3.7</Time>
+          <Value expanded="0" guid="f1a888d5-7056-11e4-b9a2-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a888d6-7056-11e4-a879-0010187736b5">
+          <Name expanded="0" guid="f1a888d7-7056-11e4-b12d-0010187736b5">Vertical Lattice Shutter Open</Name>
+          <OnChannel expanded="0" guid="f1a888d8-7056-11e4-8747-0010187736b5">VerticalLatticeShutter</OnChannel>
+          <Time expanded="0" guid="f1a888d9-7056-11e4-ba43-0010187736b5">4.0</Time>
+          <Value expanded="0" guid="f1a888da-7056-11e4-a669-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a888db-7056-11e4-9566-0010187736b5">
+          <Name expanded="0" guid="f1a888dc-7056-11e4-8a05-0010187736b5">Vertical Lattice Shutter Open</Name>
+          <OnChannel expanded="0" guid="f1a888dd-7056-11e4-acdd-0010187736b5">ScopeTrigger0</OnChannel>
+          <Time expanded="0" guid="f1a888de-7056-11e4-844b-0010187736b5">2</Time>
+          <Value expanded="0" guid="f1a888df-7056-11e4-a070-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a888e0-7056-11e4-bba6-0010187736b5">
+          <Name expanded="0" guid="f1a888e1-7056-11e4-bed2-0010187736b5">SRC Lattice AOM On</Name>
+          <OnChannel expanded="0" guid="f1a888e2-7056-11e4-9e16-0010187736b5">SRCLatticeAOM</OnChannel>
+          <Time expanded="0" guid="f1a888e3-7056-11e4-89e8-0010187736b5">4.88+1.3</Time>
+          <Value expanded="0" guid="f1a888e4-7056-11e4-aaf2-0010187736b5">9.9</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a888e5-7056-11e4-8ef7-0010187736b5">
+          <Name expanded="0" guid="f1a8afde-7056-11e4-a991-0010187736b5">Vertical Lattice AOM On</Name>
+          <OnChannel expanded="0" guid="f1a8afdf-7056-11e4-b9ce-0010187736b5">VerticalLatticeAOM</OnChannel>
+          <Time expanded="0" guid="f1a8afe0-7056-11e4-bc39-0010187736b5">4.983+1.3</Time>
+          <Value expanded="0" guid="f1a8afe1-7056-11e4-b717-0010187736b5">9.9</Value>
+        </Edge>
+        <Interval expanded="0" guid="f1a8afe2-7056-11e4-a34a-0010187736b5">
+          <OnChannel guid="f1a8afe3-7056-11e4-93d5-0010187736b5">MOTVCOTuning</OnChannel>
+          <StartTime guid="f1a8afe4-7056-11e4-a413-0010187736b5">5.5</StartTime>
+          <EndTime guid="f1a8afe5-7056-11e4-b74c-0010187736b5">5.7</EndTime>
+          <Value guid="f1a8afe6-7056-11e4-87e8-0010187736b5">2.2-(2.2-1.937)/0.2*TI</Value>
+          <TResolution guid="f1a8afe7-7056-11e4-82b4-0010187736b5">0.004</TResolution>
+          <VResolution guid="f1a8afe8-7056-11e4-b842-0010187736b5">0.002</VResolution>
+        </Interval>
+        <Edge expanded="0" guid="f1a8afe9-7056-11e4-a608-0010187736b5">
+          <Name expanded="0" guid="f1a8afea-7056-11e4-9333-0010187736b5">SRC Lattice Shutter Open</Name>
+          <OnChannel expanded="0" guid="f1a8afeb-7056-11e4-a0c1-0010187736b5">RSCOptPumpShutter</OnChannel>
+          <Time expanded="0" guid="f1a8afec-7056-11e4-97d2-0010187736b5">4</Time>
+          <Value expanded="0" guid="f1a8afed-7056-11e4-b49a-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8afee-7056-11e4-80e8-0010187736b5">
+          <Name expanded="0" guid="f1a8afef-7056-11e4-a721-0010187736b5">SRC Lattice AOM On</Name>
+          <OnChannel expanded="0" guid="f1a8aff0-7056-11e4-b257-0010187736b5">RepVCOTuning</OnChannel>
+          <Time expanded="0" guid="f1a8aff1-7056-11e4-a4a8-0010187736b5">5.5</Time>
+          <Value expanded="0" guid="f1a8aff2-7056-11e4-a652-0010187736b5">0.05</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8aff3-7056-11e4-b878-0010187736b5">
+          <Name expanded="0" guid="f1a8aff4-7056-11e4-8e3d-0010187736b5">SRC Lattice AOM On</Name>
+          <OnChannel expanded="0" guid="f1a8aff5-7056-11e4-b6bd-0010187736b5">SYLatticeOpticalPumping</OnChannel>
+          <Time expanded="0" guid="f1a8d6f0-7056-11e4-bc4a-0010187736b5">6.2</Time>
+          <Value expanded="0" guid="f1a8d6f1-7056-11e4-8b7b-0010187736b5">0.5</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1" guid="f1a8d6f2-7056-11e4-a405-0010187736b5">
+        <StartTime expanded="0" guid="f1a8d6f3-7056-11e4-ae06-0010187736b5">420</StartTime>
+        <Name expanded="0" guid="f1a8d6f4-7056-11e4-bf0c-0010187736b5">P2 Lattice Cooling Subsequence</Name>
+        <Description expanded="0" guid="f1a8d6f5-7056-11e4-91be-0010187736b5">Raman Sideband cooling in the SRC</Description>
+        <Edge expanded="0" guid="f1a8d6f6-7056-11e4-9c62-0010187736b5">
+          <Name expanded="0" guid="f1a8d6f7-7056-11e4-8109-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a8d6f8-7056-11e4-ac8c-0010187736b5">RepVCOTuning0</OnChannel>
+          <Time expanded="0" guid="f1a8d6f9-7056-11e4-8d0a-0010187736b5">20</Time>
+          <Value expanded="0" guid="f1a8d6fa-7056-11e4-965f-0010187736b5">0.05</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8d6fb-7056-11e4-990d-0010187736b5">
+          <Name expanded="0" guid="f1a8d6fc-7056-11e4-9210-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a8d6fd-7056-11e4-9fb7-0010187736b5">SYLatticeOpticalPumping0</OnChannel>
+          <Time expanded="0" guid="f1a8d6fe-7056-11e4-b742-0010187736b5">20</Time>
+          <Value expanded="0" guid="f1a8d6ff-7056-11e4-8e93-0010187736b5">0.5</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8d700-7056-11e4-8a9b-0010187736b5">
+          <Name expanded="0" guid="f1a8d701-7056-11e4-9e52-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a8d702-7056-11e4-93c4-0010187736b5">SRCCompCoilNorthSouth</OnChannel>
+          <Time expanded="0" guid="f1a8d703-7056-11e4-b52e-0010187736b5">20</Time>
+          <Value expanded="0" guid="f1a8d704-7056-11e4-be74-0010187736b5">2.4</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8d705-7056-11e4-90c2-0010187736b5">
+          <Name expanded="0" guid="f1a8d706-7056-11e4-9cbb-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a8d707-7056-11e4-bab5-0010187736b5">SRCCompCoilUpDown</OnChannel>
+          <Time expanded="0" guid="f1a8d708-7056-11e4-aba3-0010187736b5">20</Time>
+          <Value expanded="0" guid="f1a8fe00-7056-11e4-b734-0010187736b5">2.3</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8fe01-7056-11e4-8e4c-0010187736b5">
+          <Name expanded="0" guid="f1a8fe02-7056-11e4-8122-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a8fe03-7056-11e4-9826-0010187736b5">SRCCompCoilEastWest</OnChannel>
+          <Time expanded="0" guid="f1a8fe04-7056-11e4-8f0d-0010187736b5">20</Time>
+          <Value expanded="0" guid="f1a8fe05-7056-11e4-b525-0010187736b5">-0.5</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8fe06-7056-11e4-8822-0010187736b5">
+          <Name expanded="0" guid="f1a8fe07-7056-11e4-948a-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a8fe08-7056-11e4-a573-0010187736b5">ScopeTrigger0</OnChannel>
+          <Time expanded="0" guid="f1a8fe09-7056-11e4-92b3-0010187736b5">35</Time>
+          <Value expanded="0" guid="f1a8fe0a-7056-11e4-bd1a-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8fe0b-7056-11e4-8948-0010187736b5">
+          <Name expanded="0" guid="f1a8fe0c-7056-11e4-8932-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a8fe0d-7056-11e4-96e9-0010187736b5">SRCLatticeAOM0</OnChannel>
+          <Time expanded="0" guid="f1a8fe0e-7056-11e4-ac95-0010187736b5">35</Time>
+          <Value expanded="0" guid="f1a8fe0f-7056-11e4-a825-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8fe10-7056-11e4-89cd-0010187736b5">
+          <Name expanded="0" guid="f1a8fe11-7056-11e4-ac76-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a8fe12-7056-11e4-b044-0010187736b5">VerticalLatticeAOM0</OnChannel>
+          <Time expanded="0" guid="f1a8fe13-7056-11e4-8223-0010187736b5">35-0.15</Time>
+          <Value expanded="0" guid="f1a8fe14-7056-11e4-8add-0010187736b5">-0.08</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a8fe15-7056-11e4-b3a7-0010187736b5">
+          <Name expanded="0" guid="f1a8fe16-7056-11e4-a9fb-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a8fe17-7056-11e4-98b3-0010187736b5">SYLatticeOpticalPumping</OnChannel>
+          <Time expanded="0" guid="f1a9250f-7056-11e4-8d1a-0010187736b5">35</Time>
+          <Value expanded="0" guid="f1a92510-7056-11e4-8446-0010187736b5">-0.04</Value>
+        </Edge>
+        <Interval guid="f1a92511-7056-11e4-aa5f-0010187736b5" expanded="0">
+          <Name guid="f1a92512-7056-11e4-9956-0010187736b5"/>
+          <OnChannel guid="f1a92513-7056-11e4-ada9-0010187736b5">SRCLatticeAOM</OnChannel>
+          <StartTime guid="f1a92514-7056-11e4-aa44-0010187736b5">35</StartTime>
+          <EndTime guid="f1a92515-7056-11e4-9b74-0010187736b5">35+3</EndTime>
+          <Value guid="f1a92516-7056-11e4-8a9a-0010187736b5">9.9/(1.+5*TI)**2-0.1</Value>
+          <Burst guid="f1a92517-7056-11e4-9530-0010187736b5">
+            <Pulses guid="f1a92518-7056-11e4-9a68-0010187736b5"/>
+            <Period guid="f1a92519-7056-11e4-b366-0010187736b5"/>
+            <DutyHigh guid="f1a9251a-7056-11e4-b9a7-0010187736b5"/>
+            <Amplitude guid="f1a9251b-7056-11e4-881d-0010187736b5"/>
+          </Burst>
+          <TResolution guid="f1a9251c-7056-11e4-ac8b-0010187736b5">0.006</TResolution>
+          <VResolution guid="f1a9251d-7056-11e4-9e5c-0010187736b5">0.001</VResolution>
+          <Description guid="f1a9251e-7056-11e4-8e2e-0010187736b5"/>
+          <Comments guid="f1a9251f-7056-11e4-8431-0010187736b5"/>
+        </Interval>
+        <Interval guid="f1a92520-7056-11e4-ac7b-0010187736b5" expanded="0">
+          <Name guid="f1a92521-7056-11e4-9c76-0010187736b5"/>
+          <OnChannel guid="f1a92522-7056-11e4-a98d-0010187736b5">VerticalLatticeAOM</OnChannel>
+          <StartTime guid="f1a92523-7056-11e4-aa23-0010187736b5">35</StartTime>
+          <EndTime guid="f1a92524-7056-11e4-aeb5-0010187736b5">35+3</EndTime>
+          <Value guid="f1a92525-7056-11e4-8ecc-0010187736b5">9.9/(1.+5*TI)**2-0.1</Value>
+          <Burst guid="f1a92526-7056-11e4-a63c-0010187736b5">
+            <Pulses guid="f1a94c21-7056-11e4-956b-0010187736b5"/>
+            <Period guid="f1a94c22-7056-11e4-a126-0010187736b5"/>
+            <DutyHigh guid="f1a94c23-7056-11e4-82c1-0010187736b5"/>
+            <Amplitude guid="f1a94c24-7056-11e4-87d4-0010187736b5"/>
+          </Burst>
+          <TResolution guid="f1a94c25-7056-11e4-a4c0-0010187736b5">0.006</TResolution>
+          <VResolution guid="f1a94c26-7056-11e4-89d8-0010187736b5">0.001</VResolution>
+          <Description guid="f1a94c27-7056-11e4-8dd3-0010187736b5"/>
+          <Comments guid="f1a94c28-7056-11e4-968c-0010187736b5"/>
+        </Interval>
+        <Edge expanded="0" guid="f1a94c29-7056-11e4-a19b-0010187736b5">
+          <Name expanded="0" guid="f1a94c2a-7056-11e4-8ff6-0010187736b5">SRC Lattice AOM Off</Name>
+          <OnChannel expanded="0" guid="f1a94c2b-7056-11e4-bb4c-0010187736b5">SYLatticeDepumping0</OnChannel>
+          <Time expanded="0" guid="f1a94c2c-7056-11e4-ae94-0010187736b5">35</Time>
+          <Value expanded="0" guid="f1a94c2d-7056-11e4-905b-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a94c2e-7056-11e4-a495-0010187736b5">
+          <Name expanded="0" guid="f1a94c2f-7056-11e4-b067-0010187736b5">SRC Lattice Shutter Closed</Name>
+          <OnChannel expanded="0" guid="f1a94c30-7056-11e4-9b63-0010187736b5">SRCLatticeShutter</OnChannel>
+          <Time expanded="0" guid="f1a94c31-7056-11e4-babb-0010187736b5">38</Time>
+          <Value expanded="0" guid="f1a94c32-7056-11e4-903c-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a94c33-7056-11e4-ad85-0010187736b5">
+          <Name expanded="0" guid="f1a94c34-7056-11e4-b4c5-0010187736b5">SRC Lattice Shutter Closed</Name>
+          <OnChannel expanded="0" guid="f1a94c35-7056-11e4-86cc-0010187736b5">RSCDepumpShutter0</OnChannel>
+          <Time expanded="0" guid="f1a94c36-7056-11e4-bea5-0010187736b5">35</Time>
+          <Value expanded="0" guid="f1a94c37-7056-11e4-9894-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a94c38-7056-11e4-a999-0010187736b5">
+          <Name expanded="0" guid="f1a97330-7056-11e4-acdf-0010187736b5">Vertical Lattice Shutter Closed</Name>
+          <OnChannel expanded="0" guid="f1a97331-7056-11e4-b52e-0010187736b5">VerticalLatticeShutter</OnChannel>
+          <Time expanded="0" guid="f1a97332-7056-11e4-8fa7-0010187736b5">38</Time>
+          <Value expanded="0" guid="f1a97333-7056-11e4-9cec-0010187736b5">0</Value>
+        </Edge>
+        <Edge lock="1" expanded="0" guid="f1a97334-7056-11e4-bf0e-0010187736b5">
+          <Name expanded="0" guid="f1a97335-7056-11e4-9df7-0010187736b5">Vertical Lattice Shutter Closed</Name>
+          <OnChannel expanded="0" guid="f1a97336-7056-11e4-bbe8-0010187736b5">RSCOptPumpShutter</OnChannel>
+          <Time expanded="0" guid="f1a97337-7056-11e4-8cac-0010187736b5">35</Time>
+          <Value expanded="0" guid="f1a97338-7056-11e4-b669-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a97339-7056-11e4-b3c5-0010187736b5">
+          <Name expanded="0" guid="f1a9733a-7056-11e4-947d-0010187736b5">Vertical Lattice AOM On</Name>
+          <OnChannel expanded="0" guid="f1a9733b-7056-11e4-9893-0010187736b5">SYLatticeOpticalPumping</OnChannel>
+          <Time expanded="0" guid="f1a9733c-7056-11e4-83ba-0010187736b5">47</Time>
+          <Value expanded="0" guid="f1a9733d-7056-11e4-9212-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a9733e-7056-11e4-9bd1-0010187736b5">
+          <Name expanded="0" guid="f1a9733f-7056-11e4-b166-0010187736b5">Vertical Lattice AOM On</Name>
+          <OnChannel expanded="0" guid="f1a97340-7056-11e4-90ad-0010187736b5">SYLatticeDepumping0</OnChannel>
+          <Time expanded="0" guid="f1a97341-7056-11e4-a7f2-0010187736b5">47</Time>
+          <Value expanded="0" guid="f1a97342-7056-11e4-be49-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a97343-7056-11e4-820f-0010187736b5">
+          <Name expanded="0" guid="f1a97344-7056-11e4-88f7-0010187736b5">SRC Lattice AOM On</Name>
+          <OnChannel expanded="0" guid="f1a97345-7056-11e4-9fe5-0010187736b5">SRCLatticeAOM</OnChannel>
+          <Time expanded="0" guid="f1a97346-7056-11e4-b27c-0010187736b5">47</Time>
+          <Value expanded="0" guid="f1a97347-7056-11e4-934c-0010187736b5">9.9</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a97348-7056-11e4-88ef-0010187736b5">
+          <Name expanded="0" guid="f1a99a40-7056-11e4-b3b4-0010187736b5">SRC Lattice AOM On</Name>
+          <OnChannel expanded="0" guid="f1a99a41-7056-11e4-aeff-0010187736b5">MOTRepumperShutter</OnChannel>
+          <Time expanded="0" guid="f1a99a42-7056-11e4-a2d9-0010187736b5">47</Time>
+          <Value expanded="0" guid="f1a99a43-7056-11e4-b328-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a99a44-7056-11e4-b179-0010187736b5">
+          <Name expanded="0" guid="f1a99a45-7056-11e4-8d59-0010187736b5">SRC Lattice AOM On</Name>
+          <OnChannel expanded="0" guid="f1a99a46-7056-11e4-8cf8-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a99a47-7056-11e4-8b7d-0010187736b5">49</Time>
+          <Value expanded="0" guid="f1a99a48-7056-11e4-b104-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a99a49-7056-11e4-9915-0010187736b5">
+          <Name expanded="0" guid="f1a99a4a-7056-11e4-bde1-0010187736b5">SRC Lattice AOM On</Name>
+          <OnChannel expanded="0" guid="f1a99a4b-7056-11e4-9b69-0010187736b5">RepVCOTuning</OnChannel>
+          <Time expanded="0" guid="f1a99a4c-7056-11e4-aefb-0010187736b5">49</Time>
+          <Value expanded="0" guid="f1a99a4d-7056-11e4-918d-0010187736b5">0</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1" guid="f1a99a4e-7056-11e4-b780-0010187736b5">
+        <StartTime expanded="0" guid="f1a99a4f-7056-11e4-907d-0010187736b5">425</StartTime>
+        <Name expanded="0" guid="f1a99a50-7056-11e4-b45c-0010187736b5">Detection Subsequence</Name>
+        <Description expanded="0" guid="f1a99a51-7056-11e4-ba64-0010187736b5">Detect atoms by time of flight</Description>
+        <Edge expanded="0" guid="f1a99a52-7056-11e4-b3f5-0010187736b5">
+          <Name expanded="0" guid="f1a99a53-7056-11e4-9ca0-0010187736b5">MOT Laser to resonance</Name>
+          <OnChannel expanded="0" guid="f1a99a54-7056-11e4-a3a0-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0" guid="f1a99a55-7056-11e4-ac17-0010187736b5">36</Time>
+          <Value expanded="0" guid="f1a99a56-7056-11e4-9318-0010187736b5">10</Value>
+        </Edge>
+        <Interval expanded="0" guid="f1a99a57-7056-11e4-a25d-0010187736b5">
+          <OnChannel guid="f1a9c14f-7056-11e4-9a1d-0010187736b5">MOTVCOTuning</OnChannel>
+          <StartTime guid="f1a9c150-7056-11e4-9646-0010187736b5">36</StartTime>
+          <EndTime guid="f1a9c151-7056-11e4-9e5c-0010187736b5">36.4</EndTime>
+          <Value guid="f1a9c152-7056-11e4-b4c4-0010187736b5">1.937-(1.937+0.32)/0.4*TI</Value>
+          <VResolution guid="f1a9c153-7056-11e4-bd15-0010187736b5">0.002</VResolution>
+          <TResolution guid="f1a9c154-7056-11e4-b1a6-0010187736b5">0.004</TResolution>
+        </Interval>
+        <Edge expanded="0" guid="f1a9c155-7056-11e4-9357-0010187736b5">
+          <Name expanded="0" guid="f1a9c156-7056-11e4-a8ea-0010187736b5">TOF Detection Beam Off AOM</Name>
+          <OnChannel expanded="0" guid="f1a9c157-7056-11e4-a527-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="f1a9c158-7056-11e4-a42f-0010187736b5">36</Time>
+          <Value expanded="0" guid="f1a9c159-7056-11e4-b7ce-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a9c15a-7056-11e4-b296-0010187736b5">
+          <Name expanded="0" guid="f1a9c15b-7056-11e4-b31e-0010187736b5">NS Compensation </Name>
+          <OnChannel expanded="0" guid="f1a9c15c-7056-11e4-a3d0-0010187736b5">SRCCompCoilNorthSouth</OnChannel>
+          <Time expanded="0" guid="f1a9c15d-7056-11e4-917f-0010187736b5">34</Time>
+          <Value expanded="0" guid="f1a9c15e-7056-11e4-9672-0010187736b5">5</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a9c15f-7056-11e4-85c8-0010187736b5">
+          <Name expanded="0" guid="f1a9c160-7056-11e4-8ee3-0010187736b5">TOF Detection Shutter Open</Name>
+          <OnChannel expanded="0" guid="f1a9c161-7056-11e4-8cfa-0010187736b5">DetectionShutter</OnChannel>
+          <Time expanded="0" guid="f1a9c162-7056-11e4-a3cc-0010187736b5">44</Time>
+          <Value expanded="0" guid="f1a9c163-7056-11e4-ad54-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a9c164-7056-11e4-a9e6-0010187736b5">
+          <Name expanded="0" guid="f1a9c165-7056-11e4-8871-0010187736b5">TOF Detection Beam On AOM</Name>
+          <OnChannel expanded="0" guid="f1a9e861-7056-11e4-bf82-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="f1a9e862-7056-11e4-8fef-0010187736b5">46</Time>
+          <Value expanded="0" guid="f1a9e863-7056-11e4-aba1-0010187736b5">1.5</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a9e864-7056-11e4-b6ed-0010187736b5">
+          <Name expanded="0" guid="f1a9e865-7056-11e4-87c1-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="f1a9e866-7056-11e4-b536-0010187736b5">ScopeTrigger</OnChannel>
+          <Time expanded="0" guid="f1a9e867-7056-11e4-aaee-0010187736b5">94</Time>
+          <Value expanded="0" guid="f1a9e868-7056-11e4-a4d0-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a9e869-7056-11e4-be8a-0010187736b5">
+          <Name expanded="0" guid="f1a9e86a-7056-11e4-b297-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="f1a9e86b-7056-11e4-96c5-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="f1a9e86c-7056-11e4-8546-0010187736b5">100</Time>
+          <Value expanded="0" guid="f1a9e86d-7056-11e4-bc35-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a9e86e-7056-11e4-aa98-0010187736b5">
+          <Name expanded="0" guid="f1a9e86f-7056-11e4-876e-0010187736b5">TOF Detection Beam Off AOM</Name>
+          <OnChannel expanded="0" guid="f1a9e870-7056-11e4-ac4c-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="f1a9e871-7056-11e4-b4c3-0010187736b5">196</Time>
+          <Value expanded="0" guid="f1a9e872-7056-11e4-992c-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a9e873-7056-11e4-a89a-0010187736b5">
+          <Name expanded="0" guid="f1a9e874-7056-11e4-85a0-0010187736b5">TOF Detection Shutter Closed</Name>
+          <OnChannel expanded="0" guid="f1a9e875-7056-11e4-b434-0010187736b5">DetectionShutter</OnChannel>
+          <Time expanded="0" guid="f1a9e876-7056-11e4-8339-0010187736b5">294</Time>
+          <Value expanded="0" guid="f1a9e877-7056-11e4-9a39-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1a9e878-7056-11e4-8d26-0010187736b5">
+          <Name expanded="0" guid="f1aa0f70-7056-11e4-9809-0010187736b5">NS Compensation (No change)</Name>
+          <OnChannel expanded="0" guid="f1aa0f71-7056-11e4-ace3-0010187736b5">SRCCompCoilNorthSouth</OnChannel>
+          <Time expanded="0" guid="f1aa0f72-7056-11e4-890c-0010187736b5">296</Time>
+          <Value expanded="0" guid="f1aa0f73-7056-11e4-abfb-0010187736b5">0.711</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1aa0f74-7056-11e4-816a-0010187736b5">
+          <Name expanded="0" guid="f1aa0f75-7056-11e4-8286-0010187736b5">TOF Detection Beam On AOM</Name>
+          <OnChannel expanded="0" guid="f1aa0f76-7056-11e4-9872-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="f1aa0f77-7056-11e4-a5bd-0010187736b5">296</Time>
+          <Value expanded="0" guid="f1aa0f78-7056-11e4-934a-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="f1aa0f79-7056-11e4-915d-0010187736b5">
+          <Name expanded="0" guid="f1aa0f7a-7056-11e4-a0cf-0010187736b5">Close Repumper shutter</Name>
+          <OnChannel expanded="0" guid="f1aa0f7b-7056-11e4-8940-0010187736b5">MOTRepumperShutter</OnChannel>
+          <Time expanded="0" guid="f1aa0f7c-7056-11e4-9460-0010187736b5">296</Time>
+          <Value expanded="0" guid="f1aa0f7d-7056-11e4-9605-0010187736b5">0</Value>
+        </Edge>
+      </SubSequence>
+    </Sequence>
+  </body>
+</XTSM>
