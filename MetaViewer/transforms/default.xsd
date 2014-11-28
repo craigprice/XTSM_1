@@ -1,4 +1,4 @@
-﻿<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xtsm_viewer="http://braid.phys.psu.edu/xtsm_viewer">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xtsm_viewer="http://braid.phys.psu.edu/xtsm_viewer">
   <xs:element name="XTSM" type="XTSM" />
 
 
@@ -218,8 +218,8 @@
           </xs:appinfo>
         </xs:annotation>
       </xs:element>
-	  <xs:element name="Figure" type="Figure"  maxOccurs="1" minOccurs="0"/>
-      </xs:sequence>
+      <xs:element name="Figure" type="Figure"  maxOccurs="1" minOccurs="0"/>
+    </xs:sequence>
     <xs:attributeGroup ref="XTSM_general_atts"/>
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
@@ -285,7 +285,7 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-  
+
   <xs:complexType name="ScriptConsole">
     <xs:sequence>
       <xs:element name="std_out" type="std_out" maxOccurs="unbounded" minOccurs="unbounded"/>
@@ -293,8 +293,8 @@
     <xs:attributeGroup ref="XTSM_general_atts"/>
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
-  
-  
+
+
   <xs:complexType name="Type">
     <xs:simpleContent>
       <xs:extension base="xs:string">
@@ -303,8 +303,8 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-  
-		  <xs:complexType name="ExecuteOnMainServer">
+
+  <xs:complexType name="ExecuteOnMainServer">
     <xs:simpleContent>
       <xs:extension base="xs:string">
         <xs:attributeGroup ref="XTSM_general_atts"/>
@@ -312,8 +312,8 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-	
-	  <xs:complexType name="Remote">
+
+  <xs:complexType name="Remote">
     <xs:simpleContent>
       <xs:extension base="xs:string">
         <xs:attributeGroup ref="XTSM_general_atts"/>
@@ -321,8 +321,8 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-  
-  	  <xs:complexType name="XPath">
+
+  <xs:complexType name="XPath">
     <xs:simpleContent>
       <xs:extension base="xs:string">
         <xs:attributeGroup ref="XTSM_general_atts"/>
@@ -330,7 +330,7 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-  
+
   <xs:complexType name="DataGUI">
     <xs:sequence>
       <xs:element name="Name" type="Name" maxOccurs="1" minOccurs="1">
@@ -346,8 +346,18 @@
     <xs:attributeGroup ref="XTSM_general_atts"/>
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
-  
-  	  <xs:complexType name="ScriptBody">
+
+  <xs:complexType name="ScriptBody">
+    <xs:annotation>
+      <xs:appinfo>
+        <xtsm_viewer:fieldtype value="textarea"/>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:annotation>
+      <xs:appinfo>
+        <xtsm_viewer:editmode value="python"/>
+      </xs:appinfo>
+    </xs:annotation>
     <xs:simpleContent>
       <xs:extension base="xs:string">
         <xs:attributeGroup ref="XTSM_general_atts"/>
@@ -355,7 +365,27 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-	
+
+  <xs:complexType name="Method">
+    <xs:annotation>
+      <xs:appinfo>
+        <xtsm_viewer:fieldtype value="textarea"/>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:annotation>
+      <xs:appinfo>
+        <xtsm_viewer:editmode value="python"/>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attributeGroup ref="XTSM_general_atts"/>
+        <xs:attributeGroup ref="XTSM_viewer_atts"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+
   <xs:complexType name="ScriptOutput">
     <xs:sequence>
       <xs:element name="Name" type="Name" maxOccurs="1" minOccurs="1">
@@ -372,10 +402,10 @@
     <xs:attributeGroup ref="XTSM_general_atts"/>
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
-  
+
   <xs:complexType name="Heap">
     <xs:sequence>
-	<xs:element name="Name" type="Name" maxOccurs="1" minOccurs="1">
+      <xs:element name="Name" type="Name" maxOccurs="1" minOccurs="1">
         <xs:annotation>
           <xs:appinfo>
             <xtsm_viewer:topline value="true"/>
@@ -391,9 +421,9 @@
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
 
-    <xs:complexType name="PullFrom">
+  <xs:complexType name="PullFrom">
     <xs:sequence>
-	<xs:element name="Name" type="Name" maxOccurs="1" minOccurs="1">
+      <xs:element name="Name" type="Name" maxOccurs="1" minOccurs="1">
         <xs:annotation>
           <xs:appinfo>
             <xtsm_viewer:topline value="true"/>
@@ -405,14 +435,14 @@
     <xs:attributeGroup ref="XTSM_general_atts"/>
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
-  
+
   <xs:complexType name="AnalysisSpace">
     <xs:sequence>
       <xs:element name="DataGUI" type="DataGUI"  maxOccurs="unbounded" minOccurs="0"/>
       <xs:element name="Heap" type="Heap"  maxOccurs="unbounded" minOccurs="0"/>
       <xs:element name="Script" type="Script"  maxOccurs="unbounded" minOccurs="0"/>
       <xs:element name="Description" type="Description"  maxOccurs="1" minOccurs="1"/>
-	  <xs:element name="Name" type="Name" maxOccurs="1" minOccurs="1">
+      <xs:element name="Name" type="Name" maxOccurs="1" minOccurs="1">
         <xs:annotation>
           <xs:appinfo>
             <xtsm_viewer:topline value="true"/>
@@ -483,7 +513,7 @@
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
 
-    <xs:complexType name="Instrument">
+  <xs:complexType name="Instrument">
     <xs:sequence>
       <xs:element name="OnInstrument" type="OnInstrument"  maxOccurs="1" minOccurs="1">
         <xs:annotation>
@@ -498,7 +528,7 @@
     <xs:attributeGroup ref="XTSM_general_atts"/>
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
-  
+
   <xs:complexType name="OnInstrument">
     <xs:simpleContent>
       <xs:extension base="xs:string">
@@ -508,8 +538,8 @@
     </xs:simpleContent>
   </xs:complexType>
 
-  
-    <xs:complexType name="InstrumentCommand">
+
+  <xs:complexType name="InstrumentCommand">
     <xs:sequence>
       <xs:element name="OnInstrument" type="OnInstrument"  maxOccurs="1" minOccurs="1">
         <xs:annotation>
@@ -518,7 +548,7 @@
           </xs:appinfo>
         </xs:annotation>
       </xs:element>
-	  <xs:element name="Name" type="Name"  maxOccurs="1" minOccurs="1">
+      <xs:element name="Name" type="Name"  maxOccurs="1" minOccurs="1">
         <xs:annotation>
           <xs:appinfo>
             <xtsm_viewer:topline value="true"/>
@@ -534,7 +564,7 @@
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
 
-  
+
   <xs:complexType name="HeapTo">
     <xs:simpleContent>
       <xs:extension base="xs:string">
@@ -677,8 +707,8 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-  
-    <xs:complexType name="ServerIPAddress">
+
+  <xs:complexType name="ServerIPAddress">
     <xs:simpleContent>
       <xs:extension base="xs:string">
         <xs:attributeGroup ref="XTSM_general_atts"/>
@@ -686,7 +716,7 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-  
+
   <xs:complexType name="ConnectsTo">
     <xs:simpleContent>
       <xs:extension base="xs:string">
