@@ -65,6 +65,8 @@ udpbport = 8085
 
         
 
+global TIMING
+
         
 class CommandQueue():
     """
@@ -648,6 +650,7 @@ class CommandLibrary():
         if params.has_key('socket_type'):
             #Right now just for PXI_emulator
             if params['socket_type'] == 'Websocket':
+                print "sent back timing strings!"
                 params['request']['protocol'].sendMessage(msg)
                 pass
             else:
@@ -712,7 +715,8 @@ class CommandLibrary():
         the webserver to be stored to disk, associated with the generating XTSM,
         and for analyses to be initiated 
         """
-        if DEBUG: print "dealing with data bomb that came back"
+        TIMING = 1416876428
+        if DEBUG: print "dealing with data bomb that came back asdf (1)", str(time.time()-TIMING)
         #print self.server.dataContexts['default:127.0.0.1'].dict['_bombstack'].dataListenerManagers.listeners #This is the context that has the listeners
         #pdb.set_trace()
         
@@ -768,10 +772,10 @@ class CommandLibrary():
                                         'data_context':dc.name,
                                         'packed_databomb':params['databomb']},
                                          use_bin_type=True)  
-        
         for p in self.server.connection_manager.data_gui_servers:
-            self.server.send(packed_message,self.server.connection_manager.data_gui_servers[p], isBinary=True)        
-        
+            print "sending len =", len(packed_message)/(1000*1000.0), "MB. asdf (2)", str(time.time()-TIMING)
+            self.server.send(packed_message,self.server.connection_manager.data_gui_servers[p], isBinary=True)             
+        print "End sever side sending asdf (3)", str(time.time()-TIMING)
         
     def temp_plot_qt(self,params,bomb_id, dc):
         print "plotting"
@@ -1095,7 +1099,7 @@ class CommandLibrary():
         resonds to and closes (for standard HTTP) the socket communication 
         """
         try:
-            params['request']['write']('{"server_console":'+msg+'}')
+            params['request']['write']('{"server_console":'+str(msg)+'}')
         except KeyError: 
             params['request']['protocol'].transport.write(msg)
             params['request']['protocol'].transport.loseConnection()

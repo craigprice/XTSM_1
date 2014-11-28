@@ -488,7 +488,7 @@ class XTSM_core(object):
         except KeyError: return False
         return True
 
-    def write_xml(self, out=None, tablevel=0, whitespace='True'):
+    def write_xml(self, out=None, tablevel=0, whitespace='True', CDATA_ESCAPE=False):
         """
         Serialize an _XO_ object back into XML to stream out; if no argument 'out' supplied, returns string
         If tablevel is supplied, xml will be indented by level.  If whitespace is set to true, original whitespace
@@ -3223,7 +3223,7 @@ class XTSM_Object(object):
         Builds an XTSM object from an XTSM string, a file-like stream or a filepath to
         a textfile containing xtsm - THIS IS A TOPLEVEL ROUTINE FOR THE PARSER 
         """
-        if DEBUG: print "in class Command_Library, func preparse"
+        if DEBUG: print "in class XTSM_Object, func __init__"
         if not isinstance(source, basestring):
             try:
                 source=source.getvalue()

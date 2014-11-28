@@ -22,11 +22,12 @@ import PyQt4
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 import sys
+from PyQt4.QtCore import QSettings
 
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph
 import pyqtgraph.dockarea
-from pyqtgraph.dockarea.Dock import DockLabel
+#from pyqtgraph.dockarea.Dock import DockLabel
 import pyqtgraph.console
 
 import msgpack
@@ -38,6 +39,8 @@ import numpy
 import scipy.optimize
     
 DEBUG = True
+global TIMING
+TIMING = 1416876428
     
 class CCDImage(tables.IsDescription):
     short_256_description = tables.StringCol(256)
@@ -529,6 +532,12 @@ class docked_gui():
         self.win.show()
         
         
+    def _methods_to_xml(self):
+        out=""
+        for meth in dir(self):
+            if type(getattr(self,meth))==type(self._methods_to_xml):
+                print "<Method><Name>"+meth+"</Name><Source><![CDATA["+inspect.getsource(getattr(self,meth))+"]]></Source></Method>"
+        return out
     def _init_dock_console(self):
         self._dock_console = pyqtgraph.dockarea.Dock("Console", size=(500,150))
         self.dock_area.addDock(self._dock_console, 'bottom')      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
@@ -560,6 +569,8 @@ class docked_gui():
         def save():
             global state
             state = self.dock_area.saveState()
+            print state['main']
+            print dockstate_to_xml(state['main'])
             restoreBtn.setEnabled(True)
         def load():
             global state
@@ -586,7 +597,7 @@ class docked_gui():
         self.dock_area.addDock(self._dock_image_view, 'top')
         self.imv = pyqtgraph.ImageView()
         self._dock_image_view.addWidget(self.imv)
-        self._dock_image_view.label = DockLabel("Shotnumber = ", self._dock_image_view)
+        #self._dock_image_view.label = DockLabel("Shotnumber = ", self._dock_image_view)
         self._dock_image_view.updateStyle()
         self.imv.setImage(self.imgstack, xvals=numpy.arange(self.imgstack.shape[0]))#.linspace(1., 3., ))
 
@@ -668,7 +679,15 @@ class docked_gui():
         
         self.proxy = pyqtgraph.SignalProxy(self.imv.scene.sigMouseMoved, rateLimit=60, slot=mouseMoved)
                 
+    def saveSettings(self):
+        settings = PyQt4.QtCore.QSettings('test', 'test')
+        settings.setValue("state", self.win.saveState())
+        settings.sync()
         
+    def readSettings(self):
+        settings = PyQt4.QtCore.QSettings('test', 'test')
+        state = settings.value("state", PyQt4.QtCore.QByteArray()).toByteArray();
+        self.win.restoreState(state)
     def plot(self,img):
         """
         plots to image viewer
@@ -822,7 +841,7 @@ def main():
             if DEBUG: print("class data_guis.MyServerProtocol, func onOpen")
             
         def onMessage(self, payload_, isBinary):
-            if DEBUG: print "class data_guis.MyServerProtocol, func onMessage"
+            if DEBUG: print "class data_guis.MyServerProtocol, func onMessage asdf (4) " + str(time.time()-TIMING)
             #self.log_message()
             if isBinary:
                 payload = msgpack.unpackb(payload_)
@@ -889,3 +908,361 @@ def main():
     
 if __name__ == '__main__':
     main()
+    
+"""
+Below until MARKER1 is objectification of AnalysisSpaces
+"""
+
+import gnosis.xml.objectify # standard package used for conversion of xml structure to Pythonic objects, also core starting point for this set of routines
+import XTSMobjectify
+
+
+class XTSM_Element(gnosis.xml.objectify._XO_,XTSMobjectify.XTSM_core):
+    pass
+
+class Analysis_Space_Core(XTSMobjectify.XTSM_core):
+    """
+    Default Class for all elements appearing in an XTSM Analysis_Space tree; contains generic methods
+    for traversing the XTSM tree-structure, inserting and editing nodes and attributes,
+    writing data out to XML-style strings, and performing parsing of node contents in
+    python-syntax as expressions
+    """
+    pass
+
+class Docked_Gui():
+    """
+    Core class for data viewing GUIs.  Uses a set of docks to store controls
+    A console is created by default
+    """
+    _console_namespace={}
+    def __init__(self,params={}):
+        if DEBUG: print("class data_guis.docked_gui, func __init__")
+
+        for k in params.keys():
+            setattr(self,k,params[k])
+        
+        self._console_namespace.update({"self":self})
+            
+        self.app = QtGui.QApplication([])     
+        self.win = QtGui.QMainWindow()
+        self.dock_area = pyqtgraph.dockarea.DockArea()
+        self.win.setCentralWidget(self.dock_area)
+        self.win.resize(1000,1000)
+        self.win.setWindowTitle('Analysis Space')
+
+        self.command_library = CommandLibrary()
+        
+        self.docks=[]
+        for dock in params["docks"]:
+            d = dock._init_dock(self)
+            d._sources = dock._sources
+            self.docks.append(d)
+            
+        
+        self.win.show()
+            
+    def _sources_to_xml(self):
+        out=""
+        for dock in self.docks:
+            for method in dock._sources:
+                print "<DockType>"
+                print "<Name>" + dock__class__ + "</Name>"
+                print "<Method><Source><![CDATA["+method+"]]></Source></Method>"
+                print "</DockType>"
+        return out            
+            
+    def _methods_to_xml(self):
+        out=""
+        for meth in dir(self):
+            if type(getattr(self,meth))==type(self._methods_to_xml):
+                print "<Method><Name>"+meth+"</Name><Source><![CDATA["+inspect.getsource(getattr(self,meth))+"]]></Source></Method>"
+        return out
+
+class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
+    """
+    The toplevel object for an analysis space, sometimes called a data_gui
+    """
+    def read_state(self):
+        """
+        reads and appends data about dock placement from the underlying 
+        Dock_Gui element after creation or while running
+        """
+        new_representation=AnalysisSpace()
+        state=self.gui.dock_area.saveState()
+        print state
+        def dockstate_to_xml(state):
+            def elm_to_xml(elms,out):
+                #pdb.set_trace()
+                if type(elms)!=type([]):
+                    elms=[elms]
+                for elm in elms:
+                    elm_type=elm[0]
+                    elm_type = elm_type.title()
+                    out+="<"+str(elm_type)+">"
+                    if type(elm[1])==type([]):
+                        out=elm_to_xml(elm[1],out)
+                    else:
+                        elm_docktype=elm[1]
+                        out+="<Type>"+str(elm_docktype)+"</Type>"
+                    out+="</"+str(elm_type)+">"
+                return out
+            out=""
+            out=elm_to_xml(state,out)
+            return out   
+            
+
+        
+        #pdb.set_trace()
+        print "<AnalysisSpace>"
+        print _sources_to_xml()
+        print "<State>"
+        print dockstate_to_xml(state['main'])
+        print "</State>"
+        print "</AnalysisSpace>"
+        def rec_step():
+            pass
+            # what we did before, a recursive function to dive into and assemble the xml, with sizes appended as well
+            # also determining all used classes of docks, outputting them, and their methods
+        return new_representation.write_xml()
+
+    
+    def _launch_if_necessary(self):
+        """
+        checks if this AnalysisSpace is already running; if not, launches it
+        
+        if already running, reads dock states (etc?) and returns xml representation
+        of its current state
+        """
+        pass # needs writing
+    
+    def _launch(self):
+        """
+        creates and launches the data_gui
+        """
+        # creates all pyqt representation of docks
+        self._indocktrinate()
+        # create the gui (pyqtgraph object) itself
+        self.gui = Docked_Gui(params={"docks":self.docks})
+        self.gui.parent_xtsm_analysis_space = self
+        # create event loop and internals using twisted and pyqt
+        self._start_engine()
+
+    def _indocktrinate(self):
+        """
+        spawn all docks and source
+        """
+        # first spawn pyqt dock objects
+        self.docks=[]
+        for dock in self.Dock:
+            self.docks.append(dock._spawn())
+    
+    def _start_engine(self):
+        """
+        start the qtreactor and socket communications
+        """
+        import qtreactor.pyqt4reactor
+        qtreactor.pyqt4reactor.install()
+        
+        last_connection_time = time.time()
+        time_last_check = time.time()   
+        time_now = time.time()
+        
+        from twisted.internet import reactor
+        from twisted.internet import task
+        from autobahn.twisted.websocket import WebSocketServerProtocol
+        from autobahn.twisted.websocket import WebSocketServerFactory
+        from autobahn.twisted.websocket import WebSocketClientFactory
+        from autobahn.twisted.websocket import WebSocketClientProtocol
+        from autobahn.twisted.websocket import connectWS
+        from autobahn.twisted.websocket import listenWS
+        from twisted.internet.protocol import DatagramProtocol
+        import twisted.internet.error
+        from twisted.python import log
+        log.startLogging(sys.stdout)
+       
+        from twisted.internet import stdio
+        from twisted.protocols import basic
+        from twisted.internet import error
+    
+        class MyServerProtocol(WebSocketServerProtocol):
+        
+            def onConnect(self, request):
+                if DEBUG: print("class data_guis.MyServerProtocol, func onConnect: {0}".format(request.peer))
+                
+            def onOpen(self):
+                if DEBUG: print("class data_guis.MyServerProtocol, func onOpen")
+                
+            def onMessage(self, payload_, isBinary):
+                if DEBUG: print "class data_guis.MyServerProtocol, func onMessage"
+                #self.log_message()
+                
+                if isBinary:
+                    payload = msgpack.unpackb(payload_)
+                    if not payload.has_key('IDLSocket_ResponseFunction'):
+                        return None
+                    try:
+                        #ThisResponseFunction = getattr(self.factory.app.command_library,
+                        #                           payload['IDLSocket_ResponseFunction'])
+                        ThisResponseFunction = getattr(self.factory.command_library,
+                                                   payload['IDLSocket_ResponseFunction'])
+                    except AttributeError:
+                        if DEBUG: print ('Missing Socket_ResponseFunction:',
+                                         payload['IDLSocket_ResponseFunction'])
+                    ThisResponseFunction(payload)
+                else:
+                    print payload_.keys()
+                
+                
+            def onClose(self, wasClean, code, reason):
+                if DEBUG: print("class data_guis.MyServerProtocol, func onClose: {0}".format(reason))
+                server_shutdown()
+        
+                   
+        def check_for_main_server():
+            global time_last_check
+            global time_now
+            time_last_check = time_now
+            time_now = time.time()
+            #print time_last_check, time_now, last_connection_time
+            if (time_now - last_connection_time) > 1100000 and (time_now - time_last_check) < 11:
+                server_shutdown()
+            
+            
+        def server_shutdown():
+            if DEBUG: print "----------------Shutting Down DataGuiServer Now!----------------"
+            #win.close()
+            #app.quit()
+            reactor.callLater(0.01, reactor.stop)
+        
+        sys.argv.append('localhost')
+        sys.argv.append('9100')
+        #sys.argv[0] = file name of this script
+        # szys.argv[1] = ip address of this server
+        # sys.argv[2] = port to listen on
+        factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug = False)
+        factory.setProtocolOptions(failByDrop=False)
+        factory.protocol = MyServerProtocol
+        try:
+            reactor.listenTCP(int(sys.argv[2]), factory)
+            #a.factory = factory
+            command_library = CommandLibrary()
+            factory.command_library = command_library
+            command_library.factory = factory
+            factory.gui = self.gui
+        except twisted.internet.error.CannotListenError:
+            server_shutdown()
+        
+        reactor.run()
+
+class DockType(gnosis.xml.objectify._XO_,Analysis_Space_Core):
+    """
+    Root factory for a defined dock type, instances created during objectification of XTSM
+    
+    """
+    
+    def __init__(self):
+        
+        class this_docktype():
+            """
+            factory class for generating the pyqt-object docks
+            """   
+                
+            def _init_dock(self,parent_qt):
+                """
+                function to instantiate dock, must be present, should
+                typically be overwritten to generate the content of the dock,
+                i.e. buttons and so forth
+                
+                this function should always return the dock it generated, and
+                as good form attach that dock as self._dock
+                """
+                self._dock = pyqtgraph.dockarea.Dock("Default Dock", size=(500,100))
+                parent_qt.dock_area.addDock(self._dock, 'bottom')
+                return self._dock
+                
+            
+        self.factory=this_docktype
+        self.factory._sources = []
+    
+    def _install_sources(self):
+        old_stdout = sys.stdout
+        for meth in self.Method:
+            try:
+                context={"self":self}
+                capturer = StringIO()
+                sys.stdout = capturer
+                src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
+                src=meth.write_xml().split('<![CDATA[')[1].split(']]>')[0]
+                exec src in globals(),context 
+                sys.stdout = old_stdout
+                for elm in context:
+                    setattr(self.factory,elm,context[elm])
+            except Exception as e:
+                context.update({'_SCRIPT_ERROR':e})
+                print e
+        sys.stdout = old_stdout # make sure we have stdout back
+        self.factory._sources.append(src)
+                
+
+
+class Dock(gnosis.xml.objectify._XO_,Analysis_Space_Core):
+    """
+    docks created during objectification of XTSM - use _spawn method to
+    generate a pyqtgraph dock object from this XTSM element
+    """
+    def _spawn(self):
+        """
+        spawns the dock itself using the factory class defined elsewhere in
+        AnalysisSpace container, returns result, an instance of the factory class
+        """
+        try: 
+            dock_type=self.getFirstParentByType("AnalysisSpace").getItemByFieldValue("DockType","Name",self.Type.PCDATA)
+            dock_type._install_sources()
+            self._dock=dock_type.factory()
+            self._dock._sources = dock_type.factory._sources
+            pdb.set_trace()
+        except error as e:
+            pdb.set_trace()
+        #print self._dock._methods_to_xml()
+        return self._dock
+        
+class Method(gnosis.xml.objectify._XO_,Analysis_Space_Core):
+    def write_xml(self, out=None, tablevel=0, whitespace='True',CDATA_ESCAPE=True):
+        return Analysis_Space_Core.write_xml(self,out=out, tablevel=tablevel, whitespace=whitespace,CDATA_ESCAPE=CDATA_ESCAPE)
+
+
+gnosis.xml.objectify._XO_ = XTSM_Element
+# identify all XTSM classes defined above, override the objectify _XO_ subclass for each
+allclasses=inspect.getmembers(sys.modules[__name__],inspect.isclass)
+XTSM_Classes=[tclass[1] for tclass in allclasses if (issubclass(getattr(sys.modules[__name__],tclass[0]),getattr(getattr(sys.modules[__name__],'XTSMobjectify'),'XTSM_core')))]
+for XTSM_Class in XTSM_Classes:
+    setattr(gnosis.xml.objectify, "_XO_"+XTSM_Class.__name__, XTSM_Class)
+del allclasses
+
+"""
+MARKER1
+"""
+
+example_AS_xtsm=u"""<AnalysisSpace>
+    <DockType>
+        <Name>Console</Name>
+        <Method><![CDATA[
+def _init_dock(self,parent_qt):
+    self._dock= pyqtgraph.dockarea.Dock("Console", size=(500,150))
+    parent_qt.dock_area.addDock(self._dock, 'bottom')      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
+    _console = pyqtgraph.console.ConsoleWidget(namespace=parent_qt._console_namespace)
+    self._dock.addWidget(_console)
+    return self._dock
+]]>
+        </Method>
+    </DockType>
+        <Dock>
+            <Type>Console</Type>
+        </Dock>
+        <Dock>
+            <Type>Console</Type>
+        </Dock>
+        <Dock>
+            <Type>Console</Type>
+        </Dock>
+</AnalysisSpace>"""    

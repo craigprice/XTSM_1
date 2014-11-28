@@ -23,17 +23,19 @@ TODO:
 import uuid
 import time
 import sys
+import zipfile
 import inspect
 import pickle
+import datetime
 import types
 import collections
 import subprocess
 import io
 import os
 import platform #Access to underlying platform’s identifying data
-from datetime import datetime
-from datetime import date   
 import pdb
+
+
 import __main__ as main
 import colorama
 colorama.init(strip=False)
@@ -200,7 +202,8 @@ class MulticastProtocol(DatagramProtocol):
             return
             
         
-        if 'fake_shotnumber_started' in datagram.keys():
+        if 'fake_shotnumber_started' in datagram.keys():#Need to fix this for rb analysis so that on receiving
+        #fake_broadcast, it desn't send info to vortex
             if self.server.ip == '10.1.1.124':
                 return
             print datagram
@@ -1330,10 +1333,8 @@ class Keyboard_Input(basic.LineReceiver):
         err=False
         if not hasattr(self,"dc"):
             self.dc={"self":self.server}
-        print "dc:", self.dc
         try: exec(line,self.dc)
         except Exception as e: err=e
-        except KeyboardInterrupt : pass
         # remove backeffect on dictionary
         if self.dc.has_key('__builtins__'): 
             del self.dc['__builtins__']
@@ -1969,7 +1970,7 @@ class GlabPythonManager():
         or by udp broadcast (UDP flag) - the latter will reach all listeners
         """
         if DEBUG: print "class GlabPythonManager, function: broadcast"
-        if DEBUG and len(msg) < 10000: print "class GlabPythonManager, function: broadcast"
+        if DEBUG and len(msg) < 10000: print "class GlabPythonManager, function: broadcast", msg
             
         if UDP: 
             self.multicast.protocol.send(msg)
@@ -2060,6 +2061,29 @@ class GlabPythonManager():
                 callback = commands['callback_function']
                 callback()
         ###    
+    def check_todays_files(self):
+        location_root = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]
+        today = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
+        location_root = location_root+'\\'+today+'\\'
+        
+        all_zip_files = []
+        all_zip_files += [each for each in os.listdir(location_root) if each.endswith('.zip')]
+        print all_zip_files
+        try:
+            for f in all_zip_files:
+                zf = zipfile.ZipFile(location_root + f , 'r')
+                info = zf.infolist()
+                print f
+                for i in info:
+                    print i.filename
+                    msgp_data = zf.read(i.filename)
+                    payload = msgpack.unpackb(msgp_data)
+                    data =   msgpack.unpackb(payload['packed_data'])['data']
+                    print data[1][1][10:20]
+                zf.close()
+        except Exception as e:
+            print e
+            print "---------------------------------------------Error"  
     
     def execute_script(self, commands):#script_body, context, callback_with_result_function):
         #May want to pass this to a shadow server
@@ -2315,8 +2339,5 @@ debug=True
 active_xtsm = ''
 
 theBeast=GlabPythonManager()
-try:
-    theBeast.run()
-except KeyboardInterrupt:
-    pass
+theBeast.run()
 
