@@ -579,7 +579,8 @@ class CommandLibrary():
                         
         #Setting analysis stream
         if (not dc.dict.has_key('_analysis_stream')):
-            p = {'file_root_selector':'analysis_stream'}
+            #p = {'file_root_selector':'analysis_stream'}
+            p = {'filestream_folder':'analysis_stream'}
             dc.update({'_analysis_stream':InfiniteFileStream.Filestream(params=p)})
         xtsm_object.XTSM._analysis_stream = dc['_analysis_stream']
         
@@ -755,9 +756,15 @@ class CommandLibrary():
         self.temp_plot(params, bomb_id,dc)
         #pdb.set_trace()
         
-  
+        '''
+        raw_databomb = msgpack.unpackb(params['databomb'])
+        sn = raw_databomb['shotnumber']
+        xtsm = exp_sync.compiled_xtsm[sn].XTSM
+        dc._exp_sync.compiled_xtsm.
+        active_sequence = xtsm_object.XTSM.getActiveSequence()
+        '''
         
-        packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'set_global_variable_from_socket',
+        packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'plot_and_save_fluoresence_image',
                                         'data_context':dc.name,
                                         'packed_databomb':params['databomb']},
                                          use_bin_type=True)  
@@ -899,6 +906,9 @@ class CommandLibrary():
         cax4 = ax4.imshow(region_of_interest, cmap = mpl.cm.Greys_r,vmin=min_scale_zoom, vmax=max_scale_zoom,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
         num_atoms = float(region_of_interest.sum()) * 303 * pow(10,-6) * 0.7
         cbar4 = fig.colorbar(cax4)
+        
+        self.server.sum_arr=numpy.append(self.server.sum_arr,float(region_of_interest.sum()))
+        
         '''        
         ax5 = fig.add_subplot(235)
         cax5 = ax5.imshow(thresh_image, cmap = mpl.cm.Greys_r,vmin=0, vmax=2,interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)                   
@@ -925,9 +935,10 @@ class CommandLibrary():
         ax4.format_coord = format_coord       
         '''
         
-        path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()
+        #path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()
+        path = '..\\psu_data\\'+date.today().isoformat() + '\\raw_data\\'
         file_name = 'databomb_' + bomb_id + '_at_time_' + str(raw_databomb['packed_time'])
-        plt.title("SN="+str(raw_databomb['shotnumber'])+'\n_'+path+'\n/'+file_name+' Counts = '+str(region_of_interest.sum()), fontsize=10)
+        plt.title("SN="+str(raw_databomb['shotnumber'])+'\n_'+path+'\n/'+file_name+' Counts = '+str(float(region_of_interest.sum())), fontsize=10)
         #plt.title("SN="+str(raw_databomb['shotnumber'])+' Counts = '+ str(region_of_interest.sum()), fontsize=10)
        #reactor.callInThread(plt.show,'block=False')
         #reactor.callFromThread(plt.close)
@@ -999,7 +1010,8 @@ class CommandLibrary():
         cax = ax.imshow(numpy.asarray(corrected_image,dtype=float), cmap = mpl.cm.Greys_r,vmin=min_scale, vmax=max_scale, interpolation='none')#, cmap = mpl.cm.spectral mpl.cm.Greys_r)   
         cbar = fig.colorbar(cax)
         
-        path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()
+        #path = file_locations.file_locations['raw_buffer_folders'][uuid.getnode()]+'/'+date.today().isoformat()
+        path = '..\\psu_data\\'+date.today().isoformat() + '\\raw_data\\'
         file_name = 'databomb_' + bomb_id + '_at_time_' + str(raw_databomb['packed_time'])
         plt.title("SN="+str(raw_databomb['shotnumber']), fontsize=10)
         plt.show(block=False)

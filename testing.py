@@ -33,7 +33,7 @@ def fitgaussian(data):
     p, success = scipy.optimize.leastsq(errorfunction, params)
     return p
     
-
+'''
 # Create the gaussian data
 Xin, Yin = numpy.mgrid[0:201, 0:201]
 data = gaussian(3, 100, 100, 20, 40)(Xin, Yin) + numpy.random.random(Xin.shape)
@@ -58,3 +58,47 @@ verticalalignment='bottom', transform=ax.transAxes)
 print t.text()
 
 pylab.show()
+'''
+
+'''
+
+import zipfile
+import msgpack
+#mfile = '45dc6b61-7052-11e4-b42a-0010187736b5.zip'
+#path = 'C:\\wamp\\www\\raw_buffers\\DBFS\\2014-11-19\\'
+mfile = '51ef3c11-71c0-11e4-b1b5-0010187736b5.zip'
+path = 'C:\\wamp\\www\\raw_buffers\\DBFS\\2014-11-21\\'
+zf = zipfile.ZipFile( path + mfile , 'r')
+info = zf.infolist()
+print info
+print info[0].filename
+msgp_data = zf.read(info[0].filename)
+payload = msgpack.unpackb(msgp_data)
+data = msgpack.unpackb(payload['packed_data'])['data']
+print data[1][1]
+
+import tables
+h5file = tables.open_file("C:\\wamp\\www\\WebSocketServer\\edf2f6ca-53da-4118-84fd-fc1c30d4ab29.h5", "r")
+table = h5file.root.data_group.ccd_data
+data = [x['ccd_array'] if x['short_256_description'] == 'flouresence' for x in table.iterrows()]
+
+'''
+
+import os
+'''
+self.today = datetime.datetime.fromtimestamp(self.init_time).strftime('%Y-%m-%d')
+os.makedirs('C:\\wamp\\www\\archie\\')
+for i = enumerate():
+'''
+
+import datetime
+import datetime
+
+start = datetime.datetime.strptime("2014-11-13", '%Y-%m-%d')
+end = datetime.datetime.strptime("2014-11-26", "%Y-%m-%d")
+date_generated = [start + datetime.timedelta(days=x) for x in range(0, (end-start).days)]
+
+for date in date_generated:
+    os.makedirs("C:\\wamp\\www\\psu_data\\"+date.strftime("%Y-%m-%d")+'\\raw_data') 
+    os.makedirs("C:\\wamp\\www\\psu_data\\"+date.strftime("%Y-%m-%d")+'\\xtsm') 
+    os.makedirs("C:\\wamp\\www\\psu_data\\"+date.strftime("%Y-%m-%d")+'\\hdf5_heap') 

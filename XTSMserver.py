@@ -1486,6 +1486,7 @@ class GlabPythonManager():
         self.ALL_DATABOMBS = {}
         self.server.databomblist=[]
         self.databombs_for_data_gui = {}#ALL DATABOMBS
+        self.server.sum_arr=np.array([])
         #if self.ALL_DATABOMBS.len
         
         # associate the CommandProtocol as a response method on that socket
@@ -1702,6 +1703,8 @@ class GlabPythonManager():
             plt.show(block=False)
             plt.savefig(filename)
             print "Figure saved. No fitting is performed."
+            
+       
         
         elif fit == 'MolassesTOF':
             def molasses_tof(x,offset,t,a,c):
@@ -1780,7 +1783,7 @@ class GlabPythonManager():
             ax.plot(xdata,ydata)
             
             #popt,popv = curve_fit(func, xdata, ydata, (-12.,12.,15.,25.,6.,5.,50.))
-            popt,popv = curve_fit(two_gaussian, xdata[15:], ydata[15:], (-10,10.,10.,45,4.,3.,80.)) 
+            popt,popv = curve_fit(two_gaussian, xdata[15:], ydata[15:], (-10,10.,10.,45,4.,3.,75.)) 
             fit = two_gaussian(xdata[15:], *popt)
             ax.plot(xdata[15:], fit, 'r--')
             ax.axis([0,tdiv*10,-vdiv*4.,vdiv*4.])
@@ -1788,14 +1791,15 @@ class GlabPythonManager():
             ax.xaxis.set_ticks(np.linspace(0,10*tdiv,11))
             ax.grid(True)
             ax.text(0, 2*vdiv,'Fitting: Two Gaussian. \n'
-                    + 'width1 = '+str(popt[1])+' ms ;\n amplitude1 = '+str(popt[2])+' mV ; \n center1 = '+str(popt[3])+'ms.\n'+ 'FWHM = '+str(2.3548*popt[1])+'ms.')
+                    + 'width1 = '+str(popt[1])+' ms ;\n amplitude1 = '+str(popt[2])+' mV ; \n center1 = '+str(popt[3])+'ms.\n'+ 'FWHM = '+str(2.3548*popt[1])+'ms. \n Area1 = '+str(2.3548*popt[1]*popt[2])+'mV*ms.')
             ax.text(6*tdiv,2*vdiv,'width2 = '+str(popt[4])+' ms ;\n amplitude2 = '+str(popt[5])+' mV ; \n center2 = '+str(popt[6])+'ms.\n'
                     + 'FWHM = '+str(2.3548*popt[4])+'ms.\n'+'Area: '+str(2.3548*popt[4]*popt[5])+'mV*ms.')
             ax.set_ylabel('Log Amp Output Voltage (mV)')
             ax.set_xlabel('Time (ms)')
             print 'FWHM=', 2.3548*popt[4], 'ms'
             print 'Amplitude=', popt[5], 'mV'
-            print 'Area=', 2.3548*popt[4]*popt[5], 'mV*ms'
+            print 'RSC Area =', 2.3548*popt[4]*popt[5], 'mV*ms'
+            print 'Molasses Area =', 2.3548*popt[1]*popt[2], 'mV*ms'
            
             plt.show(block=False)
             plt.savefig(filename)

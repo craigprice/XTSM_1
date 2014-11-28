@@ -87,7 +87,8 @@ class Experiment_Sync_Group(HasTraits):
         #json = simplejson.dumps(msg, ensure_ascii = False).encode('utf8')
     def __flush__(self):
         if DEBUG: print "class Experiment_Sync_Group, func __flush__"
-        lsx=open(file_locations.file_locations['last_xtsm'][uuid.getnode()]+"last_xtsm.xtsm","w")
+        #lsx=open(file_locations.file_locations['last_xtsm'][uuid.getnode()]+"last_xtsm.xtsm","w")
+        lsx=open("last_xtsm.xtsm","w")
         lsx.write(self.last_successful_xtsm)
         lsx.close()
         self.compiled_xtsm.flush()
@@ -103,7 +104,8 @@ class Experiment_Sync_Group(HasTraits):
         the oldest xtsm objects are serialized for storage in this messagepack 
         format as shotnumber:xtsm entries.
         """
-        filestream = InfiniteFileStream.Filestream({"file_root_selector":"xtsm_feed"})
+        #filestream = InfiniteFileStream.Filestream({"file_root_selector":"xtsm_feed"})
+        filestream = InfiniteFileStream.Filestream({"filestream_folder":"xtsm"})
         packer = msgpack.Packer()
         def __init__(self):
             collections.OrderedDict.__init__(self)

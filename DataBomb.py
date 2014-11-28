@@ -103,7 +103,7 @@ class DataBomb(xstatus_ready.xstatus_ready):
                   'len_of_packed_data': str(len(self.packed_data)),
                   'shotnumber': self.shotnumber,
                   'packed_data': self.packed_data }
-        prefix = 'DB_SN'+str(self.shotnumber)+'_'
+        prefix = 'SN'+str(self.shotnumber)+'_'
         header = {i:to_disk[i] for i in to_disk if i!='packed_data'}
         comments = str(header)
         extension = '.msgp'
@@ -165,7 +165,8 @@ class DataBombCatcher(xstatus_ready.xstatus_ready):
             setattr(self,key,defaultparams[key])   
         self.databombs={}
         self.dataListenerManagers = DataListenerManager()
-        params = {'file_root_selector':'raw_buffer_folders'}
+        #params = {'file_root_selector':'raw_buffer_folders'}
+        params = {'filestream_folder':'raw_data'}
         self.filestream = InfiniteFileStream.Filestream(params)
         #self.stream=self.FileStream(params={'file_root_selector':'raw_buffer_folders'})
 

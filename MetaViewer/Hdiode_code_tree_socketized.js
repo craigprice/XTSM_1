@@ -26,7 +26,7 @@ function live_content_event(elm) {
     // pass the event content_id, and other arguments of call to server as a live_content_event
 	var pxi_dc;
 	pxi_dc = document.getElementById('pxi_dc').value;
-    mes = JSON.stringify({ "IDLSocket_ResponseFunction": "live_content_event", "content_id": cid, "args": slicedArgs });
+    mes = JSON.stringify({ "IDLSocket_ResponseFunction": "live_content_event", "content_id": cid, "args": slicedArgs, "data_context": pxi_dc});
     $('#server_push_output_textarea')[0].sendText(mes);
 }
 
@@ -74,7 +74,7 @@ function websocketize(target,arg) {
         target.reconnectAttempts +=1 ;
     };
     target.onopencall = onopencall;
-
+	
     function onclosecall(e) {
         if (target.isopen) {
             //console.log("Websocket closed.");
@@ -87,7 +87,7 @@ function websocketize(target,arg) {
         };
     };
     target.onclosecall = onclosecall;
-
+	
     function ReopenSocket() {
         target.reconnectAttempts = 0;
 		if (typeof reconimg_ws !== 'undefined') {
@@ -126,8 +126,8 @@ function websocketize(target,arg) {
         writes server messages to the textarea console log. 
         */
         target.innerHTML = target.innerHTML.split("\n").slice(-6,-1).join() + "\n" + message;
-        }
-        target.socket.onmessage = function (e) {
+    }
+    target.socket.onmessage = function (e) {
 			console.log("in function: target.socket.onmessage");
             /*
             Here we define the response to any incoming websocket data.  We assume if the
@@ -162,7 +162,7 @@ function websocketize(target,arg) {
 					}
                     var thearg = obj[action];
 					try{
-                    eval("this.owner.commandLibrary." + action + '(thearg)');
+						eval("this.owner.commandLibrary." + action + '(thearg)');
 					}
 					catch(err){
 						this.owner.commandLibrary.server_console("Error:"+action);
@@ -211,7 +211,7 @@ function CommandLibrary(arg) {
     this.shotnumber = shotnumber;
 
     function parsed_active_xtsm(time) {
-        this.server_console("experiment parsed.");
+        //this.server_console("experiment parsed.");
     };
     this.parsed_active_xtsm = parsed_active_xtsm;
 
@@ -219,7 +219,6 @@ function CommandLibrary(arg) {
         //console.log("In function xtsm_change. shotnumber_browser:" +  arg.shotnumber_browse + "shotnumber: " + shotnumber);
         this.server_console("xtsm for shotnumber " + shotnumber + " changed.");
         if (!(arg.shotnumber_lock) && (arg.shotnumber_browse === shotnumber)) {
-            console.log("getting in response to xtsm change");
 			var pxi_dc;
 			pxi_dc = document.getElementById('pxi_dc').value;
 			console.log('sending request_xtsm');
@@ -228,13 +227,12 @@ function CommandLibrary(arg) {
     };
     this.xtsm_change = xtsm_change;
 
-    function xtsm_return(payload) {
+    function xtsm_return(pay) {
 		console.log('inside xtsm_return');
-        var pay = jQuery.parseJSON(payload);
+        pay = jQuery.parseJSON(pay);
 		console.log('arg.shotnumber_browse ' + arg.shotnumber_browse);
 		console.log("pay['shotnumber'] "+pay['shotnumber']);
 		console.log("arg.running_shot "+arg.running_shot);
-        //if ((arg.shotnumber_browse === pay['shotnumber']) && (!arg.shotnumber_lock)) { TODO: still update the xtsm when looking at past shots
         if ((arg.shotnumber_browse === 0) && (!arg.shotnumber_lock)) {
 			console.log('updating XTSM. '+ 'shotnumber: ' +  pay['shotnumber']);
             arg.xml_string = pay['xtsm'];
@@ -248,10 +246,11 @@ function CommandLibrary(arg) {
     function receive_live_content(payload) {
         var content_id;
         payload = jQuery.parseJSON(payload);
-        for (content_id in payload) { 
-			arg.update_livedata(content_id, payload[content_id]); 
+        for (content_id in payload) {
+			//console.log('inside receive_live_content');
+			//console.log('calling update_livedata with: content_id: ' + content_id + "payload[content_id]: " + payload[content_id]);
+			arg.update_livedata(content_id, payload[content_id]);
 		};
-
     };
     this.receive_live_content = receive_live_content;
 
@@ -330,7 +329,7 @@ function CommandLibrary(arg) {
 		}
 	};
 	this.retrieve_active_xtsm_ws = retrieve_active_xtsm_ws;
-
+	
 };
 
 function replaceHtml(el, html) {
@@ -1625,8 +1624,7 @@ function Hdiode_code_tree(html_div, sources) {
     }
     this.toggle_cm = toggle_cm;
 
-    function create_cm(textarea) {
-    // this is used to create main CodeMirror editor
+	function create_cm(textarea){
 		that=this;
         this.editor = CodeMirror.fromTextArea(this.textarea,
             { mode: "text/html", gutter: "True", lineNumbers: "True",
@@ -1639,37 +1637,7 @@ function Hdiode_code_tree(html_div, sources) {
 		});
 	}
     this.create_cm = create_cm;
-
-    var root_tree = this;
-    function create_subcm(textarea, format) {
-    // this is used to create CodeMirror editors for in-tree editing (not the main XTSM editor)
-        var cmobj;
-        var that = this;
-        var forms = { python: { mode: { name: "python", version: 2, singleLineStringErrors: false },
-                                lineNumbers: true, indentUnit: 4, matchBrackets: true},
-                      xml: { mode: "text/html", gutter: "True", lineNumbers: "True",
-                                gutters: ["note-gutter", "CodeMirror-linenumbers"],
-                                linewrapping: "True", autoCloseTags: true, cursorBlinkRate: "500"}
-                        };
-        cm_obj = CodeMirror.fromTextArea(textarea,forms[format]);
-        cm_obj.setSize(900,300);
-        cm_obj.setValue(textarea.value.replace(/<!\[CDATA\[.*?\]\]>/g, ''));
-        cm_obj.container_tree = root_tree;
-        cm_obj.on("blur", function (e) {
-                e.target = textarea;
-                e.target.name = textarea.name;
-                e.target.value = ""+cm_obj.getValue();
-                e.data=Object();
-                e.data.container=e.container_tree;  // this needs to pass ref to hdiode_codetree object
-                e.gen_id = textarea.gen_id;
-                e.container = textarea.container;
-                updateElementEscaped_update_editor(e);
-                return;
-            });
-    }
-    this.create_subcm = create_subcm;
-
-
+	
     function xmltoString(elem) {
         var serialized, serializer;
         try {
@@ -1683,7 +1651,7 @@ function Hdiode_code_tree(html_div, sources) {
 
     function refresh_tree() {
         //builds HTML tree by applying XSL to XML.
-        var xslparser, docparser, xml, xsltProcessor, ex, exs, elem_num, elem, linkitem, divitem, h_classes, i, prev_class, tocms;
+        var xslparser, docparser, xml, xsltProcessor, ex, exs, elem_num, elem, linkitem, divitem, h_classes, i, prev_class;
         if (!this.xml_string) { return; }
         if (!this.xsl_string) { return; }
         // -> would be good to avoid reparsing the xsl everytime.
@@ -1696,25 +1664,14 @@ function Hdiode_code_tree(html_div, sources) {
         }
         //docparser = new DOMParser();
         xml = this.docparser.parseFromString(this.xml_string, "text/xml");
-        if (!(typeof this.xsltProcessor === 'object')) {
-            if (typeof XSLTProcessor == 'function') {
-                this.xsltProcessor = new XSLTProcessor();
-                this.xsltProcessor.importStylesheet(this.xslDoc);
-            } else {
-                this.xsltProcessor = PyXSLTProcessor; // for use in PyQT Webkit implementations
-                this.xsltProcessor.importStylesheet(this.xsl_string);
-                //this.xslDoc = this.xsltProcessor;    
-            }
-	        
+		if (!(typeof this.xsltProcessor === 'object')){
+			this.xsltProcessor = new XSLTProcessor();
+	        this.xsltProcessor.importStylesheet(this.xslDoc);
 		} 
 		//var ownerDocument = document.implementation.createDocument("", "test", null);
         //ex = this.xsltProcessor.transformToFragment(xml, ownerDocument);
 		//ex=this.xsltProcessor.transformToDocument(xml);
-		if (typeof XSLTProcessor == 'function') {
-		    var sResult = zXslt.transformToText(xml, this.xslDoc);
-		} else {
-		    var sResult = this.xsltProcessor.transformToText(this.xml_string); 
-        }
+		var sResult = zXslt.transformToText(xml,this.xslDoc);
         //exs = xmltoString(ex); // would have preferred this.xsltProcessor.GetXmlStringFromXmlDoc(xml) but chrome doesn't support it // 
         this.unbind_events();  // this is important to allow garbage collection and avoid memory leak
 		this.html_div_tree = replaceHtml(this.html_div_tree, sResult);// exs);
@@ -1731,16 +1688,7 @@ function Hdiode_code_tree(html_div, sources) {
 		for (i = 0; i < h_classes.length; i++) {
 			prev_class = h_classes[i].getAttribute('old_class');
 			h_classes[i].setAttribute('class', prev_class);
-
-        }
-
-        // swap textareas requesting codemirrorization
-
-        tocms = $("[codemirrorize]");
-        for (i = 0; i < tocms.length; i++) {
-            create_subcm(tocms[i],$(tocms[i]).attr("codemirrorize")) 
-            }
-
+		}
 		delete ex, exs, xml, h_classes, prev_class, sResult;
     }
     this.refresh_tree = refresh_tree;
@@ -1795,7 +1743,7 @@ function Hdiode_code_tree(html_div, sources) {
                 delete this.live_gui_data[item];
 				var pxi_dc;
 				pxi_dc = document.getElementById('pxi_dc').value;
-                this.to_server('{"IDLSocket_ResponseFunction":"derequest_content","content_id":"' + item + '"}');
+                this.to_server('{"IDLSocket_ResponseFunction":"derequest_content","content_id":"' + item + '","data_context":"' + pxi_dc + '"}');
                 };
             };
     }
@@ -1963,35 +1911,6 @@ function Hdiode_code_tree(html_div, sources) {
         // (tree is automatically refreshed by onchange event of codemirror editor)
     }
     this.updateElement_update_editor = updateElement_update_editor;
-
-    function updateElementEscaped_update_editor(event) {
-        // toggles an element between expanded and collapsed view by 
-        // rewriting XML, and re-generating entire tree
-        // retrieve XPATH to generating XML element from 
-        // first parent division's gen_id property
-        //var elmpath, docparser, xml, target;
-        var elmpath, docparser, xml, target, upd;
-        elmpath = $(event.target).parents("div:first").get(0).
-            getAttribute('gen_id');
-        if (elmpath.substr(elmpath.length - 2, 2) === '__') {
-            elmpath += event.target.name;
-        }
-        elmpath = elmpath.split('divtree__')[1].replace(/__/g, "]/").
-            replace(/_/g, "[") + "]";
-        docparser = new DOMParser();
-        xml = docparser.parseFromString(event.data.container.xml_string, "text/xml");
-        target = xml.evaluate(elmpath, xml, null, XPathResult.
-            UNORDERED_NODE_ITERATOR_TYPE, null).iterateNext();
-        upd = event.target.value.replace(/<!\[CDATA\[.*?\]\]>/g, '');
-        if (target.firstChild) {
-            target.removeChild(target.firstChild);
-        }
-        target.appendChild(xml.createCDATASection(upd)); 
-        event.data.container.xml_string = xmltoString(xml);
-        event.data.container.update_editor();
-        // (tree is automatically refreshed by onchange event of codemirror editor)
-    }
-    this.updateElementEscaped_update_editor = updateElementEscaped_update_editor;
 
     function autocomplete(event) {
         var docparser, tevent, xml, res;//  res, xml;
@@ -2346,8 +2265,6 @@ function Hdiode_undo(html_div) {
 
 }
 
-arg = 1;  // expose editor at base level
-
 function main() {
 	"use strict";
 	/*
@@ -2357,21 +2274,22 @@ function main() {
 	*/
 
 	//Creates new hdiode tree
-	//var arg;
+	var arg;
 	arg = new Hdiode_code_tree(document.getElementById('Create_Tree'), {xml_string: '<none>', xsl_string: '<none>', xsd_string: '<none>'});
 	arg.load_file("transforms/default.xsl", 'xsl_string');
 	arg.load_file("sequences/default.xtsm", 'xml_string');
 	arg.load_file("transforms/default.xsd", 'xsd_string');
 	
 	/*Controls html page elements outside of the code tree*/
-
+	
 	//Server Push
 	document.getElementById("server_push_menu").onclick = function () { toggle_menu("server_push_menu", "server_push_output_div"); };
 	// websocketize(document.getElementById("server_push_output_div"));
 	var ta = document.getElementById("server_push_output_div").appendChild(document.createElement("textarea"));
 	ta.id = "server_push_output_textarea";
     textarea_console(ta,arg);
-
+	
+	
 	//File Operations
 	document.getElementById("file_menu").onclick = function () {toggle_menu("file_menu", "file_operations"); };
 	document.getElementById("file_type").onchange = function () {populate_folders(); document.getElementById('save_file').value = default_save_name(); };
@@ -2416,3 +2334,4 @@ function main() {
 
 	document.onkeyup = arg.keyboard_shorts;
 }
+
