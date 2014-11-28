@@ -479,7 +479,7 @@ class CommandProtocol(protocol.Protocol):
             self.factory.openConnections.update({self.ConnectionUID:self})
         except AttributeError:
             pdb.set_trace()
-        if DEBUG: print "Connected from", self.peer, "at", datetime.now()
+        if DEBUG: print "Connected from", self.peer, "at", datetime.datetime.now()
         self.factory.connection_manager.connectLog(self)
         self.server = self.factory.connection_manager.server
         self.alldata = ''
@@ -566,7 +566,7 @@ class CommandProtocol(protocol.Protocol):
             del self.factory.openConnections[self.ConnectionUID]
         except KeyError:
             pass
-        if DEBUG: print datetime.now(), "Disconnected from %s: %s" % (self.peer,reason.value)
+        if DEBUG: print datetime.datetime.now(), "Disconnected from %s: %s" % (self.peer,reason.value)
 
         
 class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):

@@ -649,8 +649,9 @@ class docked_gui():
             if self.imv.axes['t'] is not None:
                 self.imv.setCurrentIndex(self.imv.currentIndex + n)
                 try:
-                    self._dock_image_view.label = DockLabel("Shotnumber = "+str(self.imgstack_shotnumbers[self.imv.currentIndex]), self._dock_image_view)
-                    self._dock_image_view.updateStyle()
+                    pass
+                    #self._dock_image_view.label = DockLabel("Shotnumber = "+str(self.imgstack_shotnumbers[self.imv.currentIndex]), self._dock_image_view)
+                    #self._dock_image_view.updateStyle()
                 except IndexError:
                     pass
         self.imv.jumpFrames = jumpFrames
