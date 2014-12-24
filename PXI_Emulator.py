@@ -229,6 +229,7 @@ def main():
     factory = WebSocketClientFactory(address + ":8084", debug = False)
     factory.setProtocolOptions(failByDrop=False)
     factory.protocol = MyClientProtocol
+    #command_library.request_active_xtsm()
     try:
         connectWS(factory)
         command_library.factory = factory

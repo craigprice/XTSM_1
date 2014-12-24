@@ -38,6 +38,7 @@ import pylab
 import numpy
 import scipy.optimize
 import simplejson
+import hdf5_liveheap
     
 DEBUG = True
 global TIMING
@@ -134,9 +135,30 @@ class CommandLibrary():
     def check_consistency_with_xtsm(self, params):
         xtsm = '<XTSM>'+params['analysis_space_xtsm']+'</XTSM>'
         xtsm_object = XTSMobjectify.XTSM_Object(xtsm)
+        xtsm_heap = xtsm_object.XTSM.getDescendentsByType('Heap')[0]
         self.factory.gui._console_namespace.update({"xtsm_object":xtsm_object})
-        pass
-    
+        if not (xtsm_heap.Name.PCDATA in self.factory.gui._console_namespace.keys()):
+            heap = hdf5_liveheap.glab_liveheap({"element_structure":[512,512],
+                                                "filename":"test_file",
+                                                "typecode":numpy.dtype("uint16")})#numpy.uint16 will not work
+            self.factory.gui._console_namespace.update({xtsm_heap.Name.PCDATA:heap})
+            
+        
+        
+    def databomb(self, params):
+        if DEBUG: print("class data_guis.docked_gui.CommandLibrary, func databomb")
+        db = msgpack.unpackb(params['databomb'])
+        ns = self.factory.gui._console_namespace
+        scripts = ns['xtsm_object'].XTSM.getDescendentsByType('Script')
+        #xtsm_heap = ns['xtsm_object'].XTSM.getDescendentsByType('Heap')[0]
+        #if any(x in [xtsm_heap.DataCriteria.PCDATA] for x in list(ns.values())):
+        #    ns[xtsm_heap.Name.PCDATA].push(numpy.asarray(db['data']), shotnumber=numpy.asarray(db['shotnumber']))
+        try:
+            self.factory.gui._console_namespace.databombs.append(db)
+        except AttributeError:
+            self.factory.gui._console_namespace.update({'databombs':[db]})
+        exec scripts[0].ScriptBody.PCDATA in globals(), ns
+        
     
     def plot_and_save_fluoresence_image(self,params):
         """

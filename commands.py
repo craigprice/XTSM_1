@@ -659,7 +659,7 @@ class CommandLibrary():
         # send back the timingstrings
         #pdb.set_trace()
         tsbytes = bytearray(parserOutput.package_timingstrings())
-        timing_diagram.TimingString(tsbytes)
+        #timing_diagram.TimingString(tsbytes)
         timingstringOutput = str(tsbytes)
         #print parserOutput.timing_string_ints
         #pdb.set_trace()
@@ -786,9 +786,9 @@ class CommandLibrary():
         active_sequence = xtsm_object.XTSM.getActiveSequence()
         '''
         
-        packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'plot_and_save_fluoresence_image',
+        packed_message = msgpack.packb({"IDLSocket_ResponseFunction":'databomb',
                                         'data_context':dc.name,
-                                        'packed_databomb':params['databomb']},
+                                        'databomb':params['databomb']},
                                          use_bin_type=True)  
         for p in self.server.connection_manager.data_gui_servers:
             print "sending len =", len(packed_message)/(1000*1000.0), "MB. asdf (2)", str(time.time()-TIMING)
