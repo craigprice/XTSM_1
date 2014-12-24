@@ -680,6 +680,11 @@ class ParserOutput(gnosis.xml.objectify._XO_,XTSM_core):
             ts[0]=num_tg            
             hptr=1
             ptr=headerLength*num_tg + 1
+            #print "headerLength", headerLength
+            #print "bodyLength", bodyLength
+            #print "num_tg", num_tg
+            #print "hptr", hptr
+            #print "ptr", ptr
             for cd in self.ControlData:
                 ts[hptr:hptr+headerLength] = cd.ControlArray.generate_package_header()
                 hptr+=headerLength
@@ -690,7 +695,7 @@ class ParserOutput(gnosis.xml.objectify._XO_,XTSM_core):
                 totalLength = ts.shape
                 self.timing_string_ints = ts
                 tl=numpy.asarray(totalLength, dtype=numpy.uint64).view('u1')
-                ts=numpy.concatenate((tl, ts))
+                ts=numpy.concatenate((tl, ts)) # SPEEDUP TARGET 2014-12-17 NDG CP
             except OverflowError: return ""  # Overflow error means length of ts is greater than 8 byte integer.
         except AttributeError: return ""
         return ts
@@ -726,7 +731,10 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         # coerce explicit timing edges to a multiple of the parent clock's timebase
         self.coerce_explicitEdgeSources() #LRJ 3-7-2014, edge coercion will be done inside of construct_denseT so that clockers and outputs agree on times.
         if TIMING: timing.append(("coerce_explicitEdgeSources",time.time()))        
-        # create a list of all times an update is needed for this timing group                
+        # create a list of all times an update is needed for this timing group   
+
+        #if self.tGroup == 2:
+        #    pdb.set_trace()  
         self.construct_denseT()
         if TIMING: timing.append(("construct_denseT",time.time()))        
         # clockstring management: save the current timinggroup's clocking string to the ParserOutput node,
@@ -938,9 +946,9 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             coer_chain=coer_chain_red
         for coer in coer_chain:
             self.denseT=((self.denseT/numpy.float64(coer)).round())*numpy.float64(coer)
-            for ack in range(len(allclcks)):
-                allclcks[ack]=((allclcks[ack]/numpy.float64(coer)).round())*numpy.float64(coer)
-              
+            for clkchan in range(len(allclcks)):  #LRJ 12-17-2014 added to coerce clock times on grid (previously falltimes were being computed with values off-grid)
+                allclcks[clkchan]=((allclcks[clkchan]/numpy.float64(coer)).round())*numpy.float64(coer)
+
 
         # the next few lines merge all denseT elements (from intervals and edges on this timing group)
         # with all clocking edges from channels on this timing group that clock another group
@@ -1309,7 +1317,18 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
 #        tsh[26:32]= Reserved for future use
         tsh[32:56]=numpy.fromstring(self.tGroupNode.Name[0].PCDATA[0:24].ljust(24,u" "),dtype=numpy.uint8)  # tGroup Name
         tsh[56:80]=numpy.fromstring(self.tGroupNode.ClockedBy[0].PCDATA[0:24].ljust(24,u" "),dtype=numpy.uint8)  # Clock Channel Name
-        return tsh        
+        
+        #print "headerLength", headerLength
+        #print "numpy.array([self.timingstring.shape[0]],dtype=numpy.uint64)", numpy.array([self.timingstring.shape[0]],dtype=numpy.uint64)
+        #print "numpy.array([self.tGroup],dtype=numpy.uint64)", numpy.array([self.tGroup],dtype=numpy.uint64)
+        #print "{'DigitalOutput':0,'AnalogOutput':1,'DigitalInput':2,'AnalogInput':3,'DelayTrain':4}[self.get_tgType()]", {'DigitalOutput':0,'AnalogOutput':1,'DigitalInput':2,'AnalogInput':3,'DelayTrain':4}[self.get_tgType()]
+        #print "numpy.array([1000./self.clockgenresolution],dtype=numpy.uint32)", numpy.array([1000./self.clockgenresolution],dtype=numpy.uint32)
+        #print "hasattr(self,'swTrigger')", hasattr(self,'swTrigger')
+        #print "self.isSparse", self.isSparse
+        #print "1", 1
+        #print "self.tGroupNode.Name[0].PCDATA[0:24].ljust(24,u" ")", self.tGroupNode.Name[0].PCDATA[0:24].ljust(24,u" ")
+        #print "self.tGroupNode.ClockedBy[0].PCDATA[0:24].ljust(24,u" ")", self.tGroupNode.ClockedBy[0].PCDATA[0:24].ljust(24,u" ")
+        return tsh           
     '''
     def findNearestValue(self,array,array2):
         

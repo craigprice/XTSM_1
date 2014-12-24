@@ -657,7 +657,10 @@ class CommandLibrary():
         xtsm_object.XTSM.onChange = _changed_xtsm
 
         # send back the timingstrings
-        timingstringOutput = str(bytearray(parserOutput.package_timingstrings()))
+        #pdb.set_trace()
+        tsbytes = bytearray(parserOutput.package_timingstrings())
+        timing_diagram.TimingString(tsbytes)
+        timingstringOutput = str(tsbytes)
         #print parserOutput.timing_string_ints
         #pdb.set_trace()
         if DEBUG: print "timingstringOutput, at time:", float(time.time()) - 1412863872

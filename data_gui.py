@@ -1248,8 +1248,9 @@ class Dock(gnosis.xml.objectify._XO_,Analysis_Space_Core):
             self._dock=dock_type.factory()
             self._dock._sources = dock_type.factory._sources
             pdb.set_trace()
-        except error as e:
+        except Exception as e:
             pdb.set_trace()
+            print e
         #print self._dock._methods_to_xml()
         return self._dock
         
