@@ -37,10 +37,15 @@ msgpack_numpy.patch()#This patch actually changes the behavior of "msgpack"
 import pylab
 import numpy
 import scipy.optimize
+import simplejson
     
 DEBUG = True
 global TIMING
 TIMING = 1416876428
+    
+
+import gnosis.xml.objectify # standard package used for conversion of xml structure to Pythonic objects, also core starting point for this set of routines
+import XTSMobjectify    
     
 class CCDImage(tables.IsDescription):
     short_256_description = tables.StringCol(256)
@@ -126,6 +131,12 @@ class CommandLibrary():
         self.data_storage.h5file.close()
         self.data_storage = DataStorage() 
 
+    def check_consistency_with_xtsm(self, params):
+        xtsm = '<XTSM>'+params['analysis_space_xtsm']+'</XTSM>'
+        xtsm_object = XTSMobjectify.XTSM_Object(xtsm)
+        self.factory.gui._console_namespace.update({"xtsm_object":xtsm_object})
+        pass
+    
     
     def plot_and_save_fluoresence_image(self,params):
         """
@@ -858,8 +869,25 @@ def main():
                                      payload['IDLSocket_ResponseFunction'])
                 ThisResponseFunction(payload)
             else:
-                print payload_.keys()
-            
+                payload = simplejson.loads(payload_)
+                if 'Not_Command_text_message' in payload:
+                    if DEBUG: print payload['Not_Command_text_message']
+                    return
+                if DEBUG: print "payload:"
+                if DEBUG and not len(payload) < 10000: print payload
+                if not payload.has_key('IDLSocket_ResponseFunction'):
+                    return None
+                try:
+                    #ThisResponseFunction = getattr(self.factory.app.command_library,
+                    #                           payload['IDLSocket_ResponseFunction'])
+                    ThisResponseFunction = getattr(self.factory.command_library,
+                                               payload['IDLSocket_ResponseFunction'])
+                except AttributeError:
+                    if DEBUG: print ('Missing Socket_ResponseFunction:',
+                                     payload['IDLSocket_ResponseFunction'])
+                ThisResponseFunction(payload)
+                    
+
             
         def onClose(self, wasClean, code, reason):
             if DEBUG: print("class data_guis.MyServerProtocol, func onClose: {0}".format(reason))
@@ -914,8 +942,6 @@ if __name__ == '__main__':
 Below until MARKER1 is objectification of AnalysisSpaces
 """
 
-import gnosis.xml.objectify # standard package used for conversion of xml structure to Pythonic objects, also core starting point for this set of routines
-import XTSMobjectify
 
 
 class XTSM_Element(gnosis.xml.objectify._XO_,XTSMobjectify.XTSM_core):

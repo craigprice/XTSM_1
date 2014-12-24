@@ -54,7 +54,7 @@ import numpy
 import collections
 import sync
 from scipy.optimize import curve_fit
-DEBUG = True
+DEBUG = False
       
 NUM_RETAINED_XTSM=10
 
@@ -526,6 +526,7 @@ class CommandLibrary():
         sn = exp_sync.shotnumber
         
         # turn the active_xtsm string into an object
+        
         xtsm_object = XTSMobjectify.XTSM_Object(exp_sync.active_xtsm)
         dc.update({'_active_xtsm_obj':xtsm_object})
         
@@ -602,7 +603,21 @@ class CommandLibrary():
         #InstallListeners passes the return of __generate_listeners__ to spawn in DLM class
         # InstrumentCommands       
         #pdb.set_trace()
+        
+
+        
+        #pdb.set_trace()
+        for aspace in active_sequence.getDescendentsByType('AnalysisSpace'):
+            name = aspace.Name.PCDATA
+            analysis_space_xtsm = aspace.write_xml()
+            gui_not_started = True
+            for key in self.server.connection_manager.data_gui_servers:
+                if self.server.connection_manager.data_gui_servers[key].name == name:
+                    gui_not_started = False
+            if gui_not_started:
+                self.server.command_queue.add(ServerCommand(self.server,self.server.connection_manager.add_data_gui_server,analysis_space_xtsm=analysis_space_xtsm,name=name))
             
+        
         '''
         #Dispatch all scripts, - Scripts in InstrumentCommand is in a subset
             #of all Scripts - so, dispatch all Scripts first
@@ -757,7 +772,7 @@ class CommandLibrary():
         #raw_databomb = msgpack.unpackb(params['databomb'])
         #self.server.databombs_for_data_gui.update({str(raw_databomb['shotnumber']):params['databomb']})
         
-        self.temp_plot(params, bomb_id,dc)
+        #self.temp_plot(params, bomb_id,dc)
         #pdb.set_trace()
         
         '''
@@ -836,7 +851,7 @@ class CommandLibrary():
         #hdf5_liveheap.glab_liveheap
         #file_storage = hdf5_liveheap.glab_datastore()
         #file_storage.
-                
+        #pdb.set_trace()
         
         fig = plt.figure(figsize=(18, 12))  
         ax = fig.add_subplot(221)
@@ -1107,7 +1122,7 @@ class CommandLibrary():
         
 
 class ServerCommand():
-    def __init__(self,server, command,*args):
+    def __init__(self,server, command,*args, **kwargs):
         """
         Constructs a server command object, to be executed in the command queue
         
@@ -1118,12 +1133,13 @@ class ServerCommand():
         if DEBUG and command != self.server.server_ping and command != self.server.catch_ping: print "In class ServerCommand, func __init__"
         self.command=command
         self.args=args
+        self.kwargs = kwargs
         
     def execute(self, Library=None):
         if DEBUG and self.command != self.server.server_ping and self.command != self.server.catch_ping: print "In class ServerCommand, func execute"
         #pdb.set_trace()
         try: 
-            self.command(*self.args)
+            self.command(*self.args, **self.kwargs)
         except Exception as e:
             if DEBUG: print e
             pdb.set_trace()

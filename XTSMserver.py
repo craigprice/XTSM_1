@@ -98,7 +98,8 @@ import scipy
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 import timing_diagram
-import data_gui
+import pkgutil
+#from data_gui import __file__ as data_gui_file
 import GPIB_control
 import getopt
 import commands
@@ -130,7 +131,7 @@ DEBUG_LINENO = 0
 DEBUG_TRACE = False
 TRACE_IGNORE=["popexecute","getChildNodes","getItemByFieldValue"]
 MAX_SCRIPT_SERVERS = 2
-DEBUG = True
+DEBUG = False
       
 if DEBUG_TRACE: sys.settrace(tracefunc)
 
@@ -732,7 +733,7 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
             raise
  
 
-    def add_data_gui_server(self, commands=None):
+    def add_data_gui_server(self, commands=None, analysis_space_xtsm="", name=""):
         """
         Adds a script server to the the Connection Manager for the main server.
         This is a barebones server whose only purpose is to execute little
@@ -743,6 +744,10 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
             return
         if DEBUG: print "In class ConnectionManager, function, add_data_gui_server()"
         new_data_gui_server = DataGUIServer()
+        new_data_gui_server.analysis_space_xtsm = analysis_space_xtsm
+        print "fdgd"
+        print new_data_gui_server.analysis_space_xtsm
+        new_data_gui_server.name = name
         new_data_gui_server.is_open_connection = False
         new_data_gui_server.server = self.server
         new_data_gui_server.connection_manager = self
@@ -1237,12 +1242,15 @@ class DataGUIServer(GlabClient):
         #server doesn't accidentally  try to hand this server off to two
         #processes when it was just first created.
         if DEBUG: print "in DataGUIServer class, __init__()"
-    pass
+        
     
     def open_connection(self):
         new_port = 9100 + len(self.connection_manager.data_gui_servers)
         if DEBUG: print "About to open"
-        data_gui_path = os.path.abspath(data_gui.__file__)
+        #data_gui_path = os.path.abspath(data_gui.__file__)
+        package = pkgutil.get_loader("data_gui")
+        data_gui_file = package.filename
+        data_gui_path = data_gui_file
         subprocess.Popen(['C:\\Python27\\python.exe',data_gui_path]+['localhost',str(new_port)])
         if DEBUG: print "Done Opening"            
         # Connect to the data_gui_
@@ -1274,6 +1282,11 @@ class DataGUIServer(GlabClient):
         self.server.connection_manager.connectLog(self)  
         self.last_connection_time = None
         self.in_use = False
+        msg = {"IDLSocket_ResponseFunction":"check_consistency_with_xtsm","analysis_space_xtsm":self.analysis_space_xtsm}
+        
+        self.server.command_queue.add(commands.ServerCommand(self.server,
+                                                    self.protocol.sendMessage,
+                                                    simplejson.dumps(msg)))
         if DEBUG: print 'In class DataGUIServer, func on_open'
         
      
@@ -1487,7 +1500,8 @@ class GlabPythonManager():
         self.ALL_DATABOMBS = {}
         self.server.databomblist=[]
         self.databombs_for_data_gui = {}#ALL DATABOMBS
-        self.server.sum_arr=np.array([])
+        self.server.sum_arr =np.array([])
+        self.server.scan_sn =np.array([])
         #if self.ALL_DATABOMBS.len
         
         # associate the CommandProtocol as a response method on that socket
@@ -1570,7 +1584,6 @@ class GlabPythonManager():
         dc = sync.DataContext(dc_name, self.server)
         self.dataContexts.update({dc_name:dc})
         self.command_queue.add(commands.ServerCommand(self.server, self.connection_manager.add_script_server))
-        self.command_queue.add(commands.ServerCommand(self.server, self.connection_manager.add_data_gui_server))
         self.command_queue.add(commands.ServerCommand(self.server, self.server_ping))
         self.ping_data={"server_id":self.id,
                             "server_name":self.name,

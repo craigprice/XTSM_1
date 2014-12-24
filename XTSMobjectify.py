@@ -877,6 +877,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         # loop through all windows between members of alltimes
         for starttime,endtime in zip(self.alltimes[0:-1],self.alltimes[1:]):
             
+            
             # identify all intervals in this group active in this window
             if self.groupSamOrInts.size!=0:
                 pre=(self.groupSamOrInts[2,]<=starttime).nonzero()
@@ -922,7 +923,13 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
                 self.clkchain=numpy.append(self.clkchain,self.channelMap.Clocks[self.clkchain[elem]][0])
             except KeyError :pass
             except IndexError: pass
-        # coerce denseT times collected so far repeatedly "on-grid" of each parent clocker
+       
+      
+
+#       
+      
+      # coerce denseT times collected so far repeatedly "on-grid" of each parent clocker
+        
         coer_chain = [numpy.float64(self.channelMap.tGroupClockResolutions[elem]) for elem in self.clkchain]
         coer_chain.insert(0,numpy.float64(self.channelMap.tGroupClockResolutions[self.tGroup]))
         if len(coer_chain)>1:
@@ -931,6 +938,9 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             coer_chain=coer_chain_red
         for coer in coer_chain:
             self.denseT=((self.denseT/numpy.float64(coer)).round())*numpy.float64(coer)
+            for ack in range(len(allclcks)):
+                allclcks[ack]=((allclcks[ack]/numpy.float64(coer)).round())*numpy.float64(coer)
+              
 
         # the next few lines merge all denseT elements (from intervals and edges on this timing group)
         # with all clocking edges from channels on this timing group that clock another group
@@ -939,13 +949,14 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         # back-effect on the input arrays is to replace their values (initially times) with their position
         # in the merged output array.
         
+        
         if len(allclcks)>=1:
             allclcks.append(self.denseT)  # adds denseT array to a list of arrays to be merged
             self.denseT=XTSM_cwrappers.merge_sorted(allclcks,track_indices=True)  # calls the efficient c-routine
             del allclcks[-1]  # drop the last element of allclcks which points to the original denseT
         else: self.denseT=XTSM_cwrappers.merge_sorted([self.denseT])  # if there are no clocking channels, we only need to strip duplicates from denseT
 
-
+       
         self.allclcks={i:clck for clck,i in zip(allclcks,[cc for cc in self.cStrings])}
             
         if BENCHMARK:
@@ -1656,8 +1667,8 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
         # Insert a initilization subsequence in the sequence and a holding subsequence
         #self.channelInitilization()
         #self.channelHolding()        
-        # Decipher channelMap, get resolutions
-
+        # Decipher channelMap, get resolutions channelHeir contains{tg,tglevels}, channelRes contains{tg,tgResolusion}
+        
         channelHeir=cMap.createTimingGroupHeirarchy()        
         channelRes=cMap.findTimingGroupResolutions()
         
