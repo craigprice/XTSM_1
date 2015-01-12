@@ -25,10 +25,12 @@ from it.
 """
 
 import numpy,uuid,operator,os,time,types,itertools,numbers
-import tables, pdb
+import tables
+import pdb
 import pyqtgraph
 import PyQt4
 import xstatus_ready
+import datetime
 
 VERBOSE=True
 
@@ -54,14 +56,14 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
         self.options.update(options)
 
         try:
-            self.h5file = tables.open_file(filename,
+            self.h5 = tables.open_file(filename,
                                  mode="a",
                                  title=self.options["title"],
                                  driver="H5FD_SEC2",
                                  NODE_CACHE_SLOTS=0)
         except IOError:#Folder doesn't exist, then we make the day's folder.
             os.makedirs(self.location_root)
-            self.h5file = tables.open_file(filename,
+            self.h5 = tables.open_file(filename,
                                  mode="a",
                                  title=self.options["title"],
                                  driver="H5FD_SEC2",
@@ -118,8 +120,10 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
 `        """
         print self.h5
     
-    def get_handle(self,element_id,element_structure):
+    def get_handle(self,element_id,element):
         """
+        element must be a numpy array of the size desired.        
+        
         links an element in the datastore to a liveheap by returning a handle
         corresponding to the provided element id.  id can be a string providing
         path to element in hdf5 style, or...
@@ -137,18 +141,52 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
         # first create a numpy structured array as a descriptor for the table elements
         # start by finding a name from the id, assuming it can have path structure
         eparts=element_id.rsplit("/",1)
+        try:
+            element.shape
+        except AttributeError:#Want all data elements to be some kind of numpy array
+            print "WARNING: Casting the element into numpy.asarray(element)"
+            element = numpy.asarray(element)
+            
         des = numpy.empty(1,dtype=[
                 ("shotnumber",numpy.int64),
                 ("repnumber",numpy.int64),
-                (eparts[-1],element_structure.dtype, element_structure.shape)
+                (eparts[-1],element.dtype, element.shape)
                 ])
         # now try to create or open the table, else looking for first unused name of type
+        '''
         for ind in xrange(-1,1000):
             try: 
                 h=self.h5.getNode("/"+element_id+("_"+str(ind))*(ind>0))
                 if h.dtype==des.dtype: exit_this(h)
             except tables.exceptions.NoSuchNodeError: 
                 h=self.h5.create_table("/",eparts[-1]+("_"+str(ind))*(ind>0),description=des.dtype)
+                return exit_this(h)
+        '''
+        try: 
+            h = self.h5.getNode("/"+element_id)
+            if h.dtype == des.dtype:
+                return exit_this(h)
+        except tables.exceptions.NoSuchNodeError:
+            h = self.h5.create_table("/",eparts[-1],description=des.dtype)
+            return exit_this(h)
+        
+        for ind in xrange(-1,1000):
+            print "WARNING: Could not find node with description:", element_id
+            print "shotnumber =", des[0][0]
+            print "repnumber =", des[0][1]
+            print "data =", des[0][2].shape, des[0][2].dtype
+            try: 
+                h = self.h5.getNode("/"+element_id+("_"+str(ind))*(ind>0))
+                if h.dtype == des.dtype:
+                    print "Using node:", h
+                    return exit_this(h)
+            except tables.exceptions.NoSuchNodeError:
+                h = self.h5.create_table("/",eparts[-1]+("_"+str(ind))*(ind>0),description=des.dtype)
+                print "Creating node:", h,
+                print "with description:", eparts[-1]+("_"+str(ind))*(ind>0)
+                print "shotnumber =", des[0][0]
+                print "repnumber =", des[0][1]
+                print "data =", des[0][2].shape, des[0][2].dtype
                 return exit_this(h)
 
     def load_from_filestore(self,directory,tablename="Untitled",limit=None,dtype=numpy.float32):
@@ -194,7 +232,7 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
             self.dataname=element.name
             self.status="open"
             
-        def append(self,data,shotnumber,repnumber):
+        def append(self,data,shotnumber,repnumber=0):
             """
             adds data to this table in file.
             """
@@ -202,9 +240,14 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
                 row=self.table.row
                 row['shotnumber']=shotnumber
                 row['repnumber']=repnumber
-                row[self.dataname]=data
-                row.append()
-            else: raise self.ClosedHandleError()
+                try:
+                    row[self.dataname]=data
+                    row.append()
+                except ValueError as e:
+                    print e
+                    print 'WARNING: Data was not Stored!'
+            else:
+                raise self.ClosedHandleError()
 
         def close(self):
             self.status="closed"
@@ -281,7 +324,7 @@ class glab_liveheap(PyQt4.QtCore.QObject):
         # repnumbers are stored as absolutes
         self.archived=numpy.array([True for a in xrange(self.sizeof)])
         # archived is boolean representing whether or not this element exists on permanent storage
-        #Shouldn't this be initialized as "False"? CP
+        #True is used as initialization here so that when the file is closed, it won't save the junk data that was created in the empty numpy array.
         self.last_pushed=0
         
     def __getitem__(self,indices):
@@ -303,8 +346,10 @@ class glab_liveheap(PyQt4.QtCore.QObject):
         TODO:  implement 'first' for cases rep number not specified, and reps not 0
         TODO:  thurough testing and error-trapping
         """
+        #pdb.set_trace()
         # first necessary to determine 'signature' of indices
         # how many dimensions are specified, and in what way
+        
         if type(indices)!=types.TupleType: indices=(indices,)
 
         x_d={True:2,False:1}[self.use_reps] # number of dimensions in excess of elm's
@@ -359,12 +404,14 @@ class glab_liveheap(PyQt4.QtCore.QObject):
                 asns=asns[numpy.argsort(asns[:,0]),:]
                 ret_ind=asns[:,0].searchsorted(from_archive[:,0])
                 # this could be done more effeciently by converting list to slices
-                res=res.squeeze()
-                res[from_archive[:,1],...]=self.datastore_handle.table[asns[ret_ind,1]][self.id][[slice(None,None,None)]+inds[2:]].squeeze()
+                if from_archive.shape[0] > 1:
+                    res = res.squeeze()
+                from_table = self.datastore_handle.table[asns[ret_ind,1]]
+                res[from_archive[:,1],...] = from_table[self.id][[slice(None,None,None)]+inds[2:]].squeeze()#If this fails, check effect of squeezing
             else:  # enters for shot/rep specified
                 sr_disk=numpy.append([self.getshotnumbers(archived=True)],
-                                      [self.getrepnumbers(archived=True)],0
-                                      ).transpose()
+                                      [self.getrepnumbers(archived=True)],
+                                       0).transpose()
                 # convert shot/rep pairs (each 32-bit ints) to single (64-bit) integers for easier matching 
                 from_archive1=(from_archive[:,0:2].view(dtype=numpy.uint64)*numpy.array([1L,2L**32L],dtype=numpy.uint64)).sum(axis=1)  # need to search for these
                 sr_disk1=(sr_disk.view(dtype=numpy.uint64)*numpy.array([1L,2L**32L],dtype=numpy.uint64)).sum(axis=1)
@@ -384,7 +431,7 @@ class glab_liveheap(PyQt4.QtCore.QObject):
                     from_archive[from_archive1[:,1],3],...] = self.datastore_handle.table[sr_disk1[ret_ind,1].astype(numpy.int64)][self.id][[slice(None,None,None)]+inds[2:]].squeeze()
             # return the result array
             if not self.use_reps: return res.squeeze()
-            return res
+        return res
 
     def __process_indices__(self,dim,ind,n_dim):
         """
@@ -482,12 +529,14 @@ class glab_liveheap(PyQt4.QtCore.QObject):
         self.get_current_shotnumber and self.get_current_repnumber 
         """
         # first use robust method to determine shot and rep numbers
+        
         if shotnumber==None: 
             try: shotnumber=self.get_current_shotnumber()
             except AttributeError: 
                 self.warning("no means given to record shotnumber") 
                 shotnumber=-2 # shotnumber -2 signifies none provided
-        if repnumber==None and self.use_repnumbers: 
+        self.use_repnumbers = False
+        if repnumber==None and self.use_repnumbers:
             try: repnumber=self.get_current_repnumber()
             except AttributeError: 
                 self.warning("no means given to record repnumber")
@@ -516,7 +565,7 @@ class glab_liveheap(PyQt4.QtCore.QObject):
         
         # check for duplicated data, warn if enabled
         if self._warn_duplicates:
-            if (self.stack[pushind,...]==self.stack[self.last_pushed,...]).all():
+            if len(self.stack) > 1 and not (pushind == 0 and self.last_pushed == 0) and (self.stack[pushind,...]==self.stack[self.last_pushed,...]).all():
                 self.warning("duplicated data")
             
         self.last_pushed=pushind
@@ -554,11 +603,11 @@ class glab_liveheap(PyQt4.QtCore.QObject):
         return numpy.append(self.datastore_handle.table.col('repnumber'),
                             self.repnumbers[numpy.logical_not(self.archived).nonzero()])
 
-    def attach_datastore(self,datastore=None):
+    def attach_datastore(self,datastore=None, options={}):
         """
         associates a datastore (portal to an h5 file) with this stack
         """
-        if datastore==None: datastore=glab_datastore()
+        if datastore==None: datastore=glab_datastore(options=options)
         self.datastore=datastore
         self.datastore_handle=datastore.get_handle(self.id,self.stack[0,...])
            
@@ -570,6 +619,8 @@ class test_basic_functions(unittest.TestCase):
         for i in range(20): # the first ten of the following pushes will be heaved to disk, the last ten will stay in ram stack
             self.e[i,0,0]=121+i  # set top-left element to same as shotnumber will be when pushed, starting shotnumber will be 121
 
+        self.ds = glab_datastore()
+
     def test_getitem(self):
         """
         checks basic insertion and retrieval with heap and 20 20x20 float arrays, with half held in ram
@@ -579,13 +630,47 @@ class test_basic_functions(unittest.TestCase):
         for i in range(self.e.shape[0]):
             g.push(self.e[i].squeeze(),121+i,0) # push it into the heap
         test1=g[[140,128,139,125,126]] # retrieves this list of shotnumbers, non-sequential and split ram/disk
+        #print test1
         self.assertEqual(test1.shape,(5L,20L,20L)) # check dimensionality
         self.assertTrue((test1[:,0,0].squeeze()==[140.,128.,139.,125.,126.]).all()) # check correct shots recovered
         test2=g[[140,128,139,125,126],5:15,5:15] # retrieves this list of shotnumbers, sub-arrayed on retrieval
         self.assertEqual(test2.shape,(5L,10L,10L)) # check dimensionality
         self.assertTrue((test2[:,0,0]==self.e[numpy.array([140,128,139,125,126])-121,5,5]).all()) # check correct shots recovered
-        g.use_reps=True # now use repetition numbers
-        test3=g[[140,128,139,125,126],0,5:15,5:15] # retrieve these shotnumbers, rep#=0, and subarray a 10x10 element subset of all
+        #g.use_reps=True # now use repetition numbers
+        #test3=g[[140,128,139,125,126],0,5:15,5:15] # retrieve these shotnumbers, rep#=0, and subarray a 10x10 element subset of all
         #self.assertTrue((test3[:,0,0]==self.e[numpy.array([140,128,139,125,126])-121,5,5]).all()) # check correct shots recovered
+        
+        
+        self.assertTrue((g[122] == self.e[1]).all())#Retreving single value from RAM
+        self.assertTrue((g[122+18] == self.e[1+18]).all())#Retreving single value from disk
+        self.assertTrue((g[[122,122+18]] == [self.e[1],self.e[1+18]]).all())
+           
+        
+    def test_get_handle(self):
+        handle = self.ds.get_handle('ccdimage',self.e[0])
+        handle2 = self.ds.get_handle('ccdimage',self.e[0])
+        sn = numpy.random.random_integers(1000*1000*1000)
+        rn = numpy.random.random_integers(1000*1000*1000)
+        handle.append(self.e[1], sn, rn)
+        handle.table.flush()
+        self.assertTrue((self.e[1]==handle.table.read()[0][2]).all())
+        self.assertTrue((self.e[1]==handle2.table.read()[0][2]).all())
 
-        pdb.set_trace()
+        
+    def test_get_different_handle(self):
+        handle = self.ds.get_handle('ccdimage',self.e[0])
+        test_data = numpy.random.randint(numpy.random.random_integers(1000*1000*1000), size=(40, 40))
+        handle2 = self.ds.get_handle('ccdimage',test_data)
+        sn = numpy.random.random_integers(1000*1000*1000)
+        rn = numpy.random.random_integers(1000*1000*1000)
+        handle.append(self.e[1], sn, rn)
+        handle2.append(test_data, sn, rn)
+        handle.table.flush()
+        handle2.table.flush()
+        self.assertTrue((self.e[1]==handle.table.read()[0][2]).all())
+        self.assertTrue((test_data==handle2.table.read()[0][2]).all())
+
+
+
+
+

@@ -13,6 +13,8 @@ import tables
 import uuid
 import datetime
 import pdb
+import traceback
+import sys
 
 import os
 import colorama
@@ -39,6 +41,9 @@ import numpy
 import scipy.optimize
 import simplejson
 import hdf5_liveheap
+import pprint
+#from pyqt_signal_dressing import _signal_dressed_import
+#hdf5_liveheap=_signal_dressed_import("hdf5_liveheap")
     
 DEBUG = True
 global TIMING
@@ -102,6 +107,43 @@ class CommandLibrary():
         
         self.data_storage = DataStorage()
         
+    def create_new_analysis_space(self,params):
+        if DEBUG: print("class data_guis.docked_gui.CommandLibrary, func create_new_analysis_space")
+        #gui = docked_gui()  # comment 1 line above out, put class defns above  CP 2015-01
+        #exec params['script_body'] in globals(), {}
+        command = {'script_body': params['script_body'],
+                   'context' : {'self':self}}
+        self._execute(command)
+           
+           
+    def _execute(self, commands):               
+        script = commands['script_body']
+        context = commands['context']
+        old_stdout = sys.stdout
+        try:
+            capturer = StringIO()
+            sys.stdout = capturer
+            t0=time.time()
+            exec script in globals(),context
+            t1=time.time()
+            context.update({"_starttime":t0,"_exectime":(t1-t0),"_script_console":capturer.getvalue()})
+        except Exception as e: 
+            context.update({'_SCRIPT_ERROR':e})
+            print '_SCRIPT_ERROR'
+            print e
+            print e.message
+            traceback.print_stack()
+            traceback.print_exception(*sys.exc_info())
+#          del context['__builtin__']  # removes the backeffect of exec on context to add builtins
+        sys.stdout = old_stdout
+        if DEBUG: print "Context: " + str([context])
+        if DEBUG: pprint.pprint(context)
+        if hasattr(commands, 'callback_function'):
+            if commands['callback_function'] != 'None':
+                callback = commands['callback_function']
+                callback()
+                
+                
     def execute_from_socket(self,params):
         """
         Executes an arbitrary python command through the socket, and returns the console
@@ -138,11 +180,16 @@ class CommandLibrary():
         xtsm_heap = xtsm_object.XTSM.getDescendentsByType('Heap')[0]
         self.factory.gui._console_namespace.update({"xtsm_object":xtsm_object})
         if not (xtsm_heap.Name.PCDATA in self.factory.gui._console_namespace.keys()):
-            heap = hdf5_liveheap.glab_liveheap({"element_structure":[512,512],
+            heap = hdf5_liveheap.glab_liveheap({"element_structure":[769,513],
                                                 "filename":"test_file",
                                                 "typecode":numpy.dtype("uint16")})#numpy.uint16 will not work
             self.factory.gui._console_namespace.update({xtsm_heap.Name.PCDATA:heap})
+            heap.attach_datastore()
+            #heap._glab_liveheap___s_push_fired.connect(self.test)
             
+    def test(self,adict):
+        print "dffg"
+        pass
         
         
     def databomb(self, params):
@@ -154,10 +201,44 @@ class CommandLibrary():
         #if any(x in [xtsm_heap.DataCriteria.PCDATA] for x in list(ns.values())):
         #    ns[xtsm_heap.Name.PCDATA].push(numpy.asarray(db['data']), shotnumber=numpy.asarray(db['shotnumber']))
         try:
-            self.factory.gui._console_namespace.databombs.append(db)
-        except AttributeError:
+            self.factory.gui._console_namespace['databombs'].append(db)
+        except KeyError:
             self.factory.gui._console_namespace.update({'databombs':[db]})
-        exec scripts[0].ScriptBody.PCDATA in globals(), ns
+        #print scripts[0].ScriptBody.PCDATA
+        #print repr(scripts[0].ScriptBody.PCDATA)
+        print scripts[0].ScriptBody._seq
+        #print scripts[0].ScriptBody.write_xml()
+        #scripts[0].ScriptBody.PCDATA = scripts[0].ScriptBody.PCDATA.replace('\\n ','\n')
+        #scripts[0].ScriptBody.PCDATA = scripts[0].ScriptBody.PCDATA.replace('\\n','\n')
+        #scripts[0].ScriptBody.PCDATA = scripts[0].ScriptBody.PCDATA.replace('\\t','\t')
+        #print scripts[0].ScriptBody.PCDATA
+        #print repr(scripts[0].ScriptBody.PCDATA)
+        xtsm_heap = ns['xtsm_object'].XTSM.getDescendentsByType('Heap')[0]
+        #ns[xtsm_heap.Name.PCDATA].push(numpy.asarray(db['data']), shotnumber=numpy.asarray(db['shotnumber']))
+        print numpy.asarray(db['data']).shape
+        print numpy.asarray(db['shotnumber'])
+        '''
+        try:
+            ns[xtsm_heap.Name.PCDATA].push(numpy.asarray(db['data'][0]), shotnumber=numpy.asarray(db['shotnumber']))
+        except Exception as e:
+            print "Error in push to heap"
+            print e
+            print inspect.getsource(hdf5_liveheap)
+            return
+        '''
+        for script in scripts:
+            if script.ExecuteOnEvent.PCDATA != "databomb":
+                continue
+            try:
+                exec script.ScriptBody._seq[0] in globals(), ns
+            except Exception as e:
+                print "Error in exec"
+                print e
+                traceback.print_stack()
+                traceback.print_exception(*sys.exc_info())
+                #print e.
+                #print inspect.getsource(hdf5_liveheap)
+                return
         
     
     def plot_and_save_fluoresence_image(self,params):
@@ -565,12 +646,8 @@ class docked_gui():
         self.win.show()
         
         
-    def _methods_to_xml(self):
-        out=""
-        for meth in dir(self):
-            if type(getattr(self,meth))==type(self._methods_to_xml):
-                print "<Method><Name>"+meth+"</Name><Source><![CDATA["+inspect.getsource(getattr(self,meth))+"]]></Source></Method>"
-        return out
+
+        
     def _init_dock_console(self):
         self._dock_console = pyqtgraph.dockarea.Dock("Console", size=(500,150))
         self.dock_area.addDock(self._dock_console, 'bottom')      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
@@ -696,15 +773,19 @@ class docked_gui():
                 self.imv.vLine.setPos(mousePoint.x())
                 self.imv.hLine.setPos(mousePoint.y())
                 index = (int(mousePoint.x()),int(mousePoint.y()))
-                x = "<span style='font-size: 12pt;color: blue'>x=%0.1f,   " % mousePoint.x()
-                y = "<span style='color: red'>y=%0.1f</span>,   " % mousePoint.y()
+                #x = "\<\span style='font-size: 12pt;color: blue'\>\x=%0.1f,   " % mousePoint.x() #Need to escape the <> to use them
+                x =  mousePoint.x()
+                #y = "\<\span style='color: red'\>\y=%0.1f\<\/span\>\,   " % mousePoint.y()
+                y =  mousePoint.y()
                 if index[0] > 0 and index[0] < len(self.imgstack[1][0]):
                     if index[1] > 0 and index[1] < len(self.imgstack[2][0]):
                         #Fix the next line so that the z axis is for the image that is displayed
                         try:
-                            z = "<span style='color: green'>z=%0.1f</span>" % self.imgstack[self.imv.currentIndex, index[0], index[1]]
+                            #z = "\<\span style='color: green'\>\z=%0.1f\<\/span\>\" % self.imgstack[self.imv.currentIndex, index[0], index[1]]
+                            z = self.imgstack[self.imv.currentIndex, index[0], index[1]]
                         except:
-                            z="<span style='color: green'>z=Error</span>"
+                            #z="\<\span style='color: green'\>\z=Error\<\/span\>\"
+                            z="Error"
                             print "index:", index
                             print "len(self.imgstack[1][0]:", len(self.imgstack[1][0])
                             print "self.imv.currentIndex:", self.imv.currentIndex
@@ -795,8 +876,8 @@ def main():
     #app=a.app   # ,if necessary
     #win=a.win   # ,if necessary
     
-    global gui
-    gui = docked_gui()  # comment 1 line above out, put class defns above
+    #global gui  #CP 2015-01
+    #gui = docked_gui()  # comment 1 line above out, put class defns above  CP 2015-01
  
     
     #QtGui.QApplication.instance().exec_() # this start command needs to be here to enable cursors, and hence this must initialize last
@@ -896,7 +977,7 @@ def main():
                     if DEBUG: print payload['Not_Command_text_message']
                     return
                 if DEBUG: print "payload:"
-                if DEBUG and not len(payload) < 10000: print payload
+                if DEBUG and len(payload) < 10000: print payload
                 if not payload.has_key('IDLSocket_ResponseFunction'):
                     return None
                 try:
@@ -950,7 +1031,7 @@ def main():
         command_library = CommandLibrary()
         factory.command_library = command_library
         command_library.factory = factory
-        factory.gui = gui
+        factory.gui = gui #CP 2015-01
     except twisted.internet.error.CannotListenError:
         server_shutdown()
     
@@ -1083,6 +1164,13 @@ class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
         of its current state
         """
         pass # needs writing
+    
+    def _methods_to_xml(self):
+        out=""
+        for meth in dir(self):
+            if type(getattr(self,meth))==type(self._methods_to_xml):
+                print "<Method><Name>"+meth+"</Name><Source><![CDATA["+inspect.getsource(getattr(self,meth))+"]]></Source></Method>"
+        return out    
     
     def _launch(self):
         """

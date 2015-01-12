@@ -34,8 +34,9 @@ import io
 import os
 import platform #Access to underlying platform’s identifying data
 import pdb
+import traceback
 
-
+import pprint
 import __main__ as main
 import colorama
 colorama.init(strip=False)
@@ -131,7 +132,7 @@ DEBUG_LINENO = 0
 DEBUG_TRACE = False
 TRACE_IGNORE=["popexecute","getChildNodes","getItemByFieldValue"]
 MAX_SCRIPT_SERVERS = 2
-DEBUG = False
+DEBUG = True
       
 if DEBUG_TRACE: sys.settrace(tracefunc)
 
@@ -200,6 +201,21 @@ class MulticastProtocol(DatagramProtocol):
                  dc.update({'_exp_sync':exp_sync})
             dc.get('_exp_sync').shotnumber = int(datagram['shotnumber_started'])
             print "Shot started:", datagram['shotnumber_started'], "pxi_time:", self.server.pxi_time, "time.time():", float(time.time())
+            
+            #Go into the XTSM and look for where the scope trigger edge lies.
+            try:
+                #pdb.set_trace()
+                compiled_xtsm = dc['_exp_sync'].compiled_xtsm[int(datagram['shotnumber_started'].strip())]  
+                scripts = compiled_xtsm.XTSM.getActiveSequence().getDescendentsByType('Script')  
+            except Exception as e:
+                print "Error in getting script, or no scripts found"
+                return
+            for sc in scripts:
+                if sc.ExecuteOnEvent.PCDATA == 'shot_started':
+                    time_to_execute = float(sc.Time.PCDATA)/1000.0#ms
+                    command = {'script_body': scripts[0].ScriptBody._seq[0],
+                                'context' : {'self':self.server}}
+                    self.server.reactor.callLater(time_to_execute,self.server._execute,command)
             return
             
         
@@ -745,8 +761,7 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
         if DEBUG: print "In class ConnectionManager, function, add_data_gui_server()"
         new_data_gui_server = DataGUIServer()
         new_data_gui_server.analysis_space_xtsm = analysis_space_xtsm
-        print "fdgd"
-        print new_data_gui_server.analysis_space_xtsm
+        if DEBUG: print new_data_gui_server.analysis_space_xtsm
         new_data_gui_server.name = name
         new_data_gui_server.is_open_connection = False
         new_data_gui_server.server = self.server
@@ -969,7 +984,7 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
         pass               
                
     def catch_msgpack_payload(self, payload_, protocol):
-        if DEBUG: print "class GlabClient, func catch_msgpack_payload"
+        if DEBUG: print "class GlabClient, func catch_msgpack_payload", str(time.time()), "Size:", len(payload_)/1000.0, "KB"
         try:
             payload = msgpack.unpackb(payload_)
         except:
@@ -998,6 +1013,7 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
     def catch_json_payload(self, payload_, protocol):
         # we will treat incoming websocket text using the same commandlibrary as HTTP        
         # but expect incoming messages to be JSON data key-value pairs
+        if DEBUG: print "class GlabClient, func catch_json_payload"
         try:
             payload = simplejson.loads(payload_)
         except simplejson.JSONDecodeError:
@@ -1010,6 +1026,8 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
             if DEBUG: print payload_
             protocol.transport.loseConnection()
             return False
+            
+            
         # if someone on this network has broadcast a shotnumber change, update the shotnumber in
         # the server's data contexts under _running_shotnumber
         #pdb.set_trace()  
@@ -1146,6 +1164,7 @@ class PeerServer(GlabClient):
         
 
     def on_message(self, payload, isBinary, protocol):
+        if DEBUG: print "class PeerServer, func on_message" 
         if isBinary:
             self.catch_msgpack_payload(payload, protocol)
         else:
@@ -1276,19 +1295,46 @@ class DataGUIServer(GlabClient):
             if DEBUG: print "Text message received in Client ws protocol:",payload
 
     def on_open(self):
+        if DEBUG: print 'In class DataGUIServer, func on_open'
         self.in_use = True
         self.is_open_connection = True
         self.connection_manager.data_gui_servers.update({self.id:self})
         self.server.connection_manager.connectLog(self)  
         self.last_connection_time = None
         self.in_use = False
-        msg = {"IDLSocket_ResponseFunction":"check_consistency_with_xtsm","analysis_space_xtsm":self.analysis_space_xtsm}
         
+        '''
+        msg = {"IDLSocket_ResponseFunction":"check_consistency_with_xtsm","analysis_space_xtsm":self.analysis_space_xtsm}
         self.server.command_queue.add(commands.ServerCommand(self.server,
                                                     self.protocol.sendMessage,
                                                     simplejson.dumps(msg)))
-        if DEBUG: print 'In class DataGUIServer, func on_open'
+        '''
         
+        #'''
+        try:
+            #pdb.set_trace()
+            print '<XTSM>'+self.analysis_space_xtsm+'</XTSM>'
+            aspace_xtsm_object = XTSMobjectify.XTSM_Object('<XTSM>'+self.analysis_space_xtsm+'</XTSM>')
+        except Exception as e:
+            print "Error: Failed to objectify AnalysisSpace"
+            print e
+            #print e.message
+            #traceback.print_stack()
+            #traceback.print_exception(*sys.exc_info())
+            #pdb.set_trace()
+            return
+            
+        for script in aspace_xtsm_object.XTSM.getDescendentsByType('Script'):
+            if hasattr(script, 'ExecuteOnEvent'):
+                if script.ExecuteOnEvent.PCDATA == 'create_new_analysis_space':
+                    msg = {"IDLSocket_ResponseFunction":"create_new_analysis_space",
+                           "script_body":str(script.ScriptBody._seq[0])}
+                    print "adding"
+                    self.server.command_queue.add(commands.ServerCommand(self.server,
+                                                    self.protocol.sendMessage,
+                                                    simplejson.dumps(msg)))
+        
+        #'''
      
         
 class GlabServerFactory(protocol.Factory):
@@ -2057,7 +2103,7 @@ class GlabPythonManager():
         context = commands['context']
         old_stdout = sys.stdout
         try:
-            capturer = StringIO.StringIO()
+            capturer = StringIO()
             sys.stdout = capturer
             t0=time.time()
             exec script in globals(),context
@@ -2066,9 +2112,12 @@ class GlabPythonManager():
         except Exception as e: 
             context.update({'_SCRIPT_ERROR':e})
             print '_SCRIPT_ERROR'
+            print e
+            print e.message
 #          del context['__builtin__']  # removes the backeffect of exec on context to add builtins
         sys.stdout = old_stdout
-        print "Context: " + str([context])
+        if DEBUG: print "Context: " + str([context])
+        if DEBUG: pprint.pprint(context)
         if hasattr(commands, 'callback_function'):
             if commands['callback_function'] != 'None':
                 callback = commands['callback_function']
