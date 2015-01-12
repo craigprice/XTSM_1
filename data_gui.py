@@ -50,8 +50,7 @@ global TIMING
 TIMING = 1416876428
     
 
-import gnosis.xml.objectify # standard package used for conversion of xml structure to Pythonic objects, also core starting point for this set of routines
-import XTSMobjectify    
+
     
 class CCDImage(tables.IsDescription):
     short_256_description = tables.StringCol(256)
@@ -753,18 +752,6 @@ class docked_gui():
              
         self._dock_image_view.addWidget(self._imv_layout_widg)
         
-
-        def jumpFrames(n):
-            """Move video frame ahead n frames (may be negative)"""
-            if self.imv.axes['t'] is not None:
-                self.imv.setCurrentIndex(self.imv.currentIndex + n)
-                try:
-                    pass
-                    #self._dock_image_view.label = DockLabel("Shotnumber = "+str(self.imgstack_shotnumbers[self.imv.currentIndex]), self._dock_image_view)
-                    #self._dock_image_view.updateStyle()
-                except IndexError:
-                    pass
-        self.imv.jumpFrames = jumpFrames
         
         def mouseMoved(evt):
             pos = evt[0]  ## using signal proxy turns original arguments into a tuple
@@ -870,8 +857,6 @@ class docked_gui():
         self.imgstack=data
         
 def main():
-
-            
         
     #app=a.app   # ,if necessary
     #win=a.win   # ,if necessary
@@ -1038,14 +1023,18 @@ def main():
     
     reactor.run()
     
-if __name__ == '__main__':
-    main()
+if __name__ == '__main__': 
+    #main()
+    pass
     
 """
 Below until MARKER1 is objectification of AnalysisSpaces
 """
 
 
+ 
+import gnosis.xml.objectify # standard package used for conversion of xml structure to Pythonic objects, also core starting point for this set of routines
+import XTSMobjectify  
 
 class XTSM_Element(gnosis.xml.objectify._XO_,XTSMobjectify.XTSM_core):
     pass
@@ -1070,8 +1059,14 @@ class Docked_Gui():
 
         for k in params.keys():
             setattr(self,k,params[k])
-        
+            
+        if hasattr(self,"imgstack"):
+            self.imgstack = params["imgstack"] 
+        else:
+            self._generate_random_imgstack()
+            self.imgstack = numpy.random.normal(size=(3, 512, 512)) 
         self._console_namespace.update({"self":self})
+        self._console_namespace.update({"imgstack":self.imgstack}) 
             
         self.app = QtGui.QApplication([])     
         self.win = QtGui.QMainWindow()
@@ -1107,6 +1102,80 @@ class Docked_Gui():
             if type(getattr(self,meth))==type(self._methods_to_xml):
                 print "<Method><Name>"+meth+"</Name><Source><![CDATA["+inspect.getsource(getattr(self,meth))+"]]></Source></Method>"
         return out
+        
+    def saveSettings(self):
+        settings = PyQt4.QtCore.QSettings('test', 'test')
+        settings.setValue("state", self.win.saveState())
+        settings.sync()
+        
+    def readSettings(self):
+        settings = PyQt4.QtCore.QSettings('test', 'test')
+        state = settings.value("state", PyQt4.QtCore.QByteArray()).toByteArray();
+        self.win.restoreState(state)
+    def plot(self,img):
+        """
+        plots to image viewer
+        """
+        print 'Class image_stack_gui, function plot'
+        #pdb.set_trace()
+        self.imv.setImage(numpy.asarray(img))
+        
+    def generate_coordinates(self, center=None):
+        """
+        returns arrays for coordinates (x,y,r,phi) in rectangular and cylindrical
+        systems consistent with current image size, centered on optional center param
+        """
+        (nx,ny)=self.imgstack.shape[1:3]
+        if center==None: center=(nx/2,ny/2)
+        x = numpy.outer((numpy.arange(nx)-center[0]),numpy.ones(ny))
+        y = numpy.outer(numpy.ones(nx),(numpy.arange(ny)-center[1]))
+        r = numpy.sqrt(numpy.power(x,2.)+numpy.power(y,2.))
+        phi = numpy.arctan2(y,x)
+        return (x,y,r,phi)
+
+
+
+    class cursor():
+        """
+        Class for cursors in image viewer
+        """
+        def __init__(self, coord=(0,0)):
+            self.x=coord[0]
+            self.y=coord[1]
+            self.vLine = pyqtgraph.InfiniteLine(angle=90, movable=True)
+            self.hLine = pyqtgraph.InfiniteLine(angle=0, movable=True)
+            self.vLine.setPos(self.x)
+            self.hLine.setPos(self.y)
+        def addto(self,to):
+            to.addItem(self.vLine, ignoreBounds=True)
+            to.addItem(self.hLine, ignoreBounds=True)
+
+    def dropCursor(self):
+        """
+        Drops a cursor at the current position of crosshair
+        """
+        coord=(self.vLine.getPos()[0],self.hLine.getPos()[1])        
+        c=self.cursor(coord=coord)
+        c.addto(self.imv)
+        try: self.cursors.append(c)
+        except: self.cursors=[c]        
+        
+    def _generate_random_imgstack(self):
+        ## Create random 3D data set with noisy signals
+        img = scipy.ndimage.gaussian_filter(numpy.random.normal(size=(10, 10)), (5, 5)) * 20 + 100
+        img = img[numpy.newaxis,:,:]
+        decay = numpy.exp(-numpy.linspace(0,0.3,100))[:,numpy.newaxis,numpy.newaxis]
+        data = numpy.random.normal(size=(100, 10, 10))
+        data += img * decay
+        data += 2
+        ## Add time-varying signal
+        sig = numpy.zeros(data.shape[0])
+        sig[30:] += numpy.exp(-numpy.linspace(1,10, 70))
+        sig[40:] += numpy.exp(-numpy.linspace(1,10, 60))
+        sig[70:] += numpy.exp(-numpy.linspace(1,10, 30))        
+        sig = sig[:,numpy.newaxis,numpy.newaxis] * 3
+        data[:,50:60,50:60] += sig
+        self.imgstack=data
 
 class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
     """
@@ -1117,6 +1186,7 @@ class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
         reads and appends data about dock placement from the underlying 
         Dock_Gui element after creation or while running
         """
+        if DEBUG: print("class data_guis.AnalysisSpace, func read_state")
         new_representation=AnalysisSpace()
         state=self.gui.dock_area.saveState()
         print state
@@ -1166,6 +1236,7 @@ class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
         pass # needs writing
     
     def _methods_to_xml(self):
+        if DEBUG: print("class data_guis.AnalysisSpace, func _methods_to_xml")
         out=""
         for meth in dir(self):
             if type(getattr(self,meth))==type(self._methods_to_xml):
@@ -1176,18 +1247,20 @@ class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
         """
         creates and launches the data_gui
         """
+        if DEBUG: print("class data_guis.AnalysisSpace, func _launch")
         # creates all pyqt representation of docks
-        self._indocktrinate()
+        self._install_docks()
         # create the gui (pyqtgraph object) itself
         self.gui = Docked_Gui(params={"docks":self.docks})
         self.gui.parent_xtsm_analysis_space = self
         # create event loop and internals using twisted and pyqt
         self._start_engine()
 
-    def _indocktrinate(self):
+    def _install_docks(self):
         """
         spawn all docks and source
         """
+        if DEBUG: print("class data_guis.AnalysisSpace, func _install_docks")
         # first spawn pyqt dock objects
         self.docks=[]
         for dock in self.Dock:
@@ -1197,6 +1270,7 @@ class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
         """
         start the qtreactor and socket communications
         """
+        if DEBUG: print("class data_guis.AnalysisSpace, func _start_engine")
         import qtreactor.pyqt4reactor
         qtreactor.pyqt4reactor.install()
         
@@ -1297,13 +1371,12 @@ class DockType(gnosis.xml.objectify._XO_,Analysis_Space_Core):
     
     """
     
-    def __init__(self):
-        
+    def _install_sources(self):
+        if DEBUG: print("class data_guis.DockType, func _install_sources")
         class this_docktype():
             """
             factory class for generating the pyqt-object docks
-            """   
-                
+            """
             def _init_dock(self,parent_qt):
                 """
                 function to instantiate dock, must be present, should
@@ -1313,15 +1386,16 @@ class DockType(gnosis.xml.objectify._XO_,Analysis_Space_Core):
                 this function should always return the dock it generated, and
                 as good form attach that dock as self._dock
                 """
+                if DEBUG: print("class data_guis.DockType.this_docktype, func _init_dock")
                 self._dock = pyqtgraph.dockarea.Dock("Default Dock", size=(500,100))
                 parent_qt.dock_area.addDock(self._dock, 'bottom')
                 return self._dock
-                
-            
-        self.factory=this_docktype
-        self.factory._sources = []
+        if not hasattr(self,'factory'):
+            self.factory = this_docktype
+            self.factory._sources = []
+            self.factory.initialization = True
     
-    def _install_sources(self):
+        #pdb.set_trace()
         old_stdout = sys.stdout
         for meth in self.Method:
             try:
@@ -1329,16 +1403,19 @@ class DockType(gnosis.xml.objectify._XO_,Analysis_Space_Core):
                 capturer = StringIO()
                 sys.stdout = capturer
                 src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
-                src=meth.write_xml().split('<![CDATA[')[1].split(']]>')[0]
+                #src=meth.write_xml().split('<![CDATA[')[1].split(']]>')[0]
                 exec src in globals(),context 
                 sys.stdout = old_stdout
                 for elm in context:
                     setattr(self.factory,elm,context[elm])
+                if self.factory.initialization:
+                    self.factory._sources.append(src)
             except Exception as e:
                 context.update({'_SCRIPT_ERROR':e})
                 print e
         sys.stdout = old_stdout # make sure we have stdout back
-        self.factory._sources.append(src)
+        self.factory.initialization = False
+        
                 
 
 
@@ -1352,12 +1429,13 @@ class Dock(gnosis.xml.objectify._XO_,Analysis_Space_Core):
         spawns the dock itself using the factory class defined elsewhere in
         AnalysisSpace container, returns result, an instance of the factory class
         """
+        if DEBUG: print("class data_guis.Dock, func _spawn")
         try: 
             dock_type=self.getFirstParentByType("AnalysisSpace").getItemByFieldValue("DockType","Name",self.Type.PCDATA)
             dock_type._install_sources()
             self._dock=dock_type.factory()
             self._dock._sources = dock_type.factory._sources
-            pdb.set_trace()
+            #pdb.set_trace()
         except Exception as e:
             pdb.set_trace()
             print e
@@ -1366,6 +1444,7 @@ class Dock(gnosis.xml.objectify._XO_,Analysis_Space_Core):
         
 class Method(gnosis.xml.objectify._XO_,Analysis_Space_Core):
     def write_xml(self, out=None, tablevel=0, whitespace='True',CDATA_ESCAPE=True):
+        if DEBUG: print("class data_guis.Method, func write_xml")
         return Analysis_Space_Core.write_xml(self,out=out, tablevel=tablevel, whitespace=whitespace,CDATA_ESCAPE=CDATA_ESCAPE)
 
 
@@ -1381,10 +1460,12 @@ del allclasses
 MARKER1
 """
 
-example_AS_xtsm=u"""<AnalysisSpace>
+example_AS_xtsm=u"""
+<AnalysisSpace>
     <DockType>
         <Name>Console</Name>
-        <Method><![CDATA[
+        <Method>
+<![CDATA[
 def _init_dock(self,parent_qt):
     self._dock= pyqtgraph.dockarea.Dock("Console", size=(500,150))
     parent_qt.dock_area.addDock(self._dock, 'bottom')      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
@@ -1394,13 +1475,178 @@ def _init_dock(self,parent_qt):
 ]]>
         </Method>
     </DockType>
-        <Dock>
-            <Type>Console</Type>
-        </Dock>
-        <Dock>
-            <Type>Console</Type>
-        </Dock>
-        <Dock>
-            <Type>Console</Type>
-        </Dock>
-</AnalysisSpace>"""    
+    <DockType>
+        <Name>Cursor</Name>
+        <Method>
+<![CDATA[
+def _init_dock(self,parent_qt):
+    self._dock = pyqtgraph.dockarea.Dock("Cursor Interface", size=(500,30))
+    parent_qt.dock_area.addDock(self._dock, 'bottom')
+    parent_qt.curs_pos_label = QtGui.QLabel("")
+    self._dock.addWidget(QtGui.QLabel("Cursor Data:"))
+    self._dock.addWidget(parent_qt.curs_pos_label)
+    return self._dock
+]]>
+        </Method>
+    </DockType>
+    <DockType>
+        <Name>Control</Name>
+        <Method>
+<![CDATA[
+def _init_dock(self,parent_qt):
+    self._dock = pyqtgraph.dockarea.Dock("Dock Control", size=(500, 50)) ## give this dock the minimum possible size
+    parent_qt.dock_area.addDock(self._dock, 'top')      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
+    self._layout_widget = pyqtgraph.LayoutWidget()        
+    label = QtGui.QLabel(" -- DockArea -- ")
+    saveBtn = QtGui.QPushButton('Save dock state')
+    restoreBtn = QtGui.QPushButton('Restore dock state')
+    restoreBtn.setEnabled(False)
+    fileField = QtGui.QLineEdit('File')
+    self._layout_widget.addWidget(label, row=0, col=0)
+    self._layout_widget.addWidget(saveBtn, row=1, col=0)
+    self._layout_widget.addWidget(restoreBtn, row=2, col=0)
+    self._layout_widget.addWidget(fileField, row=3, col=0)
+    self._dock.addWidget(self._layout_widget)
+    state = None
+    def save():
+        global state
+        state = parent_qt.dock_area.saveState()
+        print state['main']
+        print dockstate_to_xml(state['main'])
+        restoreBtn.setEnabled(True)
+    def load():
+        global state
+        parent_qt.dock_area.restoreState(state)
+    saveBtn.clicked.connect(save)
+    restoreBtn.clicked.connect(load)
+    return self._dock
+]]>
+        </Method>
+    </DockType>
+    <DockType>
+        <Name>1D_Plot</Name>
+        <Method>
+<![CDATA[
+def _init_dock(self,parent_qt):
+    self._dock = pyqtgraph.dockarea.Dock("1D Plot", size=(500,500))
+    parent_qt.dock_area.addDock(self._dock, 'bottom')
+    self._dock.addWidget(QtGui.QLabel("1D Plot"))
+    self._dock.win = pyqtgraph.GraphicsWindow()
+    self._dock.plot = self._dock.win.addPlot(title="1D Plot")
+    
+    self._dock.data = numpy.random.normal(size=(200))
+    self._dock.curve = self._dock.plot.plot(y=self._dock.data)
+    
+    self._dock.addWidget(self._dock.win)
+    return self._dock
+]]>
+        </Method>
+    </DockType>
+    <DockType>
+        <Name>2D_Plot</Name>
+        <Method>
+<![CDATA[
+def _init_dock(self,parent_qt):
+    self._dock = pyqtgraph.dockarea.Dock("Image View", size=(500,500))
+    parent_qt.dock_area.addDock(self._dock, 'top')
+    #self._dock.label = DockLabel("Shotnumber = ", self._dock)
+    self._dock.updateStyle()
+    
+    parent_qt.imv = pyqtgraph.ImageView()
+    self._dock.addWidget(parent_qt.imv)
+    parent_qt.imv.setImage(parent_qt.imgstack, xvals=numpy.arange(parent_qt.imgstack.shape[0]))#.linspace(1., 3., ))
+
+    # attempt to add to context menu (right mouse button) for cursor drop
+    parent_qt.imv.view.menu.cursorDrop = QtGui.QAction("Drop Cursor", parent_qt.imv.view.menu)
+    parent_qt.imv.view.menu.dropCursor = parent_qt.dropCursor
+    parent_qt.imv.view.menu.cursorDrop.triggered.connect(parent_qt.imv.view.menu.dropCursor)
+    parent_qt.imv.view.menu.addAction(parent_qt.imv.view.menu.cursorDrop)
+    acs = parent_qt.imv.view.menu.subMenus()
+    def newSubMenus():
+        return [parent_qt.imv.view.menu.cursorDrop] + acs
+    parent_qt.imv.view.menu.subMenus = newSubMenus        
+    parent_qt.imv.view.menu.valid = False
+    parent_qt.imv.view.menu.view().sigStateChanged.connect(parent_qt.imv.view.menu.viewStateChanged)
+    parent_qt.imv.view.menu.updateState()
+
+
+    #cross hair
+    parent_qt.imv.vLine = pyqtgraph.InfiniteLine(angle=90, movable=False)
+    parent_qt.imv.hLine = pyqtgraph.InfiniteLine(angle=0, movable=False)
+    parent_qt.imv.addItem(parent_qt.imv.vLine, ignoreBounds=True)
+    parent_qt.imv.addItem(parent_qt.imv.hLine, ignoreBounds=True)
+    
+    parent_qt.imv.vb = parent_qt.imv.view
+
+    def animate(evt):
+        if parent_qt.imv.playTimer.isActive():
+            parent_qt.imv.playTimer.stop()
+            return
+        fpsin = parent_qt._imv_fps_in
+        fps = float(str(fpsin.text()).split("FPS")[0])
+        parent_qt.imv.play(fps)            
+
+    #animation controls
+    parent_qt._imv_fps_in = QtGui.QLineEdit('10 FPS')   
+    parent_qt._imv_anim_b = QtGui.QPushButton('Animate')
+    parent_qt._imv_anim_b.clicked.connect(animate)
+    
+    parent_qt._imv_layout_widg = pyqtgraph.LayoutWidget()
+    parent_qt._imv_layout_widg.addWidget(QtGui.QLabel("Animation:"), row=0, col=0)
+    parent_qt._imv_layout_widg.addWidget(parent_qt._imv_fps_in, row=0, col=1)
+    parent_qt._imv_layout_widg.addWidget(parent_qt._imv_anim_b, row=0, col=2)
+         
+    self._dock.addWidget(parent_qt._imv_layout_widg)
+    
+    def mouseMoved(evt):
+        pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+        if parent_qt.imv.scene.sceneRect().contains(pos):
+            mousePoint = parent_qt.imv.vb.mapSceneToView(pos)
+            parent_qt.imv.vLine.setPos(mousePoint.x())
+            parent_qt.imv.hLine.setPos(mousePoint.y())
+            index = (int(mousePoint.x()),int(mousePoint.y()))
+            #x = "/</span style='font-size: 12pt;color: blue'/>/x=%0.1f,   " % mousePoint.x() #Need to escape the <> to use them
+            x =  "X = " + str(int(mousePoint.x())) + "; "
+            #y = "/</span style='color: red'/>/y=%0.1f/<//span/>/,   " % mousePoint.y()
+            y =  "Y = " + str(int(mousePoint.y())) + "; "
+            if index[0] > 0 and index[0] < len(parent_qt.imgstack[1][0]):
+                if index[1] > 0 and index[1] < len(parent_qt.imgstack[2][0]):
+                    #Fix the next line so that the z axis is for the image that is displayed
+                    try:
+                        #z = "/</span style='color: green'/>\z=%0.1f/<//span/>/" % parent_qt.imgstack[parent_qt.imv.currentIndex, index[0], index[1]]
+                        z = "Z = " + str(parent_qt.imgstack[parent_qt.imv.currentIndex, index[0], index[1]])
+                    except: 
+                        #z="/</span style='color: green'/>/z=Error/<//span/>/"
+                        z=" Error "
+                        print "index:", index
+                        print "len(parent_qt.imgstack[1][0]:", len(parent_qt.imgstack[1][0])
+                        print "parent_qt.imv.currentIndex:", parent_qt.imv.currentIndex
+                    parent_qt.curs_pos_label.setText(str(x)+str(y)+str(z))
+    
+    
+    self.proxy = pyqtgraph.SignalProxy(parent_qt.imv.scene.sigMouseMoved, rateLimit=60, slot=mouseMoved)  
+    return self._dock
+]]>
+        </Method>
+    </DockType>  
+    <Dock>
+        <Type>2D_Plot</Type>
+    </Dock>
+    <Dock>
+        <Type>1D_Plot</Type>
+    </Dock>
+    <Dock>
+        <Type>Cursor</Type>
+    </Dock>
+    <Dock>
+        <Type>Console</Type>
+    </Dock>
+    <Dock>
+        <Type>Control</Type>
+    </Dock>
+</AnalysisSpace>
+"""    
+
+#pdb.set_trace()
+xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + example_AS_xtsm + "</XTSM>")
+xtsm_object.XTSM.AnalysisSpace._launch()
