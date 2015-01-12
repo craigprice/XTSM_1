@@ -596,7 +596,10 @@ class CommandLibrary():
                     if script.Remote.PCDATA != str(self.server.ip):
                         script.dispatch(self.server)
                         continue
-            script._find_dependencies(self.server)
+            if hasattr(script, 'ExecuteOnEvent'):
+                if script.ExecuteOnEvent.PCDATA == 'compile_xtsm':
+                    script._find_dependencies(self.server)
+                    continue
             
         xtsm_object.installListeners(dc['_bombstack'].dataListenerManagers)
         #This calls _generate_listeners_ and passes in the DLM instance.
@@ -616,7 +619,12 @@ class CommandLibrary():
                     gui_not_started = False
             if gui_not_started:
                 self.server.command_queue.add(ServerCommand(self.server,self.server.connection_manager.add_data_gui_server,analysis_space_xtsm=analysis_space_xtsm,name=name))
-            
+            else:
+                msg = {"IDLSocket_ResponseFunction":"check_consistency_with_xtsm","analysis_space_xtsm":analysis_space_xtsm}
+                for key in self.server.connection_manager.data_gui_servers:
+                    self.server.command_queue.add(ServerCommand(self.server,
+                                                    self.server.connection_manager.data_gui_servers[key].protocol.sendMessage,
+                                                    simplejson.dumps(msg)))
         
         '''
         #Dispatch all scripts, - Scripts in InstrumentCommand is in a subset

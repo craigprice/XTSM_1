@@ -1466,6 +1466,25 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
 class channelData():
     """
     subclass of ControlArray to store individual channel data
+    
+    WARNING: the code that follows will make you cry;
+        a safety pig is provided below for your benefit.
+        
+                                 _
+     _._ _..._ .-',     _.._(`))
+    '-. `     '  /-._.-'    ',/
+       )         \            '.
+      / _    _    |             \
+     |  a    a    /              |
+     \   .-.                     ;  
+      '-('' ).-'       ,'       ;
+         '-;           |      .'
+            \           \    /
+            | 7  .__  _.-\   \
+            | |  |  ``/  /`  /
+           /,_|  |   /,_/   /
+              /,_/      '`-'
+              
     """
     def __init__(self,parent,channelnumber,times=None,values=None):
         self.channel=channelnumber
