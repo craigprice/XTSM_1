@@ -769,7 +769,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             for step in timing:
                 allsteps.append((step[0],step[1]-prior))
                 prior=step[1]
-            print allsteps
+            if DEBUG: print allsteps
         return self
 
     def get_biographics(self):
@@ -871,7 +871,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             self.construct_denseT_old()
             t1=time.time()
             old_denseT=self.denseT
-            print "old denseT: ", t1-t0
+            if DEBUG: print "old denseT: ", t1-t0
             t0=time.time()
         
         # first create a sorted list of all times at beginning or end of interval, at an edge, or beginning or start of sequence
@@ -969,9 +969,9 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             
         if BENCHMARK:
             t1=time.time()
-            print "new denseT time:" , t1-t0
-            print "equality check", numpy.array_equal(old_denseT, self.denseT)
-            print "denseT types old/new:" , old_denseT.dtype, self.denseT.dtype
+            if DEBUG: print "new denseT time:" , t1-t0
+            if DEBUG: print "equality check", numpy.array_equal(old_denseT, self.denseT)
+            if DEBUG: print "denseT types old/new:" , old_denseT.dtype, self.denseT.dtype
             if not numpy.array_equal(old_denseT, self.denseT): pass
 
     def construct_denseT_old(self):
@@ -1252,12 +1252,12 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
 
         if BENCHMARK:
             t0=time.time()-t0
-            print "new repasint time:" , t0
+            if DEBUG: print "new repasint time:" , t0
             t0=time.time()
             outvals=self.RepresentAsIntegerOld()
             t0=time.time()-t0
-            print "old repasint time:", t0
-            print "equality check:", numpy.array_equal(fast_string,outvals[0])
+            if DEBUG: print "old repasint time:", t0
+            if DEBUG: print "equality check:", numpy.array_equal(fast_string,outvals[0])
             if not numpy.array_equal(fast_string,outvals[0]): pdb.set_trace()
             if not numpy.array_equal(fast_times,outvals[1]): pdb.set_trace()
 
@@ -1891,7 +1891,7 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
         gets the starttime for the subsequence from XTSM tags(a parsed 'StartTime' tag) and add the starttime of its parent, return the absolute starttime . This method is added on 12/12/13 by JZ.
         """
         if hasattr(self,'StartTime'):
-            print self.Name.PCDATA
+            if DEBUG: print self.Name.PCDATA
             #pdb.set_trace()
             substarttime=self.StartTime[0].parse()
             try:
@@ -2354,7 +2354,7 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
             self.active=False # if any dependencies are missing don't bother executing
             unfound=[d for d in self.dependencies if not self.dependencies[d]]
             self.addAttribute("parser_error","undetermined dependent(s): "+", ".join(unfound))
-        print self.dependencies
+        if DEBUG: print self.dependencies
         if len(self.dependencies)==0: self.execute() # if no dependencies, execute immediately
     
     def __generate_listener__(self):
@@ -2604,14 +2604,14 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
     """
     def __init__(self):
         XTSM_core.__init__(self)
-        print "class InstrumentCommand, func __init__"
+        if DEBUG: print "class InstrumentCommand, func __init__"
         
     def __generate_listener__(self):#This is called by installListeners - which is called in Server, compile active xtsm
         """
         Returns listener creation data - this will be automatically called
         recursively down the tree by installListeners in XSTM_core class.
         """
-        print "in class InstrumentCommand, function __generate_listener__"
+        if DEBUG: print "in class InstrumentCommand, function __generate_listener__"
         #pdb.set_trace()
         
         
@@ -2624,7 +2624,7 @@ class InstrumentCommand(gnosis.xml.objectify._XO_,XTSM_core):
         
         if (not self.scoped):
             self.buildScope()
-        print "scope:", self.scope.keys()
+        if DEBUG: print "scope:", self.scope.keys()
         data={}
         #pdb.set_trace()
         data.update({"generator": self})
@@ -3308,7 +3308,7 @@ class XTSM_Object(object):
         scans down the XTSM tree, creating dataListeners for all elements
         which should generate them.
         """
-        print "class XTSM_object, function install Listeners"
+        if DEBUG: print "class XTSM_object, function install Listeners"
         self.XTSM.head.installListeners(dataListenerManager)#Runs the "install Listeners function in XTSM_core class
         self.XTSM.getActiveSequence().installListeners(dataListenerManager)
 
@@ -3567,12 +3567,12 @@ class Command_Library:
 
         if BENCHMARK:
             t1=time.time()        
-            print "new combine time: ", t1-t0
+            if DEBUG: print "new combine time: ", t1-t0
             t0=time.time()
             old_version_string = self.combine_with_delaytrain_old(XTSM_obj, params)
             t1=time.time()        
-            print "old combine time: ", t1-t0
-            print "equality check: ", numpy.array_equal(old_version_string,output_string)        
+            if DEBUG: print "old combine time: ", t1-t0
+            if DEBUG: print "equality check: ", numpy.array_equal(old_version_string,output_string)        
 
 
 def preparse(xtsm_obj):

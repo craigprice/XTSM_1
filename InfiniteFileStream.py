@@ -16,7 +16,7 @@ import zlib
 import zipfile
 import pprint
 
-
+DEBUG = False
 
 class Filestream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Object):
     """
@@ -27,7 +27,7 @@ class Filestream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
     a single call to write will be segmented into multiple files.
     """
     def __init__(self, params={}):
-        print "class FS, func __init__()"
+        if DEBUG: print "class FS, func __init__()"
         self.init_time = time.time()
         self.today = datetime.datetime.fromtimestamp(self.init_time).strftime('%Y-%m-%d')
         self.defaultparams = {'zip archive created':self.init_time}
@@ -52,7 +52,7 @@ class Filestream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
         self.logstream.write(unicode('This is a log of file writes\n'))
         self.logstream.close()
         self.root_zip_name = str(uuid.uuid1()) + '.zip'
-        print self.location_root
+        if DEBUG: print "location_root", self.location_root
 
     class UnknownDestinationError(Exception):
         pass
@@ -80,7 +80,7 @@ class Filestream(xstatus_ready.xstatus_ready, XTSM_Server_Objects.XTSM_Server_Ob
             self.zip_file_name = self.backup_location_root + self.root_zip_name
         else:
             self.zip_file_name = self.location_root + self.root_zip_name
-        print self.zip_file_name
+        if DEBUG: print "zip_file_name", self.zip_file_name
         try: 
             self.zip_file = zipfile.ZipFile(self.zip_file_name,
                                             mode='a',
