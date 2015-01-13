@@ -132,7 +132,7 @@ DEBUG_LINENO = 0
 DEBUG_TRACE = False
 TRACE_IGNORE=["popexecute","getChildNodes","getItemByFieldValue"]
 MAX_SCRIPT_SERVERS = 2
-DEBUG = False
+DEBUG = True
       
 if DEBUG_TRACE: sys.settrace(tracefunc)
 
@@ -971,7 +971,9 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
         pass
 
     def on_close(self):
-       self.is_open_connection = False
+        #closing the datagui window doesn't close the connection?
+        if DEBUG: print "class GlabClient, function on_close"
+        self.is_open_connection = False
        
     
     def close(self):
@@ -1294,6 +1296,10 @@ class DataGUIServer(GlabClient):
             #payload = payload.decode('utf8')
             if DEBUG: print "Text message received in Client ws protocol:",payload
 
+    def on_close(self):
+       if DEBUG: print "class DataGUIServer, function on_close"
+       self.is_open_connection = False
+
     def on_open(self):
         if DEBUG: print 'In class DataGUIServer, func on_open'
         self.in_use = True
@@ -1311,6 +1317,8 @@ class DataGUIServer(GlabClient):
         '''
         
         #'''
+        return
+        #Missing CDATA tags?
         try:
             #pdb.set_trace()
             print '<XTSM>'+self.analysis_space_xtsm+'</XTSM>'
