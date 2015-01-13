@@ -49,7 +49,7 @@ from enthought.traits.api import Int as TraitedInt
 from enthought.traits.api import Str as TraitedStr
 
 import collections
-DEBUG = True
+DEBUG = False
       
 NUM_RETAINED_XTSM=10
 

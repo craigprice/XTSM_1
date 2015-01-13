@@ -174,8 +174,13 @@ class CommandLibrary():
         self.data_storage = DataStorage() 
 
     def check_consistency_with_xtsm(self, params):
+        if DEBUG: print("class data_guis.docked_gui.CommandLibrary, func check_consistency_with_xtsm")
+        
+
         xtsm = '<XTSM>'+params['analysis_space_xtsm']+'</XTSM>'
         xtsm_object = XTSMobjectify.XTSM_Object(xtsm)
+        
+        xtsm = '<XTSM>'+params['analysis_space_xtsm']+'</XTSM>'
         xtsm_heap = xtsm_object.XTSM.getDescendentsByType('Heap')[0]
         self.factory.gui._console_namespace.update({"xtsm_object":xtsm_object})
         if not (xtsm_heap.Name.PCDATA in self.factory.gui._console_namespace.keys()):
@@ -721,6 +726,12 @@ class Docked_Gui():
         return new_representation.write_xml()        
         
     def state_to_settings(self,state):
+        '''
+        This will take a saved settings file in xml, and turn it back into the
+        expected form to restore the state of the data_gui.
+        
+        Unifinished. Copied from settings_to_xml without change yet.
+        '''
         try:
             xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + state + "</XTSM>")
         except:
@@ -732,6 +743,25 @@ class Docked_Gui():
             def xml_to_elm(state,out):
                 print 'elms'
                 pprint.pprint(elms)
+                #if state.getChildren()
+                if type(elms)!=type([]):
+                    elms=[elms]
+                for elm in elms:
+                    elm_type=elm[0]
+                    elm_type = elm_type.title()
+                    out+="<"+str(elm_type)+">\n"
+                    if type(elm[1])==type([]):
+                        out=elm_to_xml(elm[1],out)
+                    else:
+                        elm_docktype=elm[1]
+                        out+="<Type>"+str(elm_docktype)+"</Type>\n"
+                    for k in elm[2]:
+                        out+="<"+k.title()+">"+str(elm[2][k])+"</"+k.title()+">\n"
+                    out+="</"+str(elm_type)+">\n"
+                return out
+            out=""
+            out=elm_to_xml(state,out)
+            return out   
         
     def saveSettings(self):
         settings = PyQt4.QtCore.QSettings('test', 'test')
@@ -908,7 +938,7 @@ class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
                                          payload['IDLSocket_ResponseFunction'])
                     ThisResponseFunction(payload)
                 else:
-                    print payload_.keys()
+                    print payload_
                 
                 
             def onClose(self, wasClean, code, reason):
@@ -1043,12 +1073,50 @@ for XTSM_Class in XTSM_Classes:
     setattr(gnosis.xml.objectify, "_XO_"+XTSM_Class.__name__, XTSM_Class)
 del allclasses
 
-"""
-MARKER1
-"""
 
 example_AS_xtsm=u"""
 <AnalysisSpace>
+
+<Name>Absorption</Name>
+
+        <Script>
+          
+          <Name>Plot_CCD_Image</Name>
+
+          <Description>Plotting</Description>
+
+          <ExecuteOnEvent>databomb</ExecuteOnEvent>
+
+          <ExecuteOnMainServer>False</ExecuteOnMainServer>
+
+          <Time>0</Time>
+
+          <Remote>True</Remote>
+
+          <ScriptBody>
+<![CDATA[
+count = 0
+for db in databombs:
+	first_image = db['data'][0]
+	if count == 0:
+		img = [first_image]
+	else:
+		img = numpy.concatenate((img,[first_image]), axis=0)
+	count = count + 1
+self.plot(img)
+]]>	  
+</ScriptBody>
+
+        </Script>
+
+        <Heap>
+          
+          <Name>Image_Data</Name>
+
+          <DataCriteria>'10.1.1.110'</DataCriteria>
+
+        </Heap>
+
     <DockType>
         <Name>Console</Name>
         <Method>
@@ -1264,5 +1332,17 @@ def _init_dock(self,parent_qt):
 """    
 
 #pdb.set_trace()
-xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + example_AS_xtsm + "</XTSM>")
-xtsm_object.XTSM.AnalysisSpace._launch()
+
+def  main():
+    import sys
+    try:
+        print sys.argv[1]
+        xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + sys.argv[1] + "</XTSM>")
+        xtsm_object.XTSM.AnalysisSpace._launch()
+    except Exception as e:
+        print e
+    
+
+if __name__ == '__main__':
+    main()
+

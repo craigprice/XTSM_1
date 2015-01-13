@@ -54,7 +54,7 @@ import numpy
 import collections
 import sync
 from scipy.optimize import curve_fit
-DEBUG = False
+DEBUG = True
       
 NUM_RETAINED_XTSM=10
 
@@ -615,13 +615,18 @@ class CommandLibrary():
             analysis_space_xtsm = aspace.write_xml()
             gui_not_started = True
             for key in self.server.connection_manager.data_gui_servers:
-                if self.server.connection_manager.data_gui_servers[key].name == name:
+                if self.server.connection_manager.data_gui_servers[key].name == name and self.server.connection_manager.data_gui_servers[key].is_open_connection == True:
                     gui_not_started = False
             if gui_not_started:
-                self.server.command_queue.add(ServerCommand(self.server,self.server.connection_manager.add_data_gui_server,analysis_space_xtsm=analysis_space_xtsm,name=name))
+                if DEBUG: print "gui_not_started"
+                self.server.command_queue.add(ServerCommand(self.server,
+                                                            self.server.connection_manager.add_data_gui_server,
+                                                            analysis_space_xtsm=analysis_space_xtsm,
+                                                            name=name))
             else:
                 msg = {"IDLSocket_ResponseFunction":"check_consistency_with_xtsm","analysis_space_xtsm":analysis_space_xtsm}
                 for key in self.server.connection_manager.data_gui_servers:
+                    if DEBUG: print "check_consistency_with_xtsm"
                     self.server.command_queue.add(ServerCommand(self.server,
                                                     self.server.connection_manager.data_gui_servers[key].protocol.sendMessage,
                                                     simplejson.dumps(msg)))
