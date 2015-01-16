@@ -1642,8 +1642,9 @@ function Hdiode_code_tree(html_div, sources) {
 
     var root_tree = this;
     function create_subcm(textarea, format) {
+	console.log("create_subcm");
     // this is used to create CodeMirror editors for in-tree editing (not the main XTSM editor)
-        var cmobj;
+        var cm_obj;
         var that = this;
         var forms = { python: { mode: { name: "python", version: 2, singleLineStringErrors: false },
                                 lineNumbers: true, indentUnit: 4, matchBrackets: true},
@@ -1651,11 +1652,25 @@ function Hdiode_code_tree(html_div, sources) {
                                 gutters: ["note-gutter", "CodeMirror-linenumbers"],
                                 linewrapping: "True", autoCloseTags: true, cursorBlinkRate: "500"}
                         };
+		//console.log("textarea.text\n"+textarea.text);
+		//console.log("textarea.value\n"+textarea.value);
         cm_obj = CodeMirror.fromTextArea(textarea,forms[format]);
+		//console.log("create_subcm");
+		//console.log("format"+format);
         cm_obj.setSize(900,300);
-        cm_obj.setValue(textarea.value.replace(/<!\[CDATA\[.*?\]\]>/g, ''));
+		//alert(textarea.value);
+		//alert(textarea.value.replace(/<!\[CDATA\[(.*?)\]\]>/g, ''));
+		//console.log(cm_obj);
+		//console.log("textarea.text\n"+textarea.text);
+		//console.log("textarea.value\n"+textarea.value);
+		//console.log('cm_obj.getValue()\n'+cm_obj.getValue());
+		//console.log('cm_obj.getText()\n'+cm_obj.getText());
+        cm_obj.setValue(textarea.value.replace(/<!\[CDATA\[(.*?)\]\]>/g, ''));
+		//console.log("textarea.value\n"+textarea.value);
+		//console.log('cm_obj.getValue()\n'+cm_obj.getValue());
         cm_obj.container_tree = root_tree;
         cm_obj.on("blur", function (e) {
+				console.log("blur");
                 e.target = textarea;
                 e.target.name = textarea.name;
                 e.target.value = ""+cm_obj.getValue();
@@ -1738,6 +1753,10 @@ function Hdiode_code_tree(html_div, sources) {
 
         tocms = $("[codemirrorize]");
         for (i = 0; i < tocms.length; i++) {
+			//console.log('tocms[i]\n'+tocms[i]);
+			//console.log('tocms[i].text\n'+tocms[i].text);
+			//console.log('$(tocms[i])\n'+$(tocms[i]));
+			//console.log('$(tocms[i]).attr("codemirrorize")\n'+$(tocms[i]).attr("codemirrorize"));
             create_subcm(tocms[i],$(tocms[i]).attr("codemirrorize")) 
             }
 
@@ -1971,22 +1990,31 @@ function Hdiode_code_tree(html_div, sources) {
         // first parent division's gen_id property
         //var elmpath, docparser, xml, target;
         var elmpath, docparser, xml, target, upd;
-        elmpath = $(event.target).parents("div:first").get(0).
-            getAttribute('gen_id');
+        elmpath = $(event.target).parents("div:first").get(0).getAttribute('gen_id');
         if (elmpath.substr(elmpath.length - 2, 2) === '__') {
             elmpath += event.target.name;
         }
-        elmpath = elmpath.split('divtree__')[1].replace(/__/g, "]/").
-            replace(/_/g, "[") + "]";
+        elmpath = elmpath.split('divtree__')[1].replace(/__/g, "]/").replace(/_/g, "[") + "]";
         docparser = new DOMParser();
         xml = docparser.parseFromString(event.data.container.xml_string, "text/xml");
-        target = xml.evaluate(elmpath, xml, null, XPathResult.
-            UNORDERED_NODE_ITERATOR_TYPE, null).iterateNext();
-        upd = event.target.value.replace(/<!\[CDATA\[.*?\]\]>/g, '');
-        if (target.firstChild) {
-            target.removeChild(target.firstChild);
-        }
-        target.appendChild(xml.createCDATASection(upd)); 
+        target = xml.evaluate(elmpath, xml, null, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null).iterateNext();
+        upd = event.target.value.replace( /<!\[CDATA\[.*?\]\]>/g, '' );
+		var x = target.firstChild;
+		var new_lines = '';
+		while (x)
+		{
+			if (x.nodeType == 4)
+			{
+				target.removeChild(x);
+				x = target.firstChild;
+				break;
+			}else{
+				new_lines = new_lines + '\n';
+				target.removeChild(x);
+				x = target.firstChild;
+			}
+		}
+        target.appendChild(xml.createCDATASection(new_lines+upd)); 
         event.data.container.xml_string = xmltoString(xml);
         event.data.container.update_editor();
         // (tree is automatically refreshed by onchange event of codemirror editor)
