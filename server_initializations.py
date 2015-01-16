@@ -31,7 +31,8 @@ import glab_instrument
 self.dataContexts['default'].update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self,'create_example_pollcallback':True})})
 """
 
-pfaffian_init="""
+pfaffian_init=""" """
+"""
 print 'here is pfaffians init script - im in server_initializations.py'
 """
 

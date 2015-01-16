@@ -54,7 +54,7 @@ import numpy
 import collections
 import sync
 from scipy.optimize import curve_fit
-DEBUG = True
+DEBUG = False
       
 NUM_RETAINED_XTSM=10
 
@@ -803,9 +803,10 @@ class CommandLibrary():
                                         'data_context':dc.name,
                                         'databomb':params['databomb']},
                                          use_bin_type=True)  
-        for p in self.server.connection_manager.data_gui_servers:
-            print "sending len =", len(packed_message)/(1000*1000.0), "MB. asdf (2)", str(time.time()-TIMING)
-            self.server.send(packed_message,self.server.connection_manager.data_gui_servers[p], isBinary=True)             
+        #for p in self.server.connection_manager.data_gui_servers:
+        print "sending len =", len(packed_message)/(1000*1000.0), "MB. asdf (2)", str(time.time()-TIMING)
+        if params['data_context'] == 'PXI_emulator':
+            self.server.send(packed_message,self.server.connection_manager.data_gui_servers.iterkeys().next(), isBinary=True)             
         print "End sever side sending asdf (3)", str(time.time()-TIMING)
         
     def temp_plot_qt(self,params,bomb_id, dc):

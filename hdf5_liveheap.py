@@ -39,7 +39,7 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
     This class wraps the pytables module to provide a data storage vehicle
     a single datastore is intended to interface with a single .hdf5 file
     on disk.
-    Multiple live stacks can heave data into the same datastore.  
+    Multiple live heaps can heave data into the same datastore.  
     """        
     def __init__(self, options={}):
         """
@@ -141,6 +141,7 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
         # first create a numpy structured array as a descriptor for the table elements
         # start by finding a name from the id, assuming it can have path structure
         eparts=element_id.rsplit("/",1)
+        table_name = eparts[-1]
         try:
             element.shape
         except AttributeError:#Want all data elements to be some kind of numpy array
@@ -163,31 +164,47 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
                 return exit_this(h)
         '''
         try: 
-            h = self.h5.getNode("/"+element_id)
+            h = self.h5.getNode("/"+table_name)
             if h.dtype == des.dtype:
                 return exit_this(h)
+            else:
+                print "Types Don't Match"
+                print h.dtype
+                print des.dtype
         except tables.exceptions.NoSuchNodeError:
-            h = self.h5.create_table("/",eparts[-1],description=des.dtype)
+            print "Creating Table:", "/", table_name,des.dtype
+            h = self.h5.create_table("/",table_name,description=des.dtype)
             return exit_this(h)
         
-        for ind in xrange(-1,1000):
+        for ind in xrange(0,100):
             print "WARNING: Could not find node with description:", element_id
             print "shotnumber =", des[0][0]
             print "repnumber =", des[0][1]
             print "data =", des[0][2].shape, des[0][2].dtype
-            try: 
-                h = self.h5.getNode("/"+element_id+("_"+str(ind))*(ind>0))
-                if h.dtype == des.dtype:
-                    print "Using node:", h
-                    return exit_this(h)
+            try:
+                print "a"
+                print "/"+table_name+("_"+str(ind))
+                h = self.h5.getNode("/"+table_name+("_"+str(ind)))
+                print "b"
+                print h
+                return exit_this(h)
             except tables.exceptions.NoSuchNodeError:
-                h = self.h5.create_table("/",eparts[-1]+("_"+str(ind))*(ind>0),description=des.dtype)
+                print "c"
+                h = self.h5.create_table("/",table_name+("_"+str(ind)),description=des.dtype)
                 print "Creating node:", h,
-                print "with description:", eparts[-1]+("_"+str(ind))*(ind>0)
+                print "with description:", table_name+("_"+str(ind))
                 print "shotnumber =", des[0][0]
                 print "repnumber =", des[0][1]
                 print "data =", des[0][2].shape, des[0][2].dtype
-                return exit_this(h)
+                pdb.set_trace()
+                if h.dtype == des.dtype:
+                    print "Using node:", h
+                    return exit_this(h)
+                else:
+                    print "Error: in making table"
+                    #print "Creating Table:", "/", table_name+("_"+str(ind))*(ind>0),des.dtype
+                    #h = self.h5.create_table("/",table_name+("_"+str(ind))*(ind>0),description=des.dtype)
+                    #return exit_this(h)
 
     def load_from_filestore(self,directory,tablename="Untitled",limit=None,dtype=numpy.float32):
         """
@@ -607,24 +624,28 @@ class glab_liveheap(PyQt4.QtCore.QObject):
         """
         associates a datastore (portal to an h5 file) with this stack
         """
-        if datastore==None: datastore=glab_datastore(options=options)
-        self.datastore=datastore
-        self.datastore_handle=datastore.get_handle(self.id,self.stack[0,...])
+        if datastore == None:
+            datastore = glab_datastore(options=options)
+        self.datastore = datastore
+        self.datastore_handle = datastore.get_handle(self.id,self.stack[0,...])
            
 import unittest
 class test_basic_functions(unittest.TestCase):
 
     def setUp(self):
+        print 'class test_basic_functions, function setUp'
         self.e=numpy.random.rand(20,20,20) # generate 20 random matrices
         for i in range(20): # the first ten of the following pushes will be heaved to disk, the last ten will stay in ram stack
             self.e[i,0,0]=121+i  # set top-left element to same as shotnumber will be when pushed, starting shotnumber will be 121
 
         self.ds = glab_datastore()
 
+    
     def test_getitem(self):
         """
         checks basic insertion and retrieval with heap and 20 20x20 float arrays, with half held in ram
         """
+        print 'class test_basic_functions, function test_getitem'
         g=glab_liveheap(options={"element_structure":[20,20],"sizeof":10, "typecode":numpy.float}) # creates a stack of 20x20 float arrays, ten of which will be held in ram at any time
         g.attach_datastore() # attaches a datastore with a randomly generated name
         for i in range(self.e.shape[0]):
@@ -647,6 +668,7 @@ class test_basic_functions(unittest.TestCase):
            
         
     def test_get_handle(self):
+        print 'class test_basic_functions, function test_get_handle'
         handle = self.ds.get_handle('ccdimage',self.e[0])
         handle2 = self.ds.get_handle('ccdimage',self.e[0])
         sn = numpy.random.random_integers(1000*1000*1000)
@@ -655,20 +677,34 @@ class test_basic_functions(unittest.TestCase):
         handle.table.flush()
         self.assertTrue((self.e[1]==handle.table.read()[0][2]).all())
         self.assertTrue((self.e[1]==handle2.table.read()[0][2]).all())
-
+    
         
     def test_get_different_handle(self):
+        print 'class test_basic_functions, function test_get_different_handle'
         handle = self.ds.get_handle('ccdimage',self.e[0])
+        print '1'
         test_data = numpy.random.randint(numpy.random.random_integers(1000*1000*1000), size=(40, 40))
+        print '2'
         handle2 = self.ds.get_handle('ccdimage',test_data)
+        print '3'
         sn = numpy.random.random_integers(1000*1000*1000)
+        print '4'
         rn = numpy.random.random_integers(1000*1000*1000)
+        print '5'
+        pdb.set_trace()
         handle.append(self.e[1], sn, rn)
+        print '6'
+        pdb.set_trace()
         handle2.append(test_data, sn, rn)
+        print '7'
         handle.table.flush()
+        print '8'
         handle2.table.flush()
+        print '9'
         self.assertTrue((self.e[1]==handle.table.read()[0][2]).all())
+        print '10'
         self.assertTrue((test_data==handle2.table.read()[0][2]).all())
+        print '11'
 
 
 

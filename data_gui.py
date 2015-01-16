@@ -15,6 +15,7 @@ import datetime
 import pdb
 import traceback
 import sys
+import socket
 
 import os
 import colorama
@@ -123,6 +124,8 @@ class CommandLibrary():
             capturer = StringIO()
             sys.stdout = capturer
             t0=time.time()
+            script = script.replace('\g', '>')
+            script = script.replace('\l', '<')
             exec script in globals(),context
             t1=time.time()
             context.update({"_starttime":t0,"_exectime":(t1-t0),"_script_console":capturer.getvalue()})
@@ -176,20 +179,76 @@ class CommandLibrary():
     def check_consistency_with_xtsm(self, params):
         if DEBUG: print("class data_guis.docked_gui.CommandLibrary, func check_consistency_with_xtsm")
         
+        #xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + example_AS_xtsm + "</XTSM>")
+        #xtsm_object.XTSM.AnalysisSpace.gui = 
 
         xtsm = '<XTSM>'+params['analysis_space_xtsm']+'</XTSM>'
-        xtsm_object = XTSMobjectify.XTSM_Object(xtsm)
+        try:
+            xtsm_object = XTSMobjectify.XTSM_Object(xtsm)
+        except Exception as e:
+            print "Error:", e
+            print e.message
+            traceback.print_stack()
+            traceback.print_exception(*sys.exc_info())
+            return
         
-        xtsm = '<XTSM>'+params['analysis_space_xtsm']+'</XTSM>'
-        xtsm_heap = xtsm_object.XTSM.getDescendentsByType('Heap')[0]
-        self.factory.gui._console_namespace.update({"xtsm_object":xtsm_object})
-        if not (xtsm_heap.Name.PCDATA in self.factory.gui._console_namespace.keys()):
-            heap = hdf5_liveheap.glab_liveheap({"element_structure":[769,513],
-                                                "filename":"test_file",
-                                                "typecode":numpy.dtype("uint16")})#numpy.uint16 will not work
-            self.factory.gui._console_namespace.update({xtsm_heap.Name.PCDATA:heap})
-            heap.attach_datastore()
-            #heap._glab_liveheap___s_push_fired.connect(self.test)
+        
+        xtsm_object.XTSM.AnalysisSpace.gui = self.gui
+        
+        to_update_all = False
+        try:
+            self.gui._console_namespace['AnalysisSpace'].Name
+        except KeyError:
+            to_update_all = True
+            self.gui._console_namespace.update({'AnalysisSpace':xtsm_object.XTSM.AnalysisSpace})
+        
+        if self.gui._console_namespace['AnalysisSpace'].Name.PCDATA != xtsm_object.XTSM.AnalysisSpace.Name.PCDATA:
+            to_update_all = True
+            self.gui._console_namespace.update({'AnalysisSpace':xtsm_object.XTSM.AnalysisSpace})
+                
+        gui_space = self.gui._console_namespace['AnalysisSpace']
+        
+        docks = xtsm_object.XTSM.getDescendentsByType('Dock')
+        for d in docks:
+            try:
+                gui_dock = gui_space.getItemByFieldValue('Dock', 'Name', d.Name.PCDATA)
+            except AttributeError as e:
+                print "Error:", e
+                print e.message
+                traceback.print_stack()
+                traceback.print_exception(*sys.exc_info())
+                return
+                
+            #pprint.pprint('d.Method._seq[0]'+d.Method[0]._seq[0])
+            #pprint.pprint('gui_dock.Method[0]._seq[0]'+gui_dock.Method[0]._seq[0])
+            
+            command = {'script_body': d.Method._seq[0],
+                       'context' : {'self':self.gui, '_xtsm_dock': d}}
+                       
+            if (to_update_all or gui_dock.Name.PCDATA == None or gui_dock.Method[0]._seq[0] != d.Method[0]._seq[0]):
+                self._execute(command)
+            
+        
+        heaps = xtsm_object.XTSM.getDescendentsByType('Heap')[0]
+        for h in heaps:
+            try:
+                gui_heap = gui_space.getItemByFieldValue('Heap', 'Name', h.Name.PCDATA)
+            except AttributeError as e:
+                print "Error:", e
+                print e.message
+                traceback.print_stack()
+                traceback.print_exception(*sys.exc_info())
+                return
+                
+            
+            command = {'script_body': h.Method._seq[0],
+                       'context' : {'self':self.gui, '_xtsm_heap': h}}
+                
+                       
+            if (to_update_all or gui_heap.Name.PCDATA == None or gui_heap.Method[0]._seq[0] != h.Method[0]._seq[0]):
+                self._execute(command)
+
+        
             
     def test(self,adict):
         print "dffg"
@@ -644,13 +703,6 @@ class Docked_Gui():
 
         self.command_library = CommandLibrary()
         
-        self.docks=[]
-        for dock in params["docks"]:
-            d = dock._init_dock(self)
-            d._sources = dock._sources
-            self.docks.append(d)
-            
-        
         self.win.show()
             
     def _sources_to_xml(self):
@@ -839,18 +891,8 @@ class Docked_Gui():
 
 class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
     """
-    The toplevel object for an analysis space, sometimes called a data_gui
+    The toplevel object for an analysis space
     """
-
-    
-    def _launch_if_necessary(self):
-        """
-        checks if this AnalysisSpace is already running; if not, launches it
-        
-        if already running, reads dock states (etc?) and returns xml representation
-        of its current state
-        """
-        pass # needs writing
     
     def _methods_to_xml(self):
         if DEBUG: print("class data_guis.AnalysisSpace, func _methods_to_xml")
@@ -859,205 +901,37 @@ class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
             if type(getattr(self,meth))==type(self._methods_to_xml):
                 print "<Method><Name>"+meth+"</Name><Source><![CDATA["+inspect.getsource(getattr(self,meth))+"]]></Source></Method>"
         return out    
-    
-    def _launch(self):
-        """
-        creates and launches the data_gui
-        """
-        if DEBUG: print("class data_guis.AnalysisSpace, func _launch")
-        # creates all pyqt representation of docks
-        self._install_docks()
-        # create the gui (pyqtgraph object) itself
-        self.gui = Docked_Gui(params={"docks":self.docks})
-        self.gui.parent_xtsm_analysis_space = self
-        # create event loop and internals using twisted and pyqt
-        self._start_engine()
 
-    def _install_docks(self):
-        """
-        spawn all docks and source
-        """
-        if DEBUG: print("class data_guis.AnalysisSpace, func _install_docks")
-        # first spawn pyqt dock objects
-        self.docks=[]
-        for dock in self.Dock:
-            self.docks.append(dock._spawn())
-    
-    def _start_engine(self):
-        """
-        start the qtreactor and socket communications
-        """
-        if DEBUG: print("class data_guis.AnalysisSpace, func _start_engine")
-        import qtreactor.pyqt4reactor
-        qtreactor.pyqt4reactor.install()
-        
-        last_connection_time = time.time()
-        time_last_check = time.time()   
-        time_now = time.time()
-        
-        from twisted.internet import reactor
-        from twisted.internet import task
-        from autobahn.twisted.websocket import WebSocketServerProtocol
-        from autobahn.twisted.websocket import WebSocketServerFactory
-        from autobahn.twisted.websocket import WebSocketClientFactory
-        from autobahn.twisted.websocket import WebSocketClientProtocol
-        from autobahn.twisted.websocket import connectWS
-        from autobahn.twisted.websocket import listenWS
-        from twisted.internet.protocol import DatagramProtocol
-        import twisted.internet.error
-        from twisted.python import log
-        log.startLogging(sys.stdout)
-       
-        from twisted.internet import stdio
-        from twisted.protocols import basic
-        from twisted.internet import error
-    
-        class MyServerProtocol(WebSocketServerProtocol):
-        
-            def onConnect(self, request):
-                if DEBUG: print("class data_guis.MyServerProtocol, func onConnect: {0}".format(request.peer))
-                
-            def onOpen(self):
-                if DEBUG: print("class data_guis.MyServerProtocol, func onOpen")
-                
-            def onMessage(self, payload_, isBinary):
-                if DEBUG: print "class data_guis.MyServerProtocol, func onMessage"
-                #self.log_message()
-                
-                if isBinary:
-                    payload = msgpack.unpackb(payload_)
-                    if not payload.has_key('IDLSocket_ResponseFunction'):
-                        return None
-                    try:
-                        #ThisResponseFunction = getattr(self.factory.app.command_library,
-                        #                           payload['IDLSocket_ResponseFunction'])
-                        ThisResponseFunction = getattr(self.factory.command_library,
-                                                   payload['IDLSocket_ResponseFunction'])
-                    except AttributeError:
-                        if DEBUG: print ('Missing Socket_ResponseFunction:',
-                                         payload['IDLSocket_ResponseFunction'])
-                    ThisResponseFunction(payload)
-                else:
-                    print payload_
-                
-                
-            def onClose(self, wasClean, code, reason):
-                if DEBUG: print("class data_guis.MyServerProtocol, func onClose: {0}".format(reason))
-                server_shutdown()
-        
-                   
-        def check_for_main_server():
-            global time_last_check
-            global time_now
-            time_last_check = time_now
-            time_now = time.time()
-            #print time_last_check, time_now, last_connection_time
-            if (time_now - last_connection_time) > 1100000 and (time_now - time_last_check) < 11:
-                server_shutdown()
-            
-            
-        def server_shutdown():
-            if DEBUG: print "----------------Shutting Down DataGuiServer Now!----------------"
-            #win.close()
-            #app.quit()
-            reactor.callLater(0.01, reactor.stop)
-        
-        sys.argv.append('localhost')
-        sys.argv.append('9100')
-        #sys.argv[0] = file name of this script
-        # szys.argv[1] = ip address of this server
-        # sys.argv[2] = port to listen on
-        factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug = False)
-        factory.setProtocolOptions(failByDrop=False)
-        factory.protocol = MyServerProtocol
-        try:
-            reactor.listenTCP(int(sys.argv[2]), factory)
-            #a.factory = factory
-            command_library = CommandLibrary()
-            factory.command_library = command_library
-            command_library.factory = factory
-            factory.gui = self.gui
-        except twisted.internet.error.CannotListenError:
-            server_shutdown()
-        
-        reactor.run()
 
-class DockType(gnosis.xml.objectify._XO_,Analysis_Space_Core):
+class Heap(gnosis.xml.objectify._XO_,Analysis_Space_Core):
     """
-    Root factory for a defined dock type, instances created during objectification of XTSM
-    
+    docks created during objectification of XTSM - use _spawn method to
+    generate a pyqtgraph dock object from this XTSM element
     """
-    
-    def _install_sources(self):
-        if DEBUG: print("class data_guis.DockType, func _install_sources")
-        class this_docktype():
-            """
-            factory class for generating the pyqt-object docks
-            """
-            def _init_dock(self,parent_qt):
-                """
-                function to instantiate dock, must be present, should
-                typically be overwritten to generate the content of the dock,
-                i.e. buttons and so forth
-                
-                this function should always return the dock it generated, and
-                as good form attach that dock as self._dock
-                """
-                if DEBUG: print("class data_guis.DockType.this_docktype, func _init_dock")
-                self._dock = pyqtgraph.dockarea.Dock("Default Dock", size=(500,100))
-                parent_qt.dock_area.addDock(self._dock, 'bottom')
-                return self._dock
-        if not hasattr(self,'factory'):
-            self.factory = this_docktype
-            self.factory._sources = []
-            self.factory.initialization = True
-    
-        #pdb.set_trace()
-        old_stdout = sys.stdout
+    def __init__(self):
+        if DEBUG: print "class Heap, function __init__"
         for meth in self.Method:
             try:
-                context={"docktype_instance":self}
-                capturer = StringIO()
-                sys.stdout = capturer
-                src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
-                #src=meth.write_xml().split('<![CDATA[')[1].split(']]>')[0]
-                exec src in globals(),context 
-                sys.stdout = old_stdout
-                for elm in context:
-                    setattr(self.factory,elm,context[elm])
-                if self.factory.initialization:
-                    self.factory._sources.append(src)
+                meth._src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
             except Exception as e:
                 context.update({'_SCRIPT_ERROR':e})
                 print e
-        sys.stdout = old_stdout # make sure we have stdout back
-        self.factory.initialization = False
-        
-                
-
+                print context  
 
 class Dock(gnosis.xml.objectify._XO_,Analysis_Space_Core):
     """
     docks created during objectification of XTSM - use _spawn method to
     generate a pyqtgraph dock object from this XTSM element
     """
-    def _spawn(self):
-        """
-        spawns the dock itself using the factory class defined elsewhere in
-        AnalysisSpace container, returns result, an instance of the factory class
-        """
-        if DEBUG: print("class data_guis.Dock, func _spawn")
-        try: 
-            dock_type=self.getFirstParentByType("AnalysisSpace").getItemByFieldValue("DockType","Name",self.Type.PCDATA)
-            dock_type._install_sources()
-            self._dock=dock_type.factory()
-            self._dock._sources = dock_type.factory._sources
-            #pdb.set_trace()
-        except Exception as e:
-            pdb.set_trace()
-            print e
-        #print self._dock._methods_to_xml()
-        return self._dock
+    def __init__(self):
+        if DEBUG: print "class Dock, function __init__"
+        for meth in self.Method:
+            try:
+                meth._src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
+            except Exception as e:
+                context.update({'_SCRIPT_ERROR':e})
+                print e
+                print context
         
 class Method(gnosis.xml.objectify._XO_,Analysis_Space_Core):
     def write_xml(self, out=None, tablevel=0, whitespace='True',CDATA_ESCAPE=True):
@@ -1072,6 +946,168 @@ XTSM_Classes=[tclass[1] for tclass in allclasses if (issubclass(getattr(sys.modu
 for XTSM_Class in XTSM_Classes:
     setattr(gnosis.xml.objectify, "_XO_"+XTSM_Class.__name__, XTSM_Class)
 del allclasses
+
+
+def  main():
+    
+    gui = Docked_Gui()    
+    
+    if DEBUG: print("function main()")
+    import qtreactor.pyqt4reactor
+    qtreactor.pyqt4reactor.install()
+    
+    last_connection_time = time.time()
+    time_last_check = time.time()   
+    time_now = time.time()
+    
+    from twisted.internet import reactor
+    from twisted.internet import task
+    from autobahn.twisted.websocket import WebSocketServerProtocol
+    from autobahn.twisted.websocket import WebSocketServerFactory
+    from autobahn.twisted.websocket import WebSocketClientFactory
+    from autobahn.twisted.websocket import WebSocketClientProtocol
+    from autobahn.twisted.websocket import connectWS
+    from autobahn.twisted.websocket import listenWS
+    from twisted.internet.protocol import DatagramProtocol
+    import twisted.internet.error
+    from twisted.python import log
+    log.startLogging(sys.stdout)
+   
+    from twisted.internet import stdio
+    from twisted.protocols import basic
+    from twisted.internet import error
+    
+    class MulticastProtocol(DatagramProtocol):
+        """
+        Protocol to handle UDP multi-receiver broadcasts - used for servers
+        to announce their presence to one another through periodic pings
+        """
+        resident=True
+        def startProtocol(self):
+            """
+            Join the multicast address
+            """
+            interface_ = ""
+            if socket.gethostbyname(socket.gethostname()) == '10.1.1.124':
+                interface_ = '10.1.1.124'
+            self.transport.joinGroup("228.0.0.5", interface=interface_)
+        
+        def send(self,message):
+            """
+            sends message on udp broadcast channel
+            """
+            self.transport.write(message, ("228.0.0.5", udpbport))
+        
+        def datagramReceived(self, datagram_, address):
+            """
+            called when a udp broadcast is received
+            Add functionality for "catching the ping and pinging back to tell the
+            main server that I am still ready and not in_use
+            """
+            #if DEBUG: print "Datagram received from "+ repr(address)
+            pass
+
+    class MyServerProtocol(WebSocketServerProtocol):
+    
+        def onConnect(self, request):
+            if DEBUG: print("class data_guis.MyServerProtocol, func onConnect: {0}".format(request.peer))
+            
+        def onOpen(self):
+            if DEBUG: print("class data_guis.MyServerProtocol, func onOpen")
+            
+        def onMessage(self, payload_, isBinary):
+            if DEBUG: print "class data_guis.MyServerProtocol, func onMessage"
+            #self.log_message()
+            
+            if isBinary:
+                payload = msgpack.unpackb(payload_)
+                if not payload.has_key('IDLSocket_ResponseFunction'):
+                    return None
+                try:
+                    #ThisResponseFunction = getattr(self.factory.app.command_library,
+                    #                           payload['IDLSocket_ResponseFunction'])
+                    ThisResponseFunction = getattr(self.factory.command_library,
+                                               payload['IDLSocket_ResponseFunction'])
+                except AttributeError:
+                    if DEBUG: print ('Missing Socket_ResponseFunction:',
+                                     payload['IDLSocket_ResponseFunction'])
+                ThisResponseFunction(payload)
+            else:
+                payload = simplejson.loads(payload_)
+                if not payload.has_key('IDLSocket_ResponseFunction'):
+                    return None
+                try:
+                    #ThisResponseFunction = getattr(self.factory.app.command_library,
+                    #                           payload['IDLSocket_ResponseFunction'])
+                    ThisResponseFunction = getattr(self.factory.command_library,
+                                               payload['IDLSocket_ResponseFunction'])
+                except AttributeError:
+                    if DEBUG: print ('Missing Socket_ResponseFunction:',
+                                     payload['IDLSocket_ResponseFunction'])
+                ThisResponseFunction(payload)
+            
+            
+        def onClose(self, wasClean, code, reason):
+            if DEBUG: print("class data_guis.MyServerProtocol, func onClose: {0}".format(reason))
+            server_shutdown()
+    
+               
+    def check_for_main_server():
+        global time_last_check
+        global time_now
+        time_last_check = time_now
+        time_now = time.time()
+        #print time_last_check, time_now, last_connection_time
+        if (time_now - last_connection_time) > 1100000 and (time_now - time_last_check) < 11:
+            server_shutdown()
+        
+        
+    def server_shutdown():
+        if DEBUG: print "----------------Shutting Down DataGuiServer Now!----------------"
+        #win.close()
+        #app.quit()
+        reactor.callLater(0.01, reactor.stop)
+    
+    sys.argv.append('localhost')
+    sys.argv.append('9100')
+    #sys.argv[0] = file name of this script
+    # szys.argv[1] = ip address of this server
+    # sys.argv[2] = port to listen on
+    factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug=DEBUG)
+    factory.setProtocolOptions(failByDrop=False)
+    factory.protocol = MyServerProtocol
+    try:
+        reactor.listenTCP(int(sys.argv[2]), factory)
+        #a.factory = factory
+        command_library = CommandLibrary()
+        factory.command_library = command_library
+        command_library.factory = factory
+        #factory.gui = self.gui
+        command_library.gui = gui
+        factory.gui = gui
+        ping_data={"server_id":sys.argv[3],
+                "server_name":"",
+                "server_ip":"",
+                "server_port":int(sys.argv[2]),
+                "server_id_node":"",
+                "server_ping":"server_ready!",
+                "server_time":time.time()}
+        ready = simplejson.dumps(ping_data)
+        udpbport = 8085
+        multicast = reactor.listenMulticast(udpbport, 
+                                                 MulticastProtocol(),
+                                                 listenMultiple=True)
+        reactor.callWhenRunning(multicast.protocol.send, ready)        
+        
+    except twisted.internet.error.CannotListenError:
+        server_shutdown()
+    
+    reactor.run()    
+    
+    
+
+if __name__ == '__main__':
+    main()
 
 
 example_AS_xtsm=u"""
@@ -1105,7 +1141,7 @@ for db in databombs:
 	count = count + 1
 self.plot(img)
 ]]>	  
-</ScriptBody>
+            </ScriptBody>
 
         </Script>
 
@@ -1114,235 +1150,465 @@ self.plot(img)
           <Name>Image_Data</Name>
 
           <DataCriteria>'10.1.1.110'</DataCriteria>
+          
+          <Method>
+<![CDATA[
+name = '_xtsm_heap.Name.PCDATA'
+self.apogee_image_heap = hdf5_liveheap.glab_liveheap({"element_structure":[769,513],
+                                                      "filename":name,
+                                                      "dataname":"Apogee_images"+str(uuid.uuid1()),
+                                                      "typecode":numpy.dtype("uint16")})#numpy.uint16 will not work
+self.apogee_image_heap.attach_datastore({"title":name })
+self._console_namespace.update({'apogee_image_heap':self.apogee_image_heap})
+#heap._glab_liveheap___s_push_fired.connect(self.test)
+]]>
+          </Method>
 
         </Heap>
+        
+        <Heap>
+          
+          <Name>Scope</Name>
 
-    <DockType>
+          <DataCriteria>'10.1.1.110'</DataCriteria>
+          
+          <Method>
+<![CDATA[
+name = '_xtsm_heap.Name.PCDATA'
+self.scope_heap = hdf5_liveheap.glab_liveheap({"element_structure":[512],
+                                                      "filename":name,
+                                                      "dataname":"Scope_Data"+str(uuid.uuid1()),
+                                                      "typecode":numpy.dtype("uint16")})#numpy.uint16 will not work
+self.scope_heap.attach_datastore({"title":name})
+self._console_namespace.update({'scope_heap':self.scope_heap})
+#heap._glab_liveheap___s_push_fired.connect(self.test)
+]]>
+          </Method>
+
+        </Heap>        
+        
+    <Dock>
+        <Name>Raw_Image_0</Name>
+        <Method>
+<![CDATA[
+#'self' is the gui object.
+#variables created in this script will not be placed in the console namespace unless explicitly placed there.
+name = str(_xtsm_dock.Name.PCDATA)
+#d = pyqtgraph.dockarea.Dock(name, size=(500,500))
+#setattr(self, name+'_dock', d)
+#dock = getattr(self, name+'_dock')
+self.raw_image_0_dock = pyqtgraph.dockarea.Dock(name, size=(500,500))
+self.raw_image_0_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(self.raw_image_0_dock, 'top')
+self.raw_image_0_dock.updateStyle()
+
+
+self.raw_image_0_dock.imv = pyqtgraph.ImageView()
+imv = self.raw_image_0_dock.imv
+self.raw_image_0_dock.addWidget(imv)
+imv.setImage(self.imgstack, xvals=numpy.arange(self.imgstack.shape[0]))#.linspace(1., 3., ))
+
+
+# attempt to add to context menu (right mouse button) for cursor drop
+imv.view.menu.cursorDrop = QtGui.QAction("Drop Cursor", imv.view.menu)
+imv.view.menu.dropCursor = self.dropCursor
+imv.view.menu.cursorDrop.triggered.connect(imv.view.menu.dropCursor)
+imv.view.menu.addAction(imv.view.menu.cursorDrop)
+
+imv.acs = imv.view.menu.subMenus()
+
+global gui
+gui = self
+def newSubMenus():
+    global gui
+    self = gui
+    return [self.raw_image_0_dock.imv.view.menu.cursorDrop] + self.raw_image_0_dock.imv.acs
+imv.view.menu.subMenus = newSubMenus        
+imv.view.menu.valid = False
+imv.view.menu.view().sigStateChanged.connect(imv.view.menu.viewStateChanged)
+imv.view.menu.updateState()
+
+
+#cross hair
+imv.vLine = pyqtgraph.InfiniteLine(angle=90, movable=False)
+imv.hLine = pyqtgraph.InfiniteLine(angle=0, movable=False)
+imv.addItem(imv.vLine, ignoreBounds=True)
+imv.addItem(imv.hLine, ignoreBounds=True)
+
+imv.vb = imv.view
+
+def animate(evt):
+    global gui
+    self = gui
+    if self.raw_image_0_dock.imv.playTimer.isActive():
+        self.raw_image_0_dock.imv.playTimer.stop()
+        return
+    fpsin = self._imv_fps_in
+    fps = float(str(fpsin.text()).split("FPS")[0])
+    self.raw_image_0_dock.imv.play(fps)            
+
+#animation controls
+self._imv_fps_in = QtGui.QLineEdit('10 FPS')   
+self._imv_anim_b = QtGui.QPushButton('Animate')
+self._imv_anim_b.clicked.connect(animate)
+
+self._imv_layout_widg = pyqtgraph.LayoutWidget()
+self._imv_layout_widg.addWidget(QtGui.QLabel("Animation:"), row=0, col=0)
+self._imv_layout_widg.addWidget(self._imv_fps_in, row=0, col=1)
+self._imv_layout_widg.addWidget(self._imv_anim_b, row=0, col=2)
+     
+self.raw_image_0_dock.addWidget(self._imv_layout_widg)
+def mouseMoved(evt):
+    global gui
+    self = gui
+    pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+    if self.raw_image_0_dock.imv.scene.sceneRect().contains(pos):
+        mousePoint = self.raw_image_0_dock.imv.vb.mapSceneToView(pos)
+        self.raw_image_0_dock.imv.vLine.setPos(mousePoint.x())
+        self.raw_image_0_dock.imv.hLine.setPos(mousePoint.y())
+        index = (int(mousePoint.x()),int(mousePoint.y()))
+        x = "\lspan style='font-size: 12pt;color: blue'\gx=%0.1f,   " % mousePoint.x() #Need to escape the \lessthan, \greaterthan to use them
+        #x =  "X = " + str(int(mousePoint.x())) + "; "
+        y = "\lspan style='color: red'\gy=%0.1f\l/span\g,   " % mousePoint.y()
+        #y =  "Y = " + str(int(mousePoint.y())) + "; "
+        if index[0] \g 0 and index[0] \l len(self.imgstack[1][0]):
+            if index[1] \g 0 and index[1] \l len(self.imgstack[2][0]):
+                #Fix the next line so that the z axis is for the image that is displayed
+                try:
+                    z = "\lspan style='color: green'\gz=%0.1f\l/span\g" % self.imgstack[self.raw_image_0_dock.imv.currentIndex, index[0], index[1]]
+                    #z = "Z = " + str(self.imgstack[self.raw_image_0_dock.imv.currentIndex, index[0], index[1]])
+                except: 
+                    z="\lspan style='color: green'\gz=Error\l/span\g"
+                    #z=" Error "
+                    print "index:", index
+                    print "len(self.imgstack[1][0]:", len(self.imgstack[1][0])
+                    print "self.raw_image_0_dock.imv.currentIndex:", self.raw_image_0_dock.imv.currentIndex
+                self.curs_pos_label.setText(str(x)+str(y)+str(z))
+
+
+self.raw_image_0_dock.proxy = pyqtgraph.SignalProxy(imv.scene.sigMouseMoved, rateLimit=60, slot=mouseMoved)
+
+
+
+self._console_namespace.update({'raw_image_0_dock':self.raw_image_0_dock})
+
+]]>
+        </Method>
+    </Dock>  
+    <Dock>
+        <Name>Raw_Image_1</Name>
+        <Method>
+<![CDATA[
+name = 'raw_image_no_atoms'
+self.raw_image_1_dock = pyqtgraph.dockarea.Dock(name, size=(500,500))
+self.raw_image_1_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(self.raw_image_1_dock, 'above', self._console_namespace['raw_image_0_dock'])
+self.raw_image_1_dock.updateStyle()
+
+
+self.raw_image_1_dock.imv = pyqtgraph.ImageView()
+imv = self.raw_image_1_dock.imv
+self.raw_image_1_dock.addWidget(imv)
+imv.setImage(self.imgstack, xvals=numpy.arange(self.imgstack.shape[0]))#.linspace(1., 3., ))
+
+
+# attempt to add to context menu (right mouse button) for cursor drop
+imv.view.menu.cursorDrop = QtGui.QAction("Drop Cursor", imv.view.menu)
+imv.view.menu.dropCursor = self.dropCursor
+imv.view.menu.cursorDrop.triggered.connect(imv.view.menu.dropCursor)
+imv.view.menu.addAction(imv.view.menu.cursorDrop)
+
+imv.acs = imv.view.menu.subMenus()
+
+global gui
+gui = self
+def newSubMenus():
+    global gui
+    self = gui
+    return [self.raw_image_1_dock.imv.view.menu.cursorDrop] + self.raw_image_1_dock.imv.acs
+imv.view.menu.subMenus = newSubMenus        
+imv.view.menu.valid = False
+imv.view.menu.view().sigStateChanged.connect(imv.view.menu.viewStateChanged)
+imv.view.menu.updateState()
+
+
+#cross hair
+imv.vLine = pyqtgraph.InfiniteLine(angle=90, movable=False)
+imv.hLine = pyqtgraph.InfiniteLine(angle=0, movable=False)
+imv.addItem(imv.vLine, ignoreBounds=True)
+imv.addItem(imv.hLine, ignoreBounds=True)
+
+imv.vb = imv.view
+
+def animate(evt):
+    global gui
+    self = gui
+    if self.raw_image_1_dock.imv.playTimer.isActive():
+        self.raw_image_1_dock.imv.playTimer.stop()
+        return
+    fpsin = self._imv_fps_in
+    fps = float(str(fpsin.text()).split("FPS")[0])
+    self.raw_image_1_dock.imv.play(fps)            
+
+#animation controls
+self._imv_fps_in = QtGui.QLineEdit('10 FPS')   
+self._imv_anim_b = QtGui.QPushButton('Animate')
+self._imv_anim_b.clicked.connect(animate)
+
+self._imv_layout_widg = pyqtgraph.LayoutWidget()
+self._imv_layout_widg.addWidget(QtGui.QLabel("Animation:"), row=0, col=0)
+self._imv_layout_widg.addWidget(self._imv_fps_in, row=0, col=1)
+self._imv_layout_widg.addWidget(self._imv_anim_b, row=0, col=2)
+     
+self.raw_image_1_dock.addWidget(self._imv_layout_widg)
+def mouseMoved(evt):
+    global gui
+    self = gui
+    pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+    if self.raw_image_1_dock.imv.scene.sceneRect().contains(pos):
+        mousePoint = self.raw_image_1_dock.imv.vb.mapSceneToView(pos)
+        self.raw_image_1_dock.imv.vLine.setPos(mousePoint.x())
+        self.raw_image_1_dock.imv.hLine.setPos(mousePoint.y())
+        index = (int(mousePoint.x()),int(mousePoint.y()))
+        x = "\lspan style='font-size: 12pt;color: blue'\gx=%0.1f,   " % mousePoint.x() #Need to escape the \lessthan, \greaterthan to use them
+        #x =  "X = " + str(int(mousePoint.x())) + "; "
+        y = "\lspan style='color: red'\gy=%0.1f\l/span\g,   " % mousePoint.y()
+        #y =  "Y = " + str(int(mousePoint.y())) + "; "
+        if index[0] \g 0 and index[0] \l len(self.imgstack[1][0]):
+            if index[1] \g 0 and index[1] \l len(self.imgstack[2][0]):
+                #Fix the next line so that the z axis is for the image that is displayed
+                try:
+                    z = "\lspan style='color: green'\gz=%0.1f\l/span\g" % self.imgstack[self.raw_image_1_dock.imv.currentIndex, index[0], index[1]]
+                    #z = "Z = " + str(self.imgstack[self.raw_image_1_dock.imv.currentIndex, index[0], index[1]])
+                except: 
+                    z="\lspan style='color: green'\gz=Error\l/span\g"
+                    #z=" Error "
+                    print "index:", index
+                    print "len(self.imgstack[1][0]:", len(self.imgstack[1][0])
+                    print "self.raw_image_1_dock.imv.currentIndex:", self.raw_image_1_dock.imv.currentIndex
+                self.curs_pos_label.setText(str(x)+str(y)+str(z))
+
+
+self.raw_image_1_dock.proxy = pyqtgraph.SignalProxy(imv.scene.sigMouseMoved, rateLimit=60, slot=mouseMoved)
+
+
+
+self._console_namespace.update({'raw_image_1_dock':self.raw_image_1_dock})
+
+]]>
+        </Method>
+    </Dock>  
+
+    <Dock>
+        <Name>Divided_Image</Name>
+        <Method>
+<![CDATA[
+name = 'divided_image'
+self.divided_image_dock = pyqtgraph.dockarea.Dock(name, size=(500,500))
+self.divided_image_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(self.divided_image_dock, 'right', self._console_namespace['raw_image_0_dock'])
+self.divided_image_dock.updateStyle()
+
+
+self.divided_image_dock.imv = pyqtgraph.ImageView()
+imv = self.divided_image_dock.imv
+self.divided_image_dock.addWidget(imv)
+imv.setImage(self.imgstack, xvals=numpy.arange(self.imgstack.shape[0]))#.linspace(1., 3., ))
+
+
+# attempt to add to context menu (right mouse button) for cursor drop
+imv.view.menu.cursorDrop = QtGui.QAction("Drop Cursor", imv.view.menu)
+imv.view.menu.dropCursor = self.dropCursor
+imv.view.menu.cursorDrop.triggered.connect(imv.view.menu.dropCursor)
+imv.view.menu.addAction(imv.view.menu.cursorDrop)
+
+imv.acs = imv.view.menu.subMenus()
+
+global gui
+gui = self
+def newSubMenus():
+    global gui
+    self = gui
+    return [self.divided_image_dock.imv.view.menu.cursorDrop] + self.divided_image_dock.imv.acs
+imv.view.menu.subMenus = newSubMenus        
+imv.view.menu.valid = False
+imv.view.menu.view().sigStateChanged.connect(imv.view.menu.viewStateChanged)
+imv.view.menu.updateState()
+
+
+#cross hair
+imv.vLine = pyqtgraph.InfiniteLine(angle=90, movable=False)
+imv.hLine = pyqtgraph.InfiniteLine(angle=0, movable=False)
+imv.addItem(imv.vLine, ignoreBounds=True)
+imv.addItem(imv.hLine, ignoreBounds=True)
+
+imv.vb = imv.view
+
+def animate(evt):
+    global gui
+    self = gui
+    if self.divided_image_dock.imv.playTimer.isActive():
+        self.divided_image_dock.imv.playTimer.stop()
+        return
+    fpsin = self._imv_fps_in
+    fps = float(str(fpsin.text()).split("FPS")[0])
+    self.divided_image_dock.imv.play(fps)            
+
+#animation controls
+self._imv_fps_in = QtGui.QLineEdit('10 FPS')   
+self._imv_anim_b = QtGui.QPushButton('Animate')
+self._imv_anim_b.clicked.connect(animate)
+
+self._imv_layout_widg = pyqtgraph.LayoutWidget()
+self._imv_layout_widg.addWidget(QtGui.QLabel("Animation:"), row=0, col=0)
+self._imv_layout_widg.addWidget(self._imv_fps_in, row=0, col=1)
+self._imv_layout_widg.addWidget(self._imv_anim_b, row=0, col=2)
+     
+self.divided_image_dock.addWidget(self._imv_layout_widg)
+def mouseMoved(evt):
+    global gui
+    self = gui
+    pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+    if self.divided_image_dock.imv.scene.sceneRect().contains(pos):
+        mousePoint = self.divided_image_dock.imv.vb.mapSceneToView(pos)
+        self.divided_image_dock.imv.vLine.setPos(mousePoint.x())
+        self.divided_image_dock.imv.hLine.setPos(mousePoint.y())
+        index = (int(mousePoint.x()),int(mousePoint.y()))
+        x = "\lspan style='font-size: 12pt;color: blue'\gx=%0.1f,   " % mousePoint.x() #Need to escape the \lessthan, \greaterthan to use them
+        #x =  "X = " + str(int(mousePoint.x())) + "; "
+        y = "\lspan style='color: red'\gy=%0.1f\l/span\g,   " % mousePoint.y()
+        #y =  "Y = " + str(int(mousePoint.y())) + "; "
+        if index[0] \g 0 and index[0] \l len(self.imgstack[1][0]):
+            if index[1] \g 0 and index[1] \l len(self.imgstack[2][0]):
+                #Fix the next line so that the z axis is for the image that is displayed
+                try:
+                    z = "\lspan style='color: green'\gz=%0.1f\l/span\g" % self.imgstack[self.divided_image_dock.imv.currentIndex, index[0], index[1]]
+                    #z = "Z = " + str(self.imgstack[self.divided_image_dock.imv.currentIndex, index[0], index[1]])
+                except: 
+                    z="\lspan style='color: green'\gz=Error\l/span\g"
+                    #z=" Error "
+                    print "index:", index
+                    print "len(self.imgstack[1][0]:", len(self.imgstack[1][0])
+                    print "self.divided_image_dock.imv.currentIndex:", self.divided_image_dock.imv.currentIndex
+                self.curs_pos_label.setText(str(x)+str(y)+str(z))
+
+
+self.divided_image_dock.proxy = pyqtgraph.SignalProxy(imv.scene.sigMouseMoved, rateLimit=60, slot=mouseMoved)
+
+
+
+self._console_namespace.update({'divided_image_dock':self.divided_image_dock})
+
+]]>
+        </Method>
+    </Dock>  
+    <Dock>
+        <Name>cut_along_x</Name>
+        <Method>
+<![CDATA[
+name = 'cut_along_x'
+cut_along_x_dock = pyqtgraph.dockarea.Dock(name, size=(500,100))
+cut_along_x_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(cut_along_x_dock, 'bottom', self._console_namespace['raw_image_0_dock'])
+cut_along_x_dock.addWidget(QtGui.QLabel(name))
+cut_along_x_dock.win = pyqtgraph.GraphicsWindow()
+cut_along_x_dock.plot = cut_along_x_dock.win.addPlot(title=name)
+
+cut_along_x_dock.data = numpy.random.normal(size=(200))
+cut_along_x_dock.curve = cut_along_x_dock.plot.plot(y=cut_along_x_dock.data)
+
+cut_along_x_dock.addWidget(cut_along_x_dock.win)
+self._console_namespace.update({'cut_along_x_dock':cut_along_x_dock})
+]]>
+        </Method>
+    </Dock>
+    <Dock>
+        <Name>cut_along_y</Name>
+        <Method>
+<![CDATA[
+name = 'cut_along_y'
+cut_along_y_dock = pyqtgraph.dockarea.Dock(name, size=(500,100))
+cut_along_y_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(cut_along_y_dock, 'right', self._console_namespace['cut_along_x_dock'])
+cut_along_y_dock.addWidget(QtGui.QLabel(name))
+cut_along_y_dock.win = pyqtgraph.GraphicsWindow()
+cut_along_y_dock.plot = cut_along_y_dock.win.addPlot(title=name)
+
+cut_along_y_dock.data = numpy.random.normal(size=(200))
+cut_along_y_dock.curve = cut_along_y_dock.plot.plot(y=cut_along_y_dock.data)
+
+cut_along_y_dock.addWidget(cut_along_y_dock.win)
+self._console_namespace.update({'cut_along_y_dock':cut_along_y_dock})
+]]>
+        </Method>
+    </Dock>
+    <Dock>
         <Name>Console</Name>
         <Method>
 <![CDATA[
-def _init_dock(self,parent_qt):
-    self._dock= pyqtgraph.dockarea.Dock("Console", size=(500,150))
-    self._dock.label.setText(QtCore.QString(self.docktype_instance.Name.PCDATA))
-    parent_qt.dock_area.addDock(self._dock, 'bottom')      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
-    _console = pyqtgraph.console.ConsoleWidget(namespace=parent_qt._console_namespace)
-    self._dock.addWidget(_console)
-    return self._dock
+name = 'Console'
+console_dock = pyqtgraph.dockarea.Dock(name, size=(250,1))
+console_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(console_dock, 'bottom')      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
+_console = pyqtgraph.console.ConsoleWidget(namespace=self._console_namespace)
+console_dock.addWidget(_console)
+self._console_namespace.update({'console_dock':console_dock})
 ]]>
         </Method>
-    </DockType>
-    <DockType>
+    </Dock>
+    <Dock>
         <Name>Cursor</Name>
         <Method>
 <![CDATA[
-def _init_dock(self,parent_qt):
-    self._dock = pyqtgraph.dockarea.Dock("Cursor Interface", size=(500,30))
-    self._dock.label.setText(QtCore.QString(self.docktype_instance.Name.PCDATA))
-    parent_qt.dock_area.addDock(self._dock, 'bottom')
-    parent_qt.curs_pos_label = QtGui.QLabel("")
-    self._dock.addWidget(QtGui.QLabel("Cursor Data:"))
-    self._dock.addWidget(parent_qt.curs_pos_label)
-    return self._dock
+name = 'Cursor Interface'
+cursor_dock = pyqtgraph.dockarea.Dock(name, size=(1,1))
+cursor_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(cursor_dock, 'left', self._console_namespace['console_dock'])
+self.curs_pos_label = QtGui.QLabel("")
+cursor_dock.addWidget(QtGui.QLabel("Cursor Data:"))
+cursor_dock.addWidget(self.curs_pos_label)
+self._console_namespace.update({'cursor_dock':cursor_dock})
 ]]>
         </Method>
-    </DockType>
-    <DockType>
+    </Dock>
+    <Dock>
         <Name>Control</Name>
         <Method>
 <![CDATA[
-def _init_dock(self,parent_qt):
-    self._dock = pyqtgraph.dockarea.Dock("Dock Control", size=(500, 50)) ## give this dock the minimum possible size
-    self._dock.label.setText(QtCore.QString(self.docktype_instance.Name.PCDATA))
-    parent_qt.dock_area.addDock(self._dock, 'top')      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
-    self._layout_widget = pyqtgraph.LayoutWidget()        
-    label = QtGui.QLabel(" -- DockArea -- ")
-    saveBtn = QtGui.QPushButton('Save dock state')
-    restoreBtn = QtGui.QPushButton('Restore dock state')
-    restoreBtn.setEnabled(False)
-    fileField = QtGui.QLineEdit('File')
-    self._layout_widget.addWidget(label, row=0, col=0)
-    self._layout_widget.addWidget(saveBtn, row=1, col=0)
-    self._layout_widget.addWidget(restoreBtn, row=2, col=0)
-    self._layout_widget.addWidget(fileField, row=3, col=0)
-    self._dock.addWidget(self._layout_widget)
-    state = None
-    def save():
-        global state
-        state = parent_qt.dock_area.saveState()
-        print state['main']
-        #print parent_qt.dockstate_to_xml(state['main'])
-        print parent_qt.read_state()
-        restoreBtn.setEnabled(True)
-    def load():
-        global state
-        parent_qt.dock_area.restoreState(state)
-    saveBtn.clicked.connect(save)
-    restoreBtn.clicked.connect(load)
-    return self._dock
+name = 'Dock Control'
+control_dock = pyqtgraph.dockarea.Dock(name, size=(1, 1)) ## give this dock the minimum possible size
+control_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(control_dock, 'bottom', self._console_namespace['cursor_dock'])      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
+self._layout_widget = pyqtgraph.LayoutWidget()        
+label = QtGui.QLabel(" -- DockArea -- ")
+saveBtn = QtGui.QPushButton('Save dock state')
+restoreBtn = QtGui.QPushButton('Restore dock state')
+restoreBtn.setEnabled(False)
+fileField = QtGui.QLineEdit('File')
+self._layout_widget.addWidget(label, row=0, col=0)
+self._layout_widget.addWidget(saveBtn, row=1, col=0)
+self._layout_widget.addWidget(restoreBtn, row=2, col=0)
+self._layout_widget.addWidget(fileField, row=3, col=0)
+control_dock.addWidget(self._layout_widget)
+state = None
+def save():
+    global state
+    state = self.dock_area.saveState()
+    print state['main']
+    #print self.dockstate_to_xml(state['main'])
+    print self.read_state()
+    restoreBtn.setEnabled(True)
+def load():
+    global state
+    self.dock_area.restoreState(state)
+saveBtn.clicked.connect(save)
+restoreBtn.clicked.connect(load)
+self._console_namespace.update({'control_dock':control_dock})
 ]]>
         </Method>
-    </DockType>
-    <DockType>
-        <Name>1D_Plot</Name>
-        <Method>
-<![CDATA[
-def _init_dock(self,parent_qt):
-    self._dock = pyqtgraph.dockarea.Dock("1D Plot", size=(500,500))
-    self._dock.label.setText(QtCore.QString(self.docktype_instance.Name.PCDATA))
-    parent_qt.dock_area.addDock(self._dock, 'bottom')
-    self._dock.addWidget(QtGui.QLabel("1D Plot"))
-    self._dock.win = pyqtgraph.GraphicsWindow()
-    self._dock.plot = self._dock.win.addPlot(title="1D Plot")
-    
-    self._dock.data = numpy.random.normal(size=(200))
-    self._dock.curve = self._dock.plot.plot(y=self._dock.data)
-    
-    self._dock.addWidget(self._dock.win)
-    return self._dock
-]]>
-        </Method>
-    </DockType>
-    <DockType>
-        <Name>2D_Plot</Name>
-        <Method>
-<![CDATA[
-def _init_dock(self,parent_qt):
-    self._dock = pyqtgraph.dockarea.Dock("Image View", size=(500,500))
-    self._dock.label.setText(QtCore.QString(self.docktype_instance.Name.PCDATA))
-    parent_qt.dock_area.addDock(self._dock, 'top')
-    #self._dock.label = DockLabel("Shotnumber = ", self._dock)
-    self._dock.updateStyle()
-    
-    parent_qt.imv = pyqtgraph.ImageView()
-    self._dock.addWidget(parent_qt.imv)
-    parent_qt.imv.setImage(parent_qt.imgstack, xvals=numpy.arange(parent_qt.imgstack.shape[0]))#.linspace(1., 3., ))
-
-    # attempt to add to context menu (right mouse button) for cursor drop
-    parent_qt.imv.view.menu.cursorDrop = QtGui.QAction("Drop Cursor", parent_qt.imv.view.menu)
-    parent_qt.imv.view.menu.dropCursor = parent_qt.dropCursor
-    parent_qt.imv.view.menu.cursorDrop.triggered.connect(parent_qt.imv.view.menu.dropCursor)
-    parent_qt.imv.view.menu.addAction(parent_qt.imv.view.menu.cursorDrop)
-    acs = parent_qt.imv.view.menu.subMenus()
-    def newSubMenus():
-        return [parent_qt.imv.view.menu.cursorDrop] + acs
-    parent_qt.imv.view.menu.subMenus = newSubMenus        
-    parent_qt.imv.view.menu.valid = False
-    parent_qt.imv.view.menu.view().sigStateChanged.connect(parent_qt.imv.view.menu.viewStateChanged)
-    parent_qt.imv.view.menu.updateState()
-
-
-    #cross hair
-    parent_qt.imv.vLine = pyqtgraph.InfiniteLine(angle=90, movable=False)
-    parent_qt.imv.hLine = pyqtgraph.InfiniteLine(angle=0, movable=False)
-    parent_qt.imv.addItem(parent_qt.imv.vLine, ignoreBounds=True)
-    parent_qt.imv.addItem(parent_qt.imv.hLine, ignoreBounds=True)
-    
-    parent_qt.imv.vb = parent_qt.imv.view
-
-    def animate(evt):
-        if parent_qt.imv.playTimer.isActive():
-            parent_qt.imv.playTimer.stop()
-            return
-        fpsin = parent_qt._imv_fps_in
-        fps = float(str(fpsin.text()).split("FPS")[0])
-        parent_qt.imv.play(fps)            
-
-    #animation controls
-    parent_qt._imv_fps_in = QtGui.QLineEdit('10 FPS')   
-    parent_qt._imv_anim_b = QtGui.QPushButton('Animate')
-    parent_qt._imv_anim_b.clicked.connect(animate)
-    
-    parent_qt._imv_layout_widg = pyqtgraph.LayoutWidget()
-    parent_qt._imv_layout_widg.addWidget(QtGui.QLabel("Animation:"), row=0, col=0)
-    parent_qt._imv_layout_widg.addWidget(parent_qt._imv_fps_in, row=0, col=1)
-    parent_qt._imv_layout_widg.addWidget(parent_qt._imv_anim_b, row=0, col=2)
-         
-    self._dock.addWidget(parent_qt._imv_layout_widg)
-    
-    def mouseMoved(evt):
-        pos = evt[0]  ## using signal proxy turns original arguments into a tuple
-        if parent_qt.imv.scene.sceneRect().contains(pos):
-            mousePoint = parent_qt.imv.vb.mapSceneToView(pos)
-            parent_qt.imv.vLine.setPos(mousePoint.x())
-            parent_qt.imv.hLine.setPos(mousePoint.y())
-            index = (int(mousePoint.x()),int(mousePoint.y()))
-            #x = "/</span style='font-size: 12pt;color: blue'/>/x=%0.1f,   " % mousePoint.x() #Need to escape the <> to use them
-            x =  "X = " + str(int(mousePoint.x())) + "; "
-            #y = "/</span style='color: red'/>/y=%0.1f/<//span/>/,   " % mousePoint.y()
-            y =  "Y = " + str(int(mousePoint.y())) + "; "
-            if index[0] > 0 and index[0] < len(parent_qt.imgstack[1][0]):
-                if index[1] > 0 and index[1] < len(parent_qt.imgstack[2][0]):
-                    #Fix the next line so that the z axis is for the image that is displayed
-                    try:
-                        #z = "/</span style='color: green'/>\z=%0.1f/<//span/>/" % parent_qt.imgstack[parent_qt.imv.currentIndex, index[0], index[1]]
-                        z = "Z = " + str(parent_qt.imgstack[parent_qt.imv.currentIndex, index[0], index[1]])
-                    except: 
-                        #z="/</span style='color: green'/>/z=Error/<//span/>/"
-                        z=" Error "
-                        print "index:", index
-                        print "len(parent_qt.imgstack[1][0]:", len(parent_qt.imgstack[1][0])
-                        print "parent_qt.imv.currentIndex:", parent_qt.imv.currentIndex
-                    parent_qt.curs_pos_label.setText(str(x)+str(y)+str(z))
-    
-    
-    self.proxy = pyqtgraph.SignalProxy(parent_qt.imv.scene.sigMouseMoved, rateLimit=60, slot=mouseMoved)  
-    return self._dock
-]]>
-        </Method>
-    </DockType>  
-    <Dock>
-        <Type>2D_Plot</Type>
-        <Name>First_Raw</Name>
-    </Dock> 
-    <Dock>
-        <Type>2D_Plot</Type>
-        <Name>Second_Raw</Name>
-    </Dock>
-    <Dock>
-        <Type>2D_Plot</Type>
-        <Name>Divided</Name>
-    </Dock>
-    <Dock>
-        <Type>1D_Plot</Type>
-        <Name>Cut_along_X_COM</Name>
-    </Dock>
-    <Dock>
-        <Type>1D_Plot</Type>
-        <Name>Cut_along_Y_COM</Name>
-    </Dock>
-    <Dock>
-            <Type>Cursor</Type>
-        <Name>First_Raw</Name>
-    </Dock>
-    <Dock>
-            <Type>Cursor</Type>
-        <Name>Second_Raw</Name>
-    </Dock>
-    <Dock>
-            <Type>Cursor</Type>
-        <Name>Divided</Name>
-    </Dock>
-    <Dock>
-        <Type>Console</Type>
-    </Dock>
-    <Dock>
-        <Type>Control</Type>
     </Dock>
 </AnalysisSpace>
 """    
 
-#pdb.set_trace()
-
-def  main():
-    import sys
-    try:
-        print sys.argv[1]
-        xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + sys.argv[1] + "</XTSM>")
-        xtsm_object.XTSM.AnalysisSpace._launch()
-    except Exception as e:
-        print e
-    
-
-if __name__ == '__main__':
-    main()
-
+xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + example_AS_xtsm + "</XTSM>")
+#xtsm_object.XTSM.AnalysisSpace.gui = 

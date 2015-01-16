@@ -9,6 +9,7 @@ import uuid
 import glab_instrument
 import twisted.internet.error
 import StringIO
+import socket
 
 from twisted.internet import task
 
@@ -16,22 +17,24 @@ last_connection_time = time.time()
 time_last_check = time.time()
 time_now = time.time()
 
-DEBUG = True
+
+DEBUG = False
 
 class MyServerProtocol(WebSocketServerProtocol):
     
     def onConnect(self, request):
-        print("Client connecting: {0}".format(request.peer))
+        self.is_connected = True
+        if DEBUG: print("Client connecting: {0}".format(request.peer))
         
     def onOpen(self):
-        print("WebSocket connection open.")
+        if DEBUG: print("WebSocket connection open.")
         
     def onMessage(self, payload_, isBinary):
         if isBinary:
-            print("Binary message received: {0} bytes".format(len(payload_)))
+            if DEBUG: print("Binary message received: {0} bytes".format(len(payload_)))
         else:
-            print("Text message received: {0}".format(payload_.decode('utf8')))
-        print "This is inside the Script Server"
+            if DEBUG: print("Text message received: {0}".format(payload_.decode('utf8')))
+        if DEBUG: print "This is inside the Script Server"
         try:
             payload = simplejson.loads(payload_)
         except simplejson.JSONDecodeError:
@@ -83,7 +86,7 @@ class MyServerProtocol(WebSocketServerProtocol):
         
         
     def onClose(self, wasClean, code, reason):
-        print("WebSocket connection closed: {0}".format(reason))
+        if DEBUG: print("WebSocket connection closed: {0}".format(reason))
         server_shutdown()
 
     def _execute(self):#Copied from objectify
@@ -115,74 +118,77 @@ class MulticastProtocol(DatagramProtocol):
         """
         Join the multicast address
         """
-        self.transport.joinGroup("228.0.0.5")
-
+        interface_ = ""
+        if socket.gethostbyname(socket.gethostname()) == '10.1.1.124':
+            interface_ = '10.1.1.124'
+        self.transport.joinGroup("228.0.0.5", interface=interface_)
+    
     def send(self,message):
         """
         sends message on udp broadcast channel
         """
         self.transport.write(message, ("228.0.0.5", udpbport))
-
+    
     def datagramReceived(self, datagram_, address):
         """
         called when a udp broadcast is received
         Add functionality for "catching the ping and pinging back to tell the
         main server that I am still ready and not in_use
         """
-        #print "Datagram received from "+ repr(address) 
+        if DEBUG: print "Datagram received from "+ repr(address) 
         datagram = simplejson.loads(datagram_)
         port = address[1]
         if not datagram.has_key("server_ping"): 
             return
         if datagram.has_key("server_ping") and datagram['server_id_node'] == uuid.getnode() and port == 8085: 
             #pdb.set_trace()
+            if DEBUG: print datagram['server_ping'], datagram['server_id_node'], uuid.getnode(), port
             global last_connection_time
             last_connection_time = time.time()
-            
-    
-
-
 def server_shutdown():
     print "----------------Shutting Down ScriptServer Now!----------------"
     reactor.callLater(0.01, reactor.stop)
-       
+    
 def check_for_main_server():
     global time_last_check
     global time_now
     time_last_check = time_now
     time_now = time.time()
-    #print time_last_check, time_now, last_connection_time
-    if (time_now - last_connection_time) > 1100000 and (time_now - time_last_check) < 11:
+    if DEBUG: print time_last_check, time_now, last_connection_time
+    if (time_now - last_connection_time) > 20 and (time_now - time_last_check) < 11:
         server_shutdown()
-        
-
+    
 if __name__ == '__main__':
-
-
-   from twisted.python import log
-   from twisted.internet import reactor
-
-   log.startLogging(sys.stdout)
-   #sys.argv.append('script_server')
-   sys.argv.append('localhost')
-   sys.argv.append('9000')
-
+    from twisted.python import log
+    from twisted.internet import reactor
+    log.startLogging(sys.stdout)
+    #sys.argv.append('script_server')
+    sys.argv.append('localhost')
+    sys.argv.append('9000')
     # sys.argv[0] = file name of this script
     # sys.argv[1] = ip address of this server
     # sys.argv[2] = port to listen on
-   factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug = True)
-   factory.setProtocolOptions(failByDrop=False)
-   factory.protocol = MyServerProtocol
-   
-   udpbport = 8085
-   multicast = reactor.listenMulticast(udpbport, MulticastProtocol(),listenMultiple=True)
-
-   check = task.LoopingCall(check_for_main_server)
-   call_period = 1#sec
-   check.start(call_period)
-   try:
-       reactor.listenTCP(int(sys.argv[2]), factory)
-   except twisted.internet.error.CannotListenError:
-       server_shutdown()
-   #reactor.callLater(60*30, reactor.stop)
-   reactor.run()
+    factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug=DEBUG)
+    factory.setProtocolOptions(failByDrop=False)
+    factory.protocol = MyServerProtocol
+    udpbport = 8085
+    multicast = reactor.listenMulticast(udpbport, MulticastProtocol(),listenMultiple=True)
+    check = task.LoopingCall(check_for_main_server)
+    call_period = 1#sec
+    check.start(call_period)
+    
+    ping_data={"server_id":sys.argv[3],
+            "server_name":"",
+            "server_ip":"",
+            "server_port":int(sys.argv[2]),
+            "server_id_node":"",
+            "server_ping":"server_ready!",
+            "server_time":time.time()}
+    ready = simplejson.dumps(ping_data)
+    reactor.callWhenRunning(multicast.protocol.send, ready)
+    try:
+        reactor.listenTCP(int(sys.argv[2]), factory)
+    except twisted.internet.error.CannotListenError:
+        server_shutdown()
+    #reactor.callLater(60*30, reactor.stop)
+    reactor.run()

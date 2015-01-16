@@ -14,9 +14,11 @@ import file_locations, uuid
     
 from numpy.ctypeslib import ndpointer
 
+DEBUG = False
+
 class repas():
     def __init__(self):
-        print file_locations.file_locations['repasint_dll'][uuid.getnode()]
+        if DEBUG: print file_locations.file_locations['repasint_dll'][uuid.getnode()]
         self.lib = ctypes.cdll.LoadLibrary(file_locations.file_locations['repasint_dll'][uuid.getnode()])  #"c:\\Users\\Nate\\documents\\visual studio 2010\\Projects\\testctype\\x64\\Release\\testctype.dll"
         suffixes=["","dev","pulse","pulsedev"]
         # bit-flipping versions
