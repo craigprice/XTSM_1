@@ -952,7 +952,7 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
                 if DEBUG: print "Just Sent to " + address + ":"
                 if DEBUG and len(data) < 10000: print data
                 return True
-        if DEBUG: print "Not Sent!"
+        print "Not Sent!"
         return False
         
     def is_known_server(self,ping_payload):

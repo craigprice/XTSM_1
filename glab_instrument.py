@@ -6,6 +6,7 @@ Created on Sun Aug 10 12:18:56 2014
 """
 import DataBomb
 import uuid, time, numpy, pdb
+DEBUG = False
 
 #default_databomb_destination_priorities = ["active_parser","169.254.174.200:8084","169.254.174.200:8083","127.0.0.1:8084","127.0.0.1:8083"]
 default_databomb_destination_priorities = ["10.1.1.112:8084", "127.0.0.1:8084","127.0.0.1:8083"]
@@ -73,7 +74,7 @@ class Glab_Instrument():
         by default this will append identifiers for the data [time, generator ids, etc...]
         any of which can be overwritten by items in incoming data
         """
-        print "class Glab_Instrument, function serve_data"
+        if DEBUG: print "class Glab_Instrument, function serve_data"
         #print data
         if not self.server: 
             return False
@@ -120,16 +121,16 @@ class Glab_Instrument():
         create_example_pollcallback is set to true in initialization
         """
         # this triggers every-other time it is polled
-        print "generic instrument polled", "at time:", time.time()
+        if DEBUG: print "generic instrument polled", "at time:", time.time()
         if not hasattr(self,"_poll_example_it"):
             self._poll_example_it = 0
         self._poll_example_it = self._poll_example_it + 1 
         if (self._poll_example_it+1)%1==0:
-            print "Return True from example Poll"
+            if DEBUG: print "Return True from example Poll"
             return True
         else:
             return False
-    _Xserver_poll._poll_period = 1000.#"15" seconds is being attached to the function as an element of the function-object
+    _Xserver_poll._poll_period = 10000.#"15" seconds is being attached to the function as an element of the function-object
     
     def _Xserver_callback(self):
         """
@@ -137,8 +138,16 @@ class Glab_Instrument():
         """
         #if self._poll_example_it > 1:
         #    return
-        print "generic instrument callback called"
+        if DEBUG: print "generic instrument callback called"
         # generate some random data and return it using the serve data mechanism
         dim = 512
-        self.serve_data([numpy.random.rand(dim,dim).tolist(),numpy.random.rand(dim,dim).tolist(),numpy.random.rand(dim,dim).tolist()])
+        mu = 10000
+        sigma = 1000
+        shape = (dim,dim)
+        pic_0 = numpy.random.normal(loc=mu,scale=sigma,size=shape)
+        pic_1 = numpy.random.normal(loc=mu,scale=sigma,size=shape)
+        pic_2 = numpy.random.normal(loc=mu,scale=sigma,size=shape)
+        self.serve_data([pic_0.tolist(),
+                         pic_1.tolist(),
+                         pic_2.tolist()])
         

@@ -28,11 +28,15 @@ import numpy,uuid,operator,os,time,types,itertools,numbers
 import tables
 import pdb
 import pyqtgraph
+import pprint
 import PyQt4
+import sys
+import traceback
 import xstatus_ready
 import datetime
 
 VERBOSE=True
+DEBUG = False
 
 class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
     """
@@ -47,23 +51,28 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
         to attach to - filepath should provide the path
         """
         PyQt4.QtCore.QObject.__init__(self) # this is here in case class is used with pyqt signals and slots
-        self.id = str(uuid.uuid4()) # a unique identifier for the heap
+        self.id = str(uuid.uuid4()) # a unique identifier for the datastore
         today = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
-        self.location_root = '..\\psu_data\\' + today + '\\hdf5_heap\\'
-        filename = self.location_root + str(self.id) + '.h5'
-        
-        self.options={"filepath":filename, "title":"Untitled" }
+        self.location_root = '../psu_data/' + today + '/hdf5_heap/'
+              
+        #pdb.set_trace()
+        self.options={"filepath":self.location_root,
+                      'filename': str(self.id) + '.h5',
+                      "title":"Untitled"}
         self.options.update(options)
+        
+        for k in self.options:
+            self.options[k] = str(self.options[k])
 
         try:
-            self.h5 = tables.open_file(filename,
+            self.h5 = tables.open_file(self.options["filepath"] + self.options["filename"],
                                  mode="a",
                                  title=self.options["title"],
                                  driver="H5FD_SEC2",
                                  NODE_CACHE_SLOTS=0)
         except IOError:#Folder doesn't exist, then we make the day's folder.
-            os.makedirs(self.location_root)
-            self.h5 = tables.open_file(filename,
+            os.makedirs(self.options["filepath"])
+            self.h5 = tables.open_file(self.options["filepath"] + self.options["filename"],
                                  mode="a",
                                  title=self.options["title"],
                                  driver="H5FD_SEC2",
@@ -74,7 +83,10 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
             self.fatable=self.h5.get_node("/fa","access")    
         except tables.NoSuchNodeError:    # if they don't exist, create them
             self.fileaccessgroup=self.h5.create_group('/','fa','fileaccessgroup')
-            self.fatable = self.h5.create_table(self.fileaccessgroup, 'access', self.AccessRecord , "Acess Records")
+            self.fatable = self.h5.create_table(self.fileaccessgroup,
+                                                'access',
+                                                self.AccessRecord,
+                                                "Acess Records")
         self.handles=[] # an element to hold handles to individual heaps
         self.__record_action__("file opened") # record that the file was opened
         
@@ -87,7 +99,7 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
         self.h5.close()
         for hind in xrange(len(self.handles)):  # close handles
             self.handles[hind].close()
-        print "file "+self.options["filepath"]+" closed"
+        if DEBUG: print "file "+self.options["filepath"]+self.options["filename"]+" closed"
 
     def __record_action__(self, action):
         """
@@ -118,14 +130,15 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
         launches a viewer to browse contents of associated hdf file
         still working on this
 `        """
-        print self.h5
+        if DEBUG: print self.h5
     
-    def get_handle(self,element_id,element):
+    def get_handle(self, dataname, element):
         """
-        element must be a numpy array of the size desired.        
+        element must be a numpy array of the size desired. 
+        dataname is the name of the element in the table
         
         links an element in the datastore to a liveheap by returning a handle
-        corresponding to the provided element id.  id can be a string providing
+        corresponding to the provided dataname.  dataname can be a string providing
         path to element in hdf5 style, or...
         if element does not exist, or an existing element has the wrong structure,
         creates a new element with _x appended to name
@@ -136,12 +149,12 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
             """
             t=self.dataHandle(h)
             self.handles.append(t)
-            self.__record_action__("issued handle for "+str(element_id))
+            self.__record_action__("issued handle for "+str(dataname))
             return t
         # first create a numpy structured array as a descriptor for the table elements
         # start by finding a name from the id, assuming it can have path structure
-        eparts=element_id.rsplit("/",1)
-        table_name = eparts[-1]
+        eparts=dataname.rsplit("/",1)
+        dataname = str(eparts[-1])
         try:
             element.shape
         except AttributeError:#Want all data elements to be some kind of numpy array
@@ -151,20 +164,11 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
         des = numpy.empty(1,dtype=[
                 ("shotnumber",numpy.int64),
                 ("repnumber",numpy.int64),
-                (eparts[-1],element.dtype, element.shape)
+                (dataname,element.dtype,element.shape)
                 ])
         # now try to create or open the table, else looking for first unused name of type
-        '''
-        for ind in xrange(-1,1000):
-            try: 
-                h=self.h5.getNode("/"+element_id+("_"+str(ind))*(ind>0))
-                if h.dtype==des.dtype: exit_this(h)
-            except tables.exceptions.NoSuchNodeError: 
-                h=self.h5.create_table("/",eparts[-1]+("_"+str(ind))*(ind>0),description=des.dtype)
-                return exit_this(h)
-        '''
         try: 
-            h = self.h5.getNode("/"+table_name)
+            h = self.h5.getNode("/"+dataname)
             if h.dtype == des.dtype:
                 return exit_this(h)
             else:
@@ -172,31 +176,33 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
                 print h.dtype
                 print des.dtype
         except tables.exceptions.NoSuchNodeError:
-            print "Creating Table:", "/", table_name,des.dtype
-            h = self.h5.create_table("/",table_name,description=des.dtype)
+            if DEBUG: print "Creating Table:", "/", dataname,des.dtype
+            h = self.h5.create_table("/",dataname,description=des.dtype)
             return exit_this(h)
         
         for ind in xrange(0,100):
-            print "WARNING: Could not find node with description:", element_id
+            new_dataname = dataname+("_"+str(ind))
+            des = numpy.empty(1,dtype=[
+                ("shotnumber",numpy.int64),
+                ("repnumber",numpy.int64),
+                (new_dataname, element.dtype, element.shape)
+                ])
+            print "WARNING: Could not find node with description:", dataname
             print "shotnumber =", des[0][0]
             print "repnumber =", des[0][1]
             print "data =", des[0][2].shape, des[0][2].dtype
             try:
-                print "a"
-                print "/"+table_name+("_"+str(ind))
-                h = self.h5.getNode("/"+table_name+("_"+str(ind)))
-                print "b"
+                print "/"+new_dataname
+                h = self.h5.getNode("/"+new_dataname)
                 print h
                 return exit_this(h)
             except tables.exceptions.NoSuchNodeError:
-                print "c"
-                h = self.h5.create_table("/",table_name+("_"+str(ind)),description=des.dtype)
+                h = self.h5.create_table("/", new_dataname, description=des.dtype)
                 print "Creating node:", h,
-                print "with description:", table_name+("_"+str(ind))
+                print "with description:", new_dataname
                 print "shotnumber =", des[0][0]
                 print "repnumber =", des[0][1]
                 print "data =", des[0][2].shape, des[0][2].dtype
-                pdb.set_trace()
                 if h.dtype == des.dtype:
                     print "Using node:", h
                     return exit_this(h)
@@ -216,12 +222,12 @@ class glab_datastore(PyQt4.QtCore.QObject,xstatus_ready.xstatus_ready):
             num=0
             # print path to all subdirectories first.
             for subdirname in dirnames:
-                print os.path.join(dirname, subdirname)    
+                if DEBUG: print os.path.join(dirname, subdirname)    
             # import data and append to an image stack.
             imgs=[]
             names=[]
             for filename in filenames:
-                print os.path.join(dirname, filename)
+                if DEBUG: print os.path.join(dirname, filename)
                 try: 
                     imgs.append(numpy.loadtxt(os.path.join(dirname, filename),dtype=dtype))
                     names.append(os.path.join(dirname, filename))
@@ -302,34 +308,35 @@ class glab_liveheap(PyQt4.QtCore.QObject):
         sizeof should be the maximum number of data elements to hold in dynamic memory
         element_structure should be a list of dimensions for each data element
         typecode should be the numpy-supported Python data type for each element
-        FILENAME should specify the desired hdf5 file to link to the heap
+        #FILENAME should specify the desired hdf5 file to link to the heap #Removed - CP 2015-01-18
         GENERATOR ... i forget ...
         DATANAME should specify the desired name of the element        
         """
-        self.id="_"+str(uuid.uuid4()).replace("-","")
+        #self.id="_"+str(uuid.uuid4()).replace("-","")
         # first define default options and override
         PyQt4.QtCore.QObject.__init__(self) # for signal/slotting
-        default_options={"sizeof":None,
+        self.options={"sizeof":None,
                          "element_structure":(), 
                          "typecode":numpy.dtype("float64"),
-                         "filename":None, 
-                         "dataname":"untitled_"+str(uuid.uuid1()),
+                         "datastore":None,
+                         "dataname":"untitled_"+str(uuid.uuid4()).replace("-",""),#uuid4 for filenames
                          "_warn_duplicates":True,
                          "use_reps":False }
-        default_options.update(options)
+        self.options.update(options)
         # if no stack size given, set RAM size to 10MByte
-        if default_options["sizeof"]==None:
+        if self.options["sizeof"] == None:
             try:
-                size = default_options["typecode"].itemsize*reduce(operator.mul,default_options["element_structure"])
-                default_options.update({"sizeof":int((1e+7)/size)})
+                size = self.options["typecode"].itemsize*reduce(operator.mul,self.options["element_structure"])
+                self.options.update({"sizeof":int((1e+7)/size)})
             except TypeError:
-                default_options.update({"sizeof":int((1e+7)/default_options["typecode"].itemsize)})
+                self.options.update({"sizeof":int((1e+7)/self.options["typecode"].itemsize)})
         # transfer to attributes of self
-        for option in default_options.keys():
-            setattr(self,option,default_options.get(option))
+        for option in self.options.keys():
+            setattr(self,option,self.options.get(option))
         # the data stack for RAM will be created immediately on intialization
         # and never redefined to avoid constant copying or re-reservation 
         self.stack=numpy.empty((self.sizeof,)+tuple(self.element_structure),dtype=self.typecode)
+        self.dataname = self.options['dataname']
         # the stack is N+1 dimensional, with N the size of the element
         self.stackorders=numpy.array([-1 for a in xrange(self.sizeof)])
         self.current_order=0L
@@ -343,6 +350,22 @@ class glab_liveheap(PyQt4.QtCore.QObject):
         # archived is boolean representing whether or not this element exists on permanent storage
         #True is used as initialization here so that when the file is closed, it won't save the junk data that was created in the empty numpy array.
         self.last_pushed=0
+        if self.options['datastore'] == None:
+            self.datastore = glab_datastore()
+            
+        try:
+            ds_file = self.datastore.options["filepath"] + self.datastore.options["filename"]
+            self.datastore_handle = self.datastore.get_handle(self.dataname, self.stack[0,...])
+        except Exception as e:
+            print "Error: Failed to attach the datastore"
+            print "Error:", e
+            print e.message
+            traceback.print_stack()
+            traceback.print_exception(*sys.exc_info())
+            return
+            
+
+        
         
     def __getitem__(self,indices):
         """
@@ -424,7 +447,8 @@ class glab_liveheap(PyQt4.QtCore.QObject):
                 if from_archive.shape[0] > 1:
                     res = res.squeeze()
                 from_table = self.datastore_handle.table[asns[ret_ind,1]]
-                res[from_archive[:,1],...] = from_table[self.id][[slice(None,None,None)]+inds[2:]].squeeze()#If this fails, check effect of squeezing
+                #res[from_archive[:,1],...] = from_table[self.id][[slice(None,None,None)]+inds[2:]].squeeze()#If this fails, check effect of squeezing
+                res[from_archive[:,1],...] = from_table[self.dataname][[slice(None,None,None)]+inds[2:]].squeeze()#If this fails, check effect of squeezing
             else:  # enters for shot/rep specified
                 sr_disk=numpy.append([self.getshotnumbers(archived=True)],
                                       [self.getrepnumbers(archived=True)],
@@ -445,7 +469,8 @@ class glab_liveheap(PyQt4.QtCore.QObject):
                 # copy into result array
                 #pdb.set_trace()
                 res[from_archive[from_archive1[:,1],2],
-                    from_archive[from_archive1[:,1],3],...] = self.datastore_handle.table[sr_disk1[ret_ind,1].astype(numpy.int64)][self.id][[slice(None,None,None)]+inds[2:]].squeeze()
+                    #from_archive[from_archive1[:,1],3],...] = self.datastore_handle.table[sr_disk1[ret_ind,1].astype(numpy.int64)][self.id][[slice(None,None,None)]+inds[2:]].squeeze()
+                    from_archive[from_archive1[:,1],3],...] = self.datastore_handle.table[sr_disk1[ret_ind,1].astype(numpy.int64)][self.dataname][[slice(None,None,None)]+inds[2:]].squeeze()
             # return the result array
             if not self.use_reps: return res.squeeze()
         return res
@@ -535,7 +560,8 @@ class glab_liveheap(PyQt4.QtCore.QObject):
         raises a warning - if pyqt signaling is used, remember you can trigger
         on this
         """
-        message="WARNING: stack "+self.id+" reports "+message
+        message="WARNING: heap "+self.dataname+" reports "+message
+        print message
         if VERBOSE: print message
 
     def push(self,element,shotnumber=None,repnumber=None):
@@ -620,20 +646,12 @@ class glab_liveheap(PyQt4.QtCore.QObject):
         return numpy.append(self.datastore_handle.table.col('repnumber'),
                             self.repnumbers[numpy.logical_not(self.archived).nonzero()])
 
-    def attach_datastore(self,datastore=None, options={}):
-        """
-        associates a datastore (portal to an h5 file) with this stack
-        """
-        if datastore == None:
-            datastore = glab_datastore(options=options)
-        self.datastore = datastore
-        self.datastore_handle = datastore.get_handle(self.id,self.stack[0,...])
            
 import unittest
 class test_basic_functions(unittest.TestCase):
 
     def setUp(self):
-        print 'class test_basic_functions, function setUp'
+        if DEBUG: print 'class test_basic_functions, function setUp'
         self.e=numpy.random.rand(20,20,20) # generate 20 random matrices
         for i in range(20): # the first ten of the following pushes will be heaved to disk, the last ten will stay in ram stack
             self.e[i,0,0]=121+i  # set top-left element to same as shotnumber will be when pushed, starting shotnumber will be 121
@@ -645,9 +663,9 @@ class test_basic_functions(unittest.TestCase):
         """
         checks basic insertion and retrieval with heap and 20 20x20 float arrays, with half held in ram
         """
-        print 'class test_basic_functions, function test_getitem'
+        if DEBUG: print 'class test_basic_functions, function test_getitem'
         g=glab_liveheap(options={"element_structure":[20,20],"sizeof":10, "typecode":numpy.float}) # creates a stack of 20x20 float arrays, ten of which will be held in ram at any time
-        g.attach_datastore() # attaches a datastore with a randomly generated name
+        #g.attach_datastore() # attaches a datastore with a randomly generated name
         for i in range(self.e.shape[0]):
             g.push(self.e[i].squeeze(),121+i,0) # push it into the heap
         test1=g[[140,128,139,125,126]] # retrieves this list of shotnumbers, non-sequential and split ram/disk
@@ -666,9 +684,9 @@ class test_basic_functions(unittest.TestCase):
         self.assertTrue((g[122+18] == self.e[1+18]).all())#Retreving single value from disk
         self.assertTrue((g[[122,122+18]] == [self.e[1],self.e[1+18]]).all())
            
-        
+    
     def test_get_handle(self):
-        print 'class test_basic_functions, function test_get_handle'
+        if DEBUG: print 'class test_basic_functions, function test_get_handle'
         handle = self.ds.get_handle('ccdimage',self.e[0])
         handle2 = self.ds.get_handle('ccdimage',self.e[0])
         sn = numpy.random.random_integers(1000*1000*1000)
@@ -680,33 +698,52 @@ class test_basic_functions(unittest.TestCase):
     
         
     def test_get_different_handle(self):
-        print 'class test_basic_functions, function test_get_different_handle'
-        handle = self.ds.get_handle('ccdimage',self.e[0])
-        print '1'
+        if DEBUG: print 'class test_basic_functions, function test_get_different_handle'
         test_data = numpy.random.randint(numpy.random.random_integers(1000*1000*1000), size=(40, 40))
-        print '2'
-        handle2 = self.ds.get_handle('ccdimage',test_data)
-        print '3'
         sn = numpy.random.random_integers(1000*1000*1000)
-        print '4'
         rn = numpy.random.random_integers(1000*1000*1000)
-        print '5'
-        pdb.set_trace()
+        handle = self.ds.get_handle('ccdimage',self.e[0])
+        handle2 = self.ds.get_handle('ccdimage',test_data)
         handle.append(self.e[1], sn, rn)
-        print '6'
-        pdb.set_trace()
         handle2.append(test_data, sn, rn)
-        print '7'
         handle.table.flush()
-        print '8'
         handle2.table.flush()
-        print '9'
         self.assertTrue((self.e[1]==handle.table.read()[0][2]).all())
-        print '10'
-        self.assertTrue((test_data==handle2.table.read()[0][2]).all())
-        print '11'
+        self.assertTrue((test_data==handle2.table.read()[0][2]).all())    
+        
+
+    def test_make_named_datastore(self):
+        if DEBUG: print 'class test_basic_functions, function test_make_named_datastore'
+        name = 'Apogee_Image_Data'
+        ds = glab_datastore({'title':'Absorption'})
+        ds2 = glab_datastore({'title':'Absorption'})
+        ds3 = glab_datastore({'title':'Absorption'})
+        apogee_image_heap = glab_liveheap({"element_structure":[769,513],
+                                           "dataname":name,
+                                           "typecode":numpy.dtype("uint16"),#numpy.uint16 will not work
+                                           "datastore":ds})
+        apogee_image_heap2 = glab_liveheap({"element_structure":[769,513],
+                                           "dataname":name,
+                                           "typecode":numpy.dtype("uint16"),#numpy.uint16 will not work
+                                           "datastore":ds})
+        apogee_image_heap3 = glab_liveheap({"element_structure":[769,513],
+                                           "dataname":name+'1',
+                                           "typecode":numpy.dtype("uint16"),#numpy.uint16 will not work
+                                           "datastore":ds})
+        apogee_image_heap4 = glab_liveheap({"element_structure":[769,513],
+                                           "dataname":name,
+                                           "typecode":numpy.dtype("uint16")})
+        apogee_image_heap5 = glab_liveheap({"element_structure":[769,513],
+                                           "typecode":numpy.dtype("uint16")})
+        apogee_image_heap6 = glab_liveheap({"element_structure":[769,513],
+                                            "datastore":ds2,
+                                           "typecode":numpy.dtype("uint16")})
+        apogee_image_heap6.warning('test')
+        #heap._glab_liveheap___s_push_fired.connect(self.test)
+                                           
 
 
+#To run tests: unittest.main()
 
 
 

@@ -25,6 +25,7 @@ import time
 import sys
 from datetime import datetime
 from datetime import date   
+import traceback
 import pdb
 import colorama
 colorama.init(strip=False)
@@ -681,7 +682,7 @@ class CommandLibrary():
         if params.has_key('socket_type'):
             #Right now just for PXI_emulator
             if params['socket_type'] == 'Websocket':
-                print "sent back timing strings!"
+                if DEBUG: print "sent back timing strings!"
                 params['request']['protocol'].sendMessage(msg)
                 pass
             else:
@@ -804,10 +805,29 @@ class CommandLibrary():
                                         'databomb':params['databomb']},
                                          use_bin_type=True)  
         #for p in self.server.connection_manager.data_gui_servers:
-        print "sending len =", len(packed_message)/(1000*1000.0), "MB. asdf (2)", str(time.time()-TIMING)
+        if DEBUG: print "sending len =", len(packed_message)/(1000*1000.0), "MB. asdf (2)", str(time.time()-TIMING)
+        #pdb.set_trace()
         if params['data_context'] == 'PXI_emulator':
-            self.server.send(packed_message,self.server.connection_manager.data_gui_servers.iterkeys().next(), isBinary=True)             
-        print "End sever side sending asdf (3)", str(time.time()-TIMING)
+            gui_k = self.server.connection_manager.data_gui_servers.iterkeys().next()
+            gui = self.server.connection_manager.data_gui_servers[gui_k]
+            try:
+                msg_command = ServerCommand(self.server,
+                                            gui.protocol.sendMessage,
+                                            packed_message,
+                                            isBinary=True)
+                self.server.command_queue.add(msg_command)
+            except AttributeError:  
+                self.server.reactor.callLater(10, self._send_databomb, gui, packed_message)
+        if DEBUG: print "End sever side sending asdf (3)", str(time.time()-TIMING)
+        
+    def _send_databomb(self, gui, msg):  
+        
+        msg_command = ServerCommand(self.server,
+                                    gui.protocol.sendMessage,
+                                    msg,
+                                    isBinary=True)
+        self.server.command_queue.add(msg_command)
+        return
         
     def temp_plot_qt(self,params,bomb_id, dc):
         print "plotting"
@@ -1139,7 +1159,7 @@ class CommandLibrary():
         
 
 class ServerCommand():
-    def __init__(self,server, command,*args, **kwargs):
+    def __init__(self,server, command, *args, **kwargs):
         """
         Constructs a server command object, to be executed in the command queue
         
@@ -1158,8 +1178,13 @@ class ServerCommand():
         try: 
             self.command(*self.args, **self.kwargs)
         except Exception as e:
-            if DEBUG: print e
-            pdb.set_trace()
+            print "Error: Failed to execute ServerCommand:"
+            print self.command
+            print "Error:", e
+            print e.message
+            traceback.print_stack()
+            traceback.print_exception(*sys.exc_info())
+           #pdb.set_trace()
 
         
 class SocketCommand():
@@ -1238,11 +1263,25 @@ class SocketCommand():
             ThisResponseFunction = getattr(command_library,
                                            self.params['IDLSocket_ResponseFunction'])
         except AttributeError:
-            if DEBUG: print ('Missing Socket_ResponseFunction:',
+            print ('Missing Socket_ResponseFunction:',
                    self.params['IDLSocket_ResponseFunction'])
         if DEBUG: print "self.params.keys()", self.params.keys()
         if DEBUG: print "Calling this ResponseFunction:",self.params['IDLSocket_ResponseFunction']
-        ThisResponseFunction(p)
+            
+        try:
+            ThisResponseFunction(p)
+        except Exception as e:
+            print "Error: Failed to execute IDLSocket_ResponseFunction"
+            print ('Missing Socket_ResponseFunction:',
+                   self.params['IDLSocket_ResponseFunction'])
+            print "self.params.keys()", self.params.keys()
+            print "Calling this ResponseFunction:",self.params['IDLSocket_ResponseFunction']
+            print "Error:", e
+            print e.message
+            traceback.print_stack()
+            traceback.print_exception(*sys.exc_info())
+            
+            
         '''
         if self.params['IDLSocket_ResponseFunction'] == 'compile_active_xtsm':
             filenames = []

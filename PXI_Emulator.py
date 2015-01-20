@@ -15,7 +15,7 @@ import simplejson
 import socket
 import sys
 shotnumber = 1
-DEBUG = True
+DEBUG = False
 udpbport = 8085
 
 from twisted.internet import reactor
@@ -342,3 +342,4 @@ def constant_run(delay=2,iter=100):
                         ('terminator','die')],[])
         shotnumber+=1
         
+#command_library.request_active_xtsm()

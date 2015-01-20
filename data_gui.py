@@ -46,7 +46,7 @@ import pprint
 #from pyqt_signal_dressing import _signal_dressed_import
 #hdf5_liveheap=_signal_dressed_import("hdf5_liveheap")
     
-DEBUG = True
+DEBUG = False
 global TIMING
 TIMING = 1416876428
     
@@ -120,6 +120,8 @@ class CommandLibrary():
         script = commands['script_body']
         context = commands['context']
         old_stdout = sys.stdout
+        if DEBUG: print "commands"
+        if DEBUG: print commands
         try:
             capturer = StringIO()
             sys.stdout = capturer
@@ -132,6 +134,10 @@ class CommandLibrary():
         except Exception as e: 
             context.update({'_SCRIPT_ERROR':e})
             print '_SCRIPT_ERROR'
+            print 'Script:'
+            pprint.pprint(script)
+            print 'Context:'
+            pprint.pprint(context.keys())
             print e
             print e.message
             traceback.print_stack()
@@ -222,15 +228,17 @@ class CommandLibrary():
             #pprint.pprint('d.Method._seq[0]'+d.Method[0]._seq[0])
             #pprint.pprint('gui_dock.Method[0]._seq[0]'+gui_dock.Method[0]._seq[0])
             
-            command = {'script_body': d.Method._seq[0],
+            command = {'script_body': d.Method[0]._seq[0],
                        'context' : {'self':self.gui, '_xtsm_dock': d}}
                        
             if (to_update_all or gui_dock.Name.PCDATA == None or gui_dock.Method[0]._seq[0] != d.Method[0]._seq[0]):
                 self._execute(command)
             
         
-        heaps = xtsm_object.XTSM.getDescendentsByType('Heap')[0]
+        heaps = xtsm_object.XTSM.getDescendentsByType('Heap')
+        if DEBUG: print "Here are the heaps:"
         for h in heaps:
+            if DEBUG: print h.write_xml()
             try:
                 gui_heap = gui_space.getItemByFieldValue('Heap', 'Name', h.Name.PCDATA)
             except AttributeError as e:
@@ -241,10 +249,9 @@ class CommandLibrary():
                 return
                 
             
-            command = {'script_body': h.Method._seq[0],
+            command = {'script_body': h.Method[0]._seq[0],
                        'context' : {'self':self.gui, '_xtsm_heap': h}}
                 
-                       
             if (to_update_all or gui_heap.Name.PCDATA == None or gui_heap.Method[0]._seq[0] != h.Method[0]._seq[0]):
                 self._execute(command)
 
@@ -259,27 +266,29 @@ class CommandLibrary():
         if DEBUG: print("class data_guis.docked_gui.CommandLibrary, func databomb")
         db = msgpack.unpackb(params['databomb'])
         ns = self.factory.gui._console_namespace
-        scripts = ns['xtsm_object'].XTSM.getDescendentsByType('Script')
+        scripts = ns['AnalysisSpace'].getDescendentsByType('Script')
         #xtsm_heap = ns['xtsm_object'].XTSM.getDescendentsByType('Heap')[0]
         #if any(x in [xtsm_heap.DataCriteria.PCDATA] for x in list(ns.values())):
         #    ns[xtsm_heap.Name.PCDATA].push(numpy.asarray(db['data']), shotnumber=numpy.asarray(db['shotnumber']))
         try:
             self.factory.gui._console_namespace['databombs'].append(db)
+            self.factory.gui._console_namespace['_last_databomb'] = db
         except KeyError:
             self.factory.gui._console_namespace.update({'databombs':[db]})
+            self.factory.gui._console_namespace['_last_databomb'] = db
         #print scripts[0].ScriptBody.PCDATA
         #print repr(scripts[0].ScriptBody.PCDATA)
-        print scripts[0].ScriptBody._seq
+        #print scripts[0].ScriptBody._seq
         #print scripts[0].ScriptBody.write_xml()
         #scripts[0].ScriptBody.PCDATA = scripts[0].ScriptBody.PCDATA.replace('\\n ','\n')
         #scripts[0].ScriptBody.PCDATA = scripts[0].ScriptBody.PCDATA.replace('\\n','\n')
         #scripts[0].ScriptBody.PCDATA = scripts[0].ScriptBody.PCDATA.replace('\\t','\t')
         #print scripts[0].ScriptBody.PCDATA
         #print repr(scripts[0].ScriptBody.PCDATA)
-        xtsm_heap = ns['xtsm_object'].XTSM.getDescendentsByType('Heap')[0]
+        #xtsm_heap = ns['xtsm_object'].XTSM.getDescendentsByType('Heap')[0]
         #ns[xtsm_heap.Name.PCDATA].push(numpy.asarray(db['data']), shotnumber=numpy.asarray(db['shotnumber']))
-        print numpy.asarray(db['data']).shape
-        print numpy.asarray(db['shotnumber'])
+        #print numpy.asarray(db['data']).shape
+        #print numpy.asarray(db['shotnumber'])
         '''
         try:
             ns[xtsm_heap.Name.PCDATA].push(numpy.asarray(db['data'][0]), shotnumber=numpy.asarray(db['shotnumber']))
@@ -295,12 +304,15 @@ class CommandLibrary():
             try:
                 exec script.ScriptBody._seq[0] in globals(), ns
             except Exception as e:
-                print "Error in exec"
+                print 'Error in exec:'
+                print 'Script:'
+                pprint.pprint(script.ScriptBody._seq[0])
+                print 'Context:'
+                pprint.pprint(ns.keys())
                 print e
+                print e.message
                 traceback.print_stack()
                 traceback.print_exception(*sys.exc_info())
-                #print e.
-                #print inspect.getsource(hdf5_liveheap)
                 return
         
     
@@ -829,8 +841,9 @@ class Docked_Gui():
         plots to image viewer
         """
         print 'Class image_stack_gui, function plot'
+        print 'Not functional'
         #pdb.set_trace()
-        self.imv.setImage(numpy.asarray(img))
+        #self.imv.setImage(numpy.asarray(img))
         
     def generate_coordinates(self, center=None):
         """
@@ -1114,79 +1127,83 @@ example_AS_xtsm=u"""
 <AnalysisSpace>
 
 <Name>Absorption</Name>
-
         <Script>
-          
           <Name>Plot_CCD_Image</Name>
-
           <Description>Plotting</Description>
-
           <ExecuteOnEvent>databomb</ExecuteOnEvent>
-
           <ExecuteOnMainServer>False</ExecuteOnMainServer>
-
           <Time>0</Time>
-
           <Remote>True</Remote>
-
           <ScriptBody>
 <![CDATA[
-count = 0
-for db in databombs:
-	first_image = db['data'][0]
-	if count == 0:
-		img = [first_image]
-	else:
-		img = numpy.concatenate((img,[first_image]), axis=0)
-	count = count + 1
-self.plot(img)
+import numpy
+self.apogee_raw_image_0_heap.push(_last_databomb['data'][0],_last_databomb['shotnumber'],0)
+self.apogee_raw_image_1_heap.push(_last_databomb['data'][1],_last_databomb['shotnumber'],0)
+div = numpy.divide(numpy.asarray(_last_databomb['data'][0],dtype=numpy.float),
+                   numpy.asarray(_last_databomb['data'][1],dtype=numpy.float))
+div = numpy.log(div)
+self.apogee_log_divided_image_heap.push(div,_last_databomb['shotnumber'],0)
+
+self.raw_image_0_dock.imv.setImage(numpy.asarray(self.apogee_raw_image_0_heap['all'].squeeze()))
+self.raw_image_1_dock.imv.setImage(numpy.asarray(self.apogee_raw_image_1_heap['all'].squeeze()))
+self.divided_image_dock.imv.setImage(numpy.asarray(self.apogee_log_divided_image_heap['all'].squeeze()))
+
+
+
 ]]>	  
             </ScriptBody>
-
         </Script>
-
         <Heap>
-          
-          <Name>Image_Data</Name>
-
+          <Name>Raw_Image_With_Atoms</Name>
           <DataCriteria>'10.1.1.110'</DataCriteria>
-          
+          <Priority>0</Priority>
           <Method>
 <![CDATA[
-name = '_xtsm_heap.Name.PCDATA'
-self.apogee_image_heap = hdf5_liveheap.glab_liveheap({"element_structure":[769,513],
-                                                      "filename":name,
-                                                      "dataname":"Apogee_images"+str(uuid.uuid1()),
-                                                      "typecode":numpy.dtype("uint16")})#numpy.uint16 will not work
-self.apogee_image_heap.attach_datastore({"title":name })
-self._console_namespace.update({'apogee_image_heap':self.apogee_image_heap})
-#heap._glab_liveheap___s_push_fired.connect(self.test)
+print '_xtsm_heap.Name.PCDATA', _xtsm_heap.Name.PCDATA
+self.absorption_datastore = hdf5_liveheap.glab_datastore({'title':'Absorption'})
+#options = {"element_structure":[769,513],
+options = {"element_structure":[512,512],
+           "dataname":_xtsm_heap.Name.PCDATA,
+           "typecode":numpy.dtype("uint16"),#numpy.uint16 will not work
+           "datastore":self.absorption_datastore}
+self.apogee_raw_image_0_heap = hdf5_liveheap.glab_liveheap(options)
+self._console_namespace.update({'apogee_raw_image_0_heap':self.apogee_raw_image_0_heap})
+self._console_namespace.update({'absorption_datastore':self.absorption_datastore})
 ]]>
           </Method>
-
         </Heap>
-        
         <Heap>
-          
-          <Name>Scope</Name>
-
+          <Name>Raw_Image_No_Atoms</Name>
           <DataCriteria>'10.1.1.110'</DataCriteria>
-          
           <Method>
 <![CDATA[
-name = '_xtsm_heap.Name.PCDATA'
-self.scope_heap = hdf5_liveheap.glab_liveheap({"element_structure":[512],
-                                                      "filename":name,
-                                                      "dataname":"Scope_Data"+str(uuid.uuid1()),
-                                                      "typecode":numpy.dtype("uint16")})#numpy.uint16 will not work
-self.scope_heap.attach_datastore({"title":name})
-self._console_namespace.update({'scope_heap':self.scope_heap})
-#heap._glab_liveheap___s_push_fired.connect(self.test)
+print '_xtsm_heap.Name.PCDATA', _xtsm_heap.Name.PCDATA
+#options = {"element_structure":[769,513],
+options = {"element_structure":[512,512],
+           "dataname":_xtsm_heap.Name.PCDATA,
+           "typecode":numpy.dtype("uint16"),#numpy.uint16 will not work
+           "datastore":self.absorption_datastore}
+self.apogee_raw_image_1_heap = hdf5_liveheap.glab_liveheap(options)
+self._console_namespace.update({'apogee_raw_image_1_heap':self.apogee_raw_image_1_heap})
 ]]>
           </Method>
-
-        </Heap>        
-        
+        </Heap>
+        <Heap>
+          <Name>Log_Divided</Name>
+          <DataCriteria>'10.1.1.110'</DataCriteria>
+          <Method>
+<![CDATA[
+print '_xtsm_heap.Name.PCDATA', _xtsm_heap.Name.PCDATA
+#options = {"element_structure":[769,513],
+options = {"element_structure":[512,512],
+           "dataname":_xtsm_heap.Name.PCDATA,
+           "typecode":numpy.dtype("float64"),#numpy.uint16 will not work
+           "datastore":self.absorption_datastore}
+self.apogee_log_divided_image_heap = hdf5_liveheap.glab_liveheap(options)
+self._console_namespace.update({'apogee_log_divided_image_heap':self.apogee_log_divided_image_heap})
+]]>
+          </Method>
+        </Heap>      
     <Dock>
         <Name>Raw_Image_0</Name>
         <Method>
