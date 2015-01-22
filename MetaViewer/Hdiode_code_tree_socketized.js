@@ -297,7 +297,7 @@ function CommandLibrary(arg) {
 		_active_xtsm = arg.xml_string;
 		pxi_dc = document.getElementById('pxi_dc').value;
 		if (pxi_dc === '') {
-			alert('You must enter a PXI Data Context in order to post an active experiment!');
+			alert('You must enter a Data Context in order to post an active experiment!');
 			return;
 		}
 		// Send active XTSM object.

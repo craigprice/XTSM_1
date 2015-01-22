@@ -674,17 +674,7 @@ class CommandLibrary():
 import gnosis.xml.objectify # standard package used for conversion of xml structure to Pythonic objects, also core starting point for this set of routines
 import XTSMobjectify  
 
-class XTSM_Element(gnosis.xml.objectify._XO_,XTSMobjectify.XTSM_core):
-    pass
 
-class Analysis_Space_Core(XTSMobjectify.XTSM_core):
-    """
-    Default Class for all elements appearing in an XTSM Analysis_Space tree; contains generic methods
-    for traversing the XTSM tree-structure, inserting and editing nodes and attributes,
-    writing data out to XML-style strings, and performing parsing of node contents in
-    python-syntax as expressions
-    """
-    pass
 
 class Docked_Gui():
     """
@@ -902,56 +892,7 @@ class Docked_Gui():
         data[:,50:60,50:60] += sig
         self.imgstack=data
 
-class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
-    """
-    The toplevel object for an analysis space
-    """
-    
-    def _methods_to_xml(self):
-        if DEBUG: print("class data_guis.AnalysisSpace, func _methods_to_xml")
-        out=""
-        for meth in dir(self):
-            if type(getattr(self,meth))==type(self._methods_to_xml):
-                print "<Method><Name>"+meth+"</Name><Source><![CDATA["+inspect.getsource(getattr(self,meth))+"]]></Source></Method>"
-        return out    
-
-
-class Heap(gnosis.xml.objectify._XO_,Analysis_Space_Core):
-    """
-    docks created during objectification of XTSM - use _spawn method to
-    generate a pyqtgraph dock object from this XTSM element
-    """
-    def __init__(self):
-        if DEBUG: print "class Heap, function __init__"
-        for meth in self.Method:
-            try:
-                meth._src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
-            except Exception as e:
-                context.update({'_SCRIPT_ERROR':e})
-                print e
-                print context  
-
-class Dock(gnosis.xml.objectify._XO_,Analysis_Space_Core):
-    """
-    docks created during objectification of XTSM - use _spawn method to
-    generate a pyqtgraph dock object from this XTSM element
-    """
-    def __init__(self):
-        if DEBUG: print "class Dock, function __init__"
-        for meth in self.Method:
-            try:
-                meth._src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
-            except Exception as e:
-                context.update({'_SCRIPT_ERROR':e})
-                print e
-                print context
-        
-class Method(gnosis.xml.objectify._XO_,Analysis_Space_Core):
-    def write_xml(self, out=None, tablevel=0, whitespace='True',CDATA_ESCAPE=True):
-        if DEBUG: print("class data_guis.Method, func write_xml")
-        return Analysis_Space_Core.write_xml(self,out=out, tablevel=tablevel, whitespace=whitespace,CDATA_ESCAPE=CDATA_ESCAPE)
-
-
+'''
 gnosis.xml.objectify._XO_ = XTSM_Element
 # identify all XTSM classes defined above, override the objectify _XO_ subclass for each
 allclasses=inspect.getmembers(sys.modules[__name__],inspect.isclass)
@@ -959,7 +900,7 @@ XTSM_Classes=[tclass[1] for tclass in allclasses if (issubclass(getattr(sys.modu
 for XTSM_Class in XTSM_Classes:
     setattr(gnosis.xml.objectify, "_XO_"+XTSM_Class.__name__, XTSM_Class)
 del allclasses
-
+'''
 
 def  main():
     
@@ -1086,9 +1027,23 @@ def  main():
     #sys.argv[0] = file name of this script
     # szys.argv[1] = ip address of this server
     # sys.argv[2] = port to listen on
-    factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug=DEBUG)
+    factory = WebSocketServerFactory("ws://" + 'localhost' + ":"+str(sys.argv[2]), debug=False)
     factory.setProtocolOptions(failByDrop=False)
     factory.protocol = MyServerProtocol
+    if DEBUG: pprint.pprint(sys.argv)
+    try:
+        server_ip = int(sys.argv[1])
+    except:
+        server_ip = '10.1.1.112'
+    try:
+        server_port = int(sys.argv[2])
+    except:
+        server_port = 9100
+    try:
+        server_id = sys.argv[3]
+    except:
+        server_id = str(uuid.uuid1())
+        
     try:
         reactor.listenTCP(int(sys.argv[2]), factory)
         #a.factory = factory
@@ -1098,10 +1053,10 @@ def  main():
         #factory.gui = self.gui
         command_library.gui = gui
         factory.gui = gui
-        ping_data={"server_id":sys.argv[3],
+        ping_data={"server_id":server_id,
                 "server_name":"",
-                "server_ip":"",
-                "server_port":int(sys.argv[2]),
+                "server_ip":server_ip,
+                "server_port":server_port,
                 "server_id_node":"",
                 "server_ping":"server_ready!",
                 "server_time":time.time()}
@@ -1115,16 +1070,17 @@ def  main():
     except twisted.internet.error.CannotListenError:
         server_shutdown()
     
-    reactor.run()    
+    reactor.run()
     
     
 
 if __name__ == '__main__':
+    pass
     main()
 
 
 example_AS_xtsm=u"""
-<AnalysisSpace>
+<AnalysisSpace expanded="1">
 
 <Name>Absorption</Name>
         <Script>
@@ -1153,7 +1109,7 @@ self.divided_image_dock.imv.setImage(numpy.asarray(self.apogee_log_divided_image
 ]]>	  
             </ScriptBody>
         </Script>
-        <Heap>
+        <Heap expanded="1">
           <Name>Raw_Image_With_Atoms</Name>
           <DataCriteria>'10.1.1.110'</DataCriteria>
           <Priority>0</Priority>
@@ -1204,7 +1160,7 @@ self._console_namespace.update({'apogee_log_divided_image_heap':self.apogee_log_
 ]]>
           </Method>
         </Heap>      
-    <Dock>
+    <Dock expanded="1">
         <Name>Raw_Image_0</Name>
         <Method>
 <![CDATA[
@@ -1625,7 +1581,62 @@ self._console_namespace.update({'control_dock':control_dock})
         </Method>
     </Dock>
 </AnalysisSpace>
-"""    
+"""
+
+small_example_xtsm = u"""
+<AnalysisSpace>
+    <Dock>
+        <Name>Control</Name>
+        <Method>
+<![CDATA[
+a = 'hi < 40'
+]]>
+        </Method>
+    </Dock>
+    <Dock>
+        <Name>Control</Name>
+        <Method>
+a = 'hi < 40'
+        </Method>
+    </Dock>
+</AnalysisSpace>
+"""
+
+example_0 = u"""
+<AnalysisSpace>if x > 10:'Yes' if 5 > 2 else 'No'</AnalysisSpace>
+<Method>
+<![CDATA[
+if x > 10:'Yes' if 5 > 2 else 'No'
+if x > 10:'Yes' if 5 < 2 else 'No'
+if x < 10:'Yes' if 5 < 2 else 'No'
+if x < 10:'Yes' if 5 > 2 else 'No'
+]]>
+</Method>
+<Dock>if x > 10:'Yes' if 5 > 2 else 'No'</Dock>
+<Name>if x > 10:'Yes' if 5 > 2 else 'No'</Name>
+<Method>'Yes' if 5 > 7 else 'No'</Method>
+"""
+
+example_1 = u"""
+<body>if x > 10:'Yes' if 5 > 2 else 'No'</body>
+<SequenceSelector>if x > 10:'Yes' if 5 > 2 else 'No'</SequenceSelector>
+<Sequence>if x > 10:'Yes' if 5 > 2 else 'No'</Sequence>
+<SubSequence>if x > 10:'Yes' if 5 > 2 else 'No'</SubSequence>
+<StartTime>if x > 10:'Yes' if 5 > 2 else 'No'</StartTime>
+<head>if x > 10:'Yes' if 5 > 2 else 'No'</head>
+<Instrument>if x > 10:'Yes' if 5 > 2 else 'No'</Instrument>
+<Parameter>if x > 10:'Yes' if 5 > 2 else 'No'</Parameter>
+<Channel>if x > 10:'Yes' if 5 > 2 else 'No'</Channel>
+<ChannelMap>if x > 10:'Yes' if 5 > 2 else 'No'</ChannelMap>
+<ServerIPAddress>if x > 10:'Yes' if 5 > 2 else 'No'</ServerIPAddress>
+<Value>if x > 10:'Yes' if 5 > 2 else 'No'</Value>
+<Name>if x > 10:'Yes' if 5 > 2 else 'No'</Name>
+"""
 
 xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + example_AS_xtsm + "</XTSM>")
+#xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + small_example_xtsm + "</XTSM>")
+xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + example_0 + "</XTSM>")
+xtsm_object = XTSMobjectify.XTSM_Object("<XTSM>" + example_1 + "</XTSM>")
 #xtsm_object.XTSM.AnalysisSpace.gui = 
+#xtsm_object.XTSM.AnalysisSpace.Dock[0].Name
+#res = list(gnosis.xml.objectify.utils.XPath(self,'//'+target_type))

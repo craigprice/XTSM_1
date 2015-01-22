@@ -1,6 +1,5 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xtsm_viewer="http://braid.phys.psu.edu/xtsm_viewer" exclude-result-prefixes="xs xsl xtsm_viewer">
 	<xsl:output method="xml" indent="yes" encoding="utf-8" omit-xml-declaration="no" />
-<!--<xsl:output method="xml" version="1.0" encoding="UTF-8" cdata-section-elements='description' /> -->
 
     <!-- Remove annotations -->
     <xsl:template match="xs:annotation" />

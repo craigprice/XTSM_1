@@ -28,7 +28,7 @@ import sync
 
 #from IPy import IP
 
-DEBUG = False
+DEBUG = True
 
 XO_IGNORE=['PCDATA']  # ignored elements on XML_write operations
 
@@ -136,37 +136,52 @@ class XTSM_core(object):
         child_nodes = [a for a in self._seq if type(a)!=type(u'')]
         return child_nodes
         
-    def getDescendentsByTypeRecursively(self,targetType):
+    def getDescendentsByTypeRecursively(self,targetType, first=False):
         """
         Returns a list of all descendents of given type
         Original implementation by Nate
         """
         
         res=[]
-        for child in self.getChildNodes():
-            #print self, self.getChildNodes()
-            if hasattr(child,'getDescendentsByType'):
-                res.extend(child.getDescendentsByType(targetType)) 
         if hasattr(self,targetType): 
             res.extend(getattr(self,targetType))
+        if first and len(res) > 0:
+            return res
+        for child in self.getChildNodes():
+            if hasattr(child,'getDescendentsByType'):
+                res.extend(child.getDescendentsByTypeRecursively(targetType)) 
                     
         #print res
         return res
     
-    def getDescendentsByType(self, target_type):
+    
+    def getDescendentsByType(self, target_type, first=False):
         """
         Returns a list of all descendents of given type.
         """
-        #res = self.getDescendentsByTypeRecursively(target_type)
-        res2 = self.getDescendentsByTypeIteratively(target_type)
+        #t0=time.time()
+        res = self.getDescendentsByTypeRecursively(target_type, first=first)
+        #t1=time.time()
+        #res2 = self.getDescendentsByTypeRecursively(target_type, first=False)
+        #t2=time.time()
+        #res2 = self.getDescendentsByTypeIteratively(target_type)
+        #res3 = self.getByGnosisXPath(self,target_type)
+        #t2=time.time()
+        #print target_type,  (t2-t1) , (t1-t0)
         '''
         if collections.Counter(res) != collections.Counter(res2):
             print target_type
             print 'getDescendentsByTypeRecursively:', res
-            print 'getDescendentsByTypeIteratively:', res2
+            #print 'getDescendentsByTypeIteratively:', res2
+            #print 'getDescendentsByTypeGnosis:', res3
+            print 'getDescendentsByTypeFalse:', res2
             pdb.set_trace()        
         '''
-        return res2
+        return res
+        
+    def getByGnosisXPath(self, target_type):
+        return list(gnosis.xml.objectify.utils.XPath(self,'//'+target_type))
+        
     
     def getDescendentsByTypeIteratively(self, target_type):
         """
@@ -187,12 +202,13 @@ class XTSM_core(object):
                 for i, node in enumerate(nodes[:]):
                 #iterates over a copy of the nodes list
                     if hasattr(node, 'get_tag'):
-                        if(node.get_tag() == target_type ):#or hasattr(node,target_type)
+                        #if(node.get_tag() == target_type ):#or hasattr(node,target_type)#slow CP 2015-01-20
+                        if(type(node).__name__.split('_XO_')[-1] == target_type):#or hasattr(node,target_type)                            
                             results.extend(node)
                     if hasattr(node, 'getChildNodes'):
                         newNodes = node.getChildNodes()
                         nodes.extend(newNodes)
-                    nodes.remove(node)
+                    nodes.remove(node)#slow
             return results
             
         decendents = iterativeChildren(self.getChildNodes(),target_type)
@@ -490,10 +506,19 @@ class XTSM_core(object):
 
     def write_xml(self, out=None, tablevel=0, whitespace='True', CDATA_ESCAPE=False):
         """
-        Serialize an _XO_ object back into XML to stream out; if no argument 'out' supplied, returns string
-        If tablevel is supplied, xml will be indented by level.  If whitespace is set to true, original whitespace
-        will be preserved.
+        Serialize an _XO_ object back into XML to stream out; if no argument
+        'out' supplied, returns string.
+        If tablevel is supplied, xml will be indented by level.  If whitespace
+        is set to true, original whitespace will be preserved.
         """
+        #t0=time.time()
+        '''
+        if hasattr(self, '_write_xml_lookup') and contents of self have not changed...:
+            if self._write_xml_lookup != None:
+                return self._write_xml_lookup
+            else:
+                return None
+        '''
         global XO_IGNORE
         mode=False
         newline=False
@@ -507,7 +532,8 @@ class XTSM_core(object):
         # attribute output; ignore any listed in global XO_IGNORE
         for attr in self.__dict__:
             if (isinstance(self.__dict__[attr], basestring)):
-                if (attr in XO_IGNORE): continue 
+                if (attr in XO_IGNORE):
+                    continue 
                 out.write(' ' + attr + '="' + self.__dict__[attr] + '"')
         out.write('>')
         # write nodes in original order using _XO_ class _seq list
@@ -519,7 +545,8 @@ class XTSM_core(object):
                             pass
                         else: 
                             out.write(node)                            
-                    else: out.write(node)
+                    else:
+                        out.write(node)
                 else:
                     if firstsub:
                         out.write("\n")
@@ -530,11 +557,16 @@ class XTSM_core(object):
         if newline:
             out.write(tablevel*"  ")
         out.write("</%s>\n" % self.get_tag())
-        # if mode is stringy, return string        
+        # if mode is stringy, return string
+        #t1 = time.time()
+        #if t1-t0 > 5/10000: 
+        #    print self.__parent__, t1-t0        
         if mode:
             nout=out.getvalue()
             out.close()
+            #self._write_xml_lookup = nout
             return nout
+        #self._write_xml_lookup = None
         return None
         
     def countDescendents(self,tagname):
@@ -588,10 +620,12 @@ class ClockPeriod(gnosis.xml.objectify._XO_,XTSM_core):
 class body(gnosis.xml.objectify._XO_,XTSM_core):
     def parseActiveSequence(self):
         """
-        finds/parses SequenceSelector node, identifies active Sequence, initiates subnodeParsing,
-        constructs control arrays, returns the ParserOutput node, which is also attached as a 
-        subnode to the active Sequence node        
+        finds/parses SequenceSelector node, identifies active Sequence,
+        initiates subnodeParsing, constructs control arrays, returns the
+        ParserOutput node, which is also attached as a subnode to the active
+        Sequence node        
         """
+        if DEBUG: print "class body, func parseActiveSequence"
         try:
             if self.SequenceSelector:
                 if not hasattr(self.SequenceSelector[0],'current_value'): 
@@ -617,9 +651,10 @@ class body(gnosis.xml.objectify._XO_,XTSM_core):
 
 class TimingProffer():
     """
-    A helper class defined to aid XTSM parsing; holds data about request for timing events
-    from edges, intervals... Provides methods for compromise timing when requests
-    are conflictory or require arbitration of timing resolution, etc...
+    A helper class defined to aid XTSM parsing; holds data about request for
+    timing events from edges, intervals... Provides methods for compromise
+    timing when requests are conflictory or require arbitration of timing
+    resolution, etc...
     """
     data={}  # a dictionary to be filled with arrays for each type of timing request: edge,interval, etc...
     valid_entries={'Edge':0,'Interval':0,'Sample':0} # will hold the number of elements in the array which are currently valid data
@@ -710,56 +745,108 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         constructs the timing control array for a timingGroup in given sequence
         sequence should already have collected TimingProffers
         """
+        if DEBUG: print "class ControlArray, func construct"
         
         TIMING=False
         timing=[]      
         if TIMING: t0=time.time()
         
         # bind arguments to object
-        self.sequence=sequence
-        self.channelMap=channelMap
-        self.tGroup=tGroup
-        del sequence,channelMap,tGroup
+        self.sequence = sequence
+        self.channelMap = channelMap
+        self.tGroup = tGroup
+        del sequence, channelMap, tGroup
         
         
         # get data about the channel, sequence and its clocking channel
         self.get_biographics()
-        # locate the edges and intervals for this timing group, generated explicitly or by clocking requests                
-        if TIMING: timing.append(("biographics FOR GROUP "+str(self.tGroup),time.time()))        
+        if TIMING: timing.append(("biographics FOR GROUP "+str(self.tGroup),time.time()))  
+        
+        # locate the edges and intervals for this timing group, generated explicitly or by clocking requests
         self.get_edgeSources()
-        if TIMING: timing.append(("get_edge_sources",time.time()))                
+        if TIMING: timing.append(("get_edge_sources",time.time()))
+            
+        #Need to fix problem with duplicate edge values at different times.
+        #Only considering digital Boards. Possible problems may occur with
+        #intervals on digital boards and any further edges. CP 2015-01-21
+        if self.ResolutionBits == 1:
+            ge_T = numpy.transpose(self.groupEdges)#SPEEDUP Target - Transposes necessary? CP 2015-01-20
+            sort_ge_T = ge_T[numpy.lexsort((ge_T[:, 2], ge_T[:, 1]))]
+            sort_ge = numpy.transpose(sort_ge_T)
+            
+            #Trues for if the consequtive edges have the same channel
+            channel_equal = sort_ge[1,1:-1]==sort_ge[1,0:-2]
+            #Trues for if the consequtive edges have the same values
+            times_equal = sort_ge[3,1:-1]==sort_ge[3,0:-2]
+            #These are the consequtive edges that have the same value at different times.
+            duplicates = numpy.logical_and(channel_equal, times_equal)
+            remove =  sort_ge_T[numpy.where(duplicates)[0]+1]
+            print remove
+            #if len(check_dups) > 0 or len(remove) > 0:
+            if len(duplicates) > 0:
+                #print "CHECK:!!", (check_dups == remove).all()
+                print "WARNING! --- Needed to remove duplicate edges:"
+                print "         --- Timing Group:", self.tGroupNode.Name.PCDATA
+                print "         ---", self.tGroupNode.Description.PCDATA
+                for dup in sort_ge_T[numpy.where(duplicates)[0]+1]:
+                    fast_tag = dup[4]
+                    #pdb.set_trace()
+                    node = self.tGroupNode.getOwnerXTSM().body.Sequence._fasttag_dict[fast_tag]
+                    node.addAttribute("parser_warning","edge discarded as duplicate")
+                    #chan_node = self.tGroupNode.getItemByFieldValue('Channel',
+                    #                                                'TimingGroupIndex',
+                    #                                                 dup[1])
+                    #print 
+                    #print "         --- ChannelName:", chan_node.ChannelName.PCDATA
+                    print "         --- OnChannel:", node.OnChannel.PCDATA
+                    print "         --- Time:", dup[3]
+                self.groupEdges = numpy.delete(sort_ge, numpy.where(duplicates)[0]+1, 1)
+                     
         # coerce explicit timing edges to a multiple of the parent clock's timebase
         self.coerce_explicitEdgeSources() #LRJ 3-7-2014, edge coercion will be done inside of construct_denseT so that clockers and outputs agree on times.
         if TIMING: timing.append(("coerce_explicitEdgeSources",time.time()))        
-        # create a list of all times an update is needed for this timing group   
 
-        #if self.tGroup == 2:
-        #    pdb.set_trace()  
+        # create a list of all times an update is needed for this timing group   
         self.construct_denseT()
-        if TIMING: timing.append(("construct_denseT",time.time()))        
-        # clockstring management: save the current timinggroup's clocking string to the ParserOutput node,
-        # also find and eventually insert clocking strings for other timinggroups which should occur on a channel in the current timinggroup
-        if not hasattr(self.sequence.ParserOutput,"clockStrings"): self.sequence.ParserOutput.clockStrings={}
-        self.sequence.ParserOutput.clockStrings.update({self.tGroup:(self.denseT/self.parentgenresolution).astype('uint64')})
-        if TIMING: timing.append(("clock strings updates",time.time()))        
-        if self.direction!='INPUT':
+        if TIMING: timing.append(("construct_denseT",time.time()))  
+        
+        '''
+        clockstring management: save the current timinggroup's clocking
+        string to the ParserOutput node, also find and eventually insert
+        clocking strings for other timinggroups which should occur on a
+        channel in the current timinggroup
+        '''
+        if not hasattr(self.sequence.ParserOutput,"clockStrings"):
+            self.sequence.ParserOutput.clockStrings = {}
+        _tgroup = (self.denseT/self.parentgenresolution).astype('uint64')
+        self.sequence.ParserOutput.clockStrings.update({self.tGroup: _tgroup})
+        if TIMING: timing.append(("clock strings updates",time.time())) 
+        
+        if self.direction != 'INPUT':
+            if DEBUG: print "self.direction != 'INPUT'"
+            
             # sort edges and intervals by group index (channel), then by (start)time
             self.sort_edgeSources()
-            if TIMING: timing.append(("sort_edgeSources",time.time()))        
+            if TIMING: timing.append(("sort_edgeSources",time.time()))
+            
             # create a channelData object for every channel; accumulates all edges for each channel
-            self.channels={channum:channelData(self,channum) for channum in range(self.numchan)} 
-            if TIMING: timing.append(("channel creations",time.time()))        
+            self.channels = {channum:channelData(self,channum) for channum in range(self.numchan)} 
+            if TIMING: timing.append(("channel creations",time.time()))       
+            
             # HERE WE NEED TO CONVERT FLAGGED DIGITAL BOARDS INTO SINGLE CHANNEL INTEGER REPRESENTATIONS
-            if self.ResolutionBits==1 and hasattr(self.tGroupNode,'ParserInstructions'):
+            if self.ResolutionBits == 1 and hasattr(self.tGroupNode,'ParserInstructions'):
                 if self.tGroupNode.ParserInstructions[0].get_childNodeValue_orDefault('RepresentAsInteger','yes').lower() == 'yes':
-                    self.repasint=True
+                    self.repasint = True
                     self.RepresentAsInteger()
                     if TIMING: timing.append(("rep as int",time.time()))        
 
             # Break these into channel control strings - first determine necessary size and define empty array
         else: 
+            if DEBUG: print "self.direction = 'INPUT'"
+            
             self.channels={channum:channelData(self,channum) for channum in range(self.numchan)}
-            if TIMING: timing.append(("channel creations",time.time()))        
+            if TIMING: timing.append(("channel creations",time.time()))   
+            
         self.TimingStringConstruct()
         if TIMING: timing.append(("timing string construct",time.time()))        
         
@@ -776,6 +863,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         """
         get biographical data about the timing group: number of channels, its clock period, whether it is a delaytrain
         """
+        if DEBUG: print "class ControlArray, func get_biographics"
                 
         self.tGroupNode=self.channelMap.getItemByFieldValue('TimingGroupData','GroupNumber',str(self.tGroup))
         self.clockgenresolution=numpy.float64(self.channelMap.tGroupClockResolutions[self.tGroup])
@@ -824,23 +912,28 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         """
         gets all sources of timing edges (Edges, Intervals) for this group from the timing Proffer object
         """
+        if DEBUG: print "class ControlArray, func get_edgeSources"
        
         # Find the edge that belongs to this timinggroup        
         if len(self.sequence.TimingProffer.data['Edge'])>0:
             self.groupEdges=(self.sequence.TimingProffer.data['Edge'])[(((self.sequence.TimingProffer.data['Edge'])[:,0]==int(self.tGroup)).nonzero())[0],]
         else: self.groupEdges=self.sequence.TimingProffer.data['Edge']
+        
         # Find the interval that belongs to this timinggroup       
         if len(self.sequence.TimingProffer.data['Interval'])>0:
             self.groupIntervals=(self.sequence.TimingProffer.data['Interval'])[(((self.sequence.TimingProffer.data['Interval'])[:,0]==int(self.tGroup)).nonzero())[0],]
         else: self.groupIntervals=self.sequence.TimingProffer.data['Interval']
+        
         # Find the samples that belong to this timinggroup       
         if len(self.sequence.TimingProffer.data['Sample'])>0:
             self.groupSamples=(self.sequence.TimingProffer.data['Sample'])[(((self.sequence.TimingProffer.data['Sample'])[:,0]==int(self.tGroup)).nonzero())[0],]
         else: self.groupSamples=self.sequence.TimingProffer.data['Sample']
+        
         # transpose to match IDL syntax
         self.groupEdges=self.groupEdges.transpose().astype(numpy.float64) # NDG 051714 to float64
         self.groupIntervals=self.groupIntervals.transpose().astype(numpy.float64) # NDG 051714 to float64
         self.groupSamples=self.groupSamples.transpose().astype(numpy.float64) # NDG 051714 to float64
+        
         # now check if any channels in this timingGroup are claimed as clocks by other timingGroups
         self.cStrings={}  # dictionary of clock times for each channel that clocks another timingGroup
         for channel in range(self.numchan):
@@ -855,6 +948,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         coerce explicit timing edges to a multiple of the parent clock's timebase
         (using the parent's resolution allows us to subresolution step.)
         """
+        if DEBUG: print "class ControlArray, func coerce_explicitEdgeSources"
         self.lasttimecoerced=numpy.float64(numpy.ceil(numpy.float64(self.seqendtime)/numpy.float64(self.clockgenresolution)))*numpy.float64(self.clockgenresolution)    
 
 
@@ -864,6 +958,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         this could arise from an explicitly defined edge, an update in an interval,
         or from a clocking pulse needed by another channel 
         """
+        if DEBUG: print "class ControlArray, func construct_denseT"
         
         BENCHMARK=False
         if BENCHMARK: 
@@ -1178,10 +1273,13 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
 
     def RepresentAsInteger(self):
         """
-        Replaces an N-channel digital group intedge with a single-channel log_2(N)-bit intedge list
-        This algorithm assumes the group is digital, channel intedges have no duplications, 
-        and that the final edges all coincide - THIS LAST PART IS PROBLEMATIC
+        Replaces an N-channel digital group intedge with a single-channel
+        log_2(N)-bit intedge list.
+        This algorithm assumes the group is digital, channel intedges have no
+        duplications, and that the final edges all coincide
+        - THIS LAST PART IS PROBLEMATIC
         """
+        if DEBUG: print "class ControlArray, func RepresentAsInteger"
 
         BENCHMARK = False  # setting true benchmarks and compares output of this routine to the old one.
 
@@ -1278,6 +1376,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         in memory, then calling ChannelData elements to construct and fill
         their fragments
         """
+        if DEBUG: print "class ControlArray, func TimingStringConstruct"
         # first reserve a place for the timinstring in memory        
         # calculate the total number of edges on the timingGroup
         if self.direction=='INPUT': 
@@ -1465,45 +1564,29 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
 
 class channelData():
     """
-    subclass of ControlArray to store individual channel data
-    
-    WARNING: the code that follows will make you cry;
-        a safety pig is provided below for your benefit.
-        
-                                 _
-     _._ _..._ .-',     _.._(`))
-    '-. `     '  /-._.-'    ',/
-       )         \            '.
-      / _    _    |             \
-     |  a    a    /              |
-     \   .-.                     ;  
-      '-('' ).-'       ,'       ;
-         '-;           |      .'
-            \           \    /
-            | 7  .__  _.-\   \
-            | |  |  ``/  /`  /
-           /,_|  |   /,_/   /
-              /,_/      '`-'
-              
+    subclass of ControlArray to store individual channel data        
     """
     def __init__(self,parent,channelnumber,times=None,values=None):
-        self.channel=channelnumber
-        self.parent=parent
+        self.channel = channelnumber
+        self.parent = parent
                
-        if times==None:
-            self.clockchans=[parent.channelMap.isClock(parent.tGroup,x) for x in range(parent.numchan)] #LRJ 10-31-2013 create list of clock channels in the active timing group. False for non-clocker channels, clocked timing group number for clock channels
-            self.isclock=parent.channelMap.isClock(parent.tGroup,self.channel)
-            self.isinput=parent.channelMap.isInput(parent.tGroup,self.channel)            
+        if times == None:
+            self.clockchans = [parent.channelMap.isClock(parent.tGroup,x) for x in range(parent.numchan)] #LRJ 10-31-2013 create list of clock channels in the active timing group. False for non-clocker channels, clocked timing group number for clock channels
+            self.isclock = parent.channelMap.isClock(parent.tGroup,self.channel)
+            self.isinput = parent.channelMap.isInput(parent.tGroup,self.channel)            
             # find the channel for data, get biographicals                
-            self.chanObj=parent.channelMap.getChannel([parent.tGroup,self.channel])   # find the channel
-            if hasattr(self.chanObj,'InitialValue'): self.initval=self.chanObj.InitialValue[0].parse()
-            else: self.initval=0
+            self.chanObj = parent.channelMap.getChannel([parent.tGroup,self.channel])   # find the channel
+            if hasattr(self.chanObj,'InitialValue'):
+                self.initval = self.chanObj.InitialValue[0].parse()
+            else:
+                self.initval = 0
             if hasattr(self.chanObj,'HoldingValue'): 
-                if (self.chanObj.HoldingValue[0].parse()!= None):
-                    self.holdingval=self.chanObj.HoldingValue[0].parse()
+                if (self.chanObj.HoldingValue[0].parse() !=  None):
+                    self.holdingval = self.chanObj.HoldingValue[0].parse()
                 else:
-                    self.holdingval=0
-            else: self.holdingval=0
+                    self.holdingval = 0
+            else:
+                self.holdingval = 0
             
              
             # retrieve intedges
@@ -1511,10 +1594,12 @@ class channelData():
                 # if this is a clock channel, take the clock edges if already constructed or construct from clockstring
                 #t0=time.time()
                 try: 
-                    if parent.dTrain!=True: self.intedges=self.clock_harvest(parent.cEdges[self.channel],parent.denseT,chan_num=self.channel)
-                    else: self.intedges=parent.cEdges[self.channel]
+                    if parent.dTrain != True:
+                        self.intedges = self.clock_harvest(parent.cEdges[self.channel],parent.denseT,chan_num=self.channel)
+                    else:
+                        self.intedges = parent.cEdges[self.channel]
                 except (AttributeError,KeyError):
-                    self.intedges=parent.generate_clockEdges(parent.cStrings[self.channel],self.chanObj,self.channel)
+                    self.intedges = parent.generate_clockEdges(parent.cStrings[self.channel],self.chanObj,self.channel)
                 #t1=time.time()
                 #print "clock harvest: ", t1-t0
 
@@ -1524,18 +1609,22 @@ class channelData():
                 #t0=time.time()
                 try: 
                     #replace times in groupEdges with the nearest coerced time in denseT using the edge_harvest method of ControlArray
-                    edgesonchannel=parent.groupEdges[:,(parent.groupEdges[1,:]==self.channel).nonzero()[0]]                    
-                    self.intedges=numpy.empty((5L,edgesonchannel.shape[1]))                    
+                    edgesonchannel = parent.groupEdges[:,(parent.groupEdges[1,:]==self.channel).nonzero()[0]]                    
+                    self.intedges = numpy.empty((5L,edgesonchannel.shape[1]))                    
                     for i in range(edgesonchannel.shape[1]):
-                        self.intedges[:,i]=self.parent.sequence._fasttag_dict[edgesonchannel[4,i]].parse_harvest(parent.denseT)
-                except IndexError: self.intedges=numpy.empty((5,0))
-                try: self.chanIntervals=parent.groupIntervals[:,(parent.groupIntervals[1,:]==self.channel).nonzero()[0]]
-                except IndexError: self.chanIntervals=numpy.empty((7,0))
+                        self.intedges[:,i] = self.parent.sequence._fasttag_dict[edgesonchannel[4,i]].parse_harvest(parent.denseT)
+                except IndexError:
+                    self.intedges = numpy.empty((5,0))
+                try: self.chanIntervals = parent.groupIntervals[:,(parent.groupIntervals[1,:]==self.channel).nonzero()[0]]
+                except IndexError:
+                    self.chanIntervals = numpy.empty((7,0))
                 for intervalInd in self.chanIntervals[6,]:
                    # locate the next interval, reparse for denseT and append
-                   interval=parent.sequence._fasttag_dict[intervalInd]
-                   try: self.intedges=numpy.hstack((self.intedges,interval.parse_harvest(parent.denseT)))
-                   except: pdb.set_trace()
+                   interval = parent.sequence._fasttag_dict[intervalInd]
+                   try:
+                       self.intedges = numpy.hstack((self.intedges,interval.parse_harvest(parent.denseT)))
+                   except:
+                       pdb.set_trace()
                 #t1=time.time()
                 #print "harvest: ", t1-t0
 
@@ -1544,28 +1633,28 @@ class channelData():
                 # add first and last edge if necessary
                 if self.intedges.shape[1]>0:
                     if self.intedges[2,0]!=0:
-                        self.intedges=numpy.hstack([numpy.array([[parent.denseT.searchsorted(parent.channelMap.hardwaretime),self.channel,parent.channelMap.hardwaretime,self.initval,-1]]).transpose(),self.intedges])
-                    if self.intedges[2,-1]!=parent.lasttimecoerced:
-                        self.intedges=numpy.hstack([self.intedges,numpy.array([[parent.denseT.searchsorted(parent.lasttimecoerced),self.channel,parent.lasttimecoerced,self.holdingval,-1]]).transpose()])
+                        self.intedges = numpy.hstack([numpy.array([[parent.denseT.searchsorted(parent.channelMap.hardwaretime),self.channel,parent.channelMap.hardwaretime,self.initval,-1]]).transpose(),self.intedges])
+                    if self.intedges[2,-1] != parent.lasttimecoerced:
+                        self.intedges = numpy.hstack([self.intedges,numpy.array([[parent.denseT.searchsorted(parent.lasttimecoerced),self.channel,parent.lasttimecoerced,self.holdingval,-1]]).transpose()])
                 else: 
-                    self.intedges=numpy.hstack([numpy.array([[parent.denseT.searchsorted(parent.channelMap.hardwaretime),self.channel,parent.channelMap.hardwaretime,self.initval,-1]]).transpose(),self.intedges]) 
-                    self.intedges=numpy.hstack([self.intedges,numpy.array([[parent.denseT.searchsorted(parent.lasttimecoerced),self.channel,parent.lasttimecoerced,self.holdingval,-1]]).transpose()])
+                    self.intedges = numpy.hstack([numpy.array([[parent.denseT.searchsorted(parent.channelMap.hardwaretime),self.channel,parent.channelMap.hardwaretime,self.initval,-1]]).transpose(),self.intedges]) 
+                    self.intedges = numpy.hstack([self.intedges,numpy.array([[parent.denseT.searchsorted(parent.lasttimecoerced),self.channel,parent.lasttimecoerced,self.holdingval,-1]]).transpose()])
                 #t1=time.time()
                 #print "first/last edge insert: ", t1-t0
 
 
 
-                if self.parent.ResolutionBits==1:         # Only remove the repeat values for digital Channel , JZ 08/13/14  
-                    self.intedges=numpy.delete(self.intedges,numpy.where(self.intedges[3,:-1]==self.intedges[3,1:])[0]+1,axis=1)            
+                if self.parent.ResolutionBits == 1:         # Only remove the repeat values for digital Channel , JZ 08/13/14  
+                    self.intedges = numpy.delete(self.intedges,numpy.where(self.intedges[3,:-1]==self.intedges[3,1:])[0]+1,axis=1)            
             
         else:
             #t0=time.time()
-            self.intedges=numpy.empty((5,times.shape[0]),dtype=numpy.float64)
-            self.intedges[4,:]=-1
-            self.intedges[1,:]=self.parent.tGroup
-            self.intedges[0,:]=times
-            self.intedges[2,:]=self.parent.denseT
-            self.intedges[3,:]=values
+            self.intedges = numpy.empty((5,times.shape[0]),dtype=numpy.float64)
+            self.intedges[4,:] =-1
+            self.intedges[1,:] = self.parent.tGroup
+            self.intedges[0,:] = times
+            self.intedges[2,:] = self.parent.denseT
+            self.intedges[3,:] = values
             #t1=time.time()
         self.intedges=self.intedges[:,self.intedges[2,:].argsort()]  # added 10/8/14 NDG,JZ,CP  to solve missing edge elements which follow an interval in source XTSM
 #        try: 
@@ -1577,6 +1666,7 @@ class channelData():
         """
         Returns an edge array entry with coerced times from denseT that are nearest to an edge's requested time
         """
+        if DEBUG: print "class channelData, func clock_harvest"
         
         NEW_VERSION=True        
         
@@ -1600,6 +1690,7 @@ class channelData():
         Applies XTSM-declared tranformations to the channel output, including declared
         calibrations, min's, and max's, and scales and offsets into integer ranges
         """
+        if DEBUG: print "class channelData, func apply_channelTransforms"
         try: 
             if not (self.chanObj.Calibration[0].PCDATA == '' or self.chanObj.Calibration[0].PCDATA == None):
                 V=self.intedges[:,3] # the variable V can be referenced in channel calibration formula (eval'd next line)
@@ -1621,6 +1712,7 @@ class channelData():
         inserts the timingstring fragment for this channel into the parent ControlArray's existing timingstring at position tsptr;
         also enforces min and max values, channel calibration expressions, and scales to byte-form (these should be split to ancillary methods for maintainability)
         """
+        if DEBUG: print "class channelData, func timingstring_construct"
         length=self.intedges.shape[1]
         # first a header denoting this channel's length in bytes as 4bytes, LSB leading
         self.parent.timingstring[self.parent.tsptr:(self.parent.tsptr+4)]=numpy.asarray([int(length*(self.parent.bytesperrepeat+self.parent.bytespervalue))], dtype='<u4').view('u1')
@@ -1658,8 +1750,11 @@ class channelData():
 class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
     def collectTimingProffers(self):
         """
-        Performs a first pass through all edges and intervals, parsing and collecting all ((Start/ /End)time/value/channel) entries necessary to arbitrate clocking edges
+        Performs a first pass through all edges and intervals, parsing and
+        collecting all ((Start/ /End)time/value/channel) entries necessary to
+        arbitrate clocking edges
         """        
+        if DEBUG: print "class Sequence, func collectTimingProffers"
         self.TimingProffer=TimingProffer(self)
         if (not hasattr(self,'guid_lookup')): 
             self.generate_guid()            
@@ -1675,6 +1770,7 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
         top-level algorithm for parsing a sequence;
         equivalent to XTSM_parse in IDL code.
         """
+        if DEBUG: print "class Sequence, func parse"
         
         # replicate subsequences with iterations specified (also strip any previously generated replications)
         for subseq in self.getDescendentsByType("SubSequence"):
@@ -1693,7 +1789,7 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
             stats.print_stats()
             '''
         # get the channelmap node from the XTSM object.
-        cMap=self.getOwnerXTSM().getDescendentsByType("ChannelMap")[0]
+        cMap=self.getOwnerXTSM().head.getDescendentsByType("ChannelMap", first=True)[0]
       
         # Add undecleared channels to the ChannelMap node. The following line causes a problem
         #in the postparse step. Since all the undecleared channels are created as nonclock channels, even that the
@@ -1712,13 +1808,14 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
         
         # collect requested timing edges, intervals, etc...
         self.collectTimingProffers()
+        if DEBUG: print "Finished Collecting Timing Proffers"
         #pdb.set_trace()
         # create an element to hold parser output
         pOutNode=self.insert(ParserOutput())
         # step through timing groups, starting from lowest on heirarchy
         #sorted (channelHeir, key=channelHeir.__getitem__) returns a list of groupnumber in the order of clocklevel, from low to high
         for tgroup in sorted(channelHeir, key=channelHeir.__getitem__):
-            cA=pOutNode.insert(ControlData()) # create a control array node tagged with group number
+            cA = pOutNode.insert(ControlData()) # create a control array node tagged with group number
             cA.insert(GroupNumber().set_value(tgroup))
             cA.insert(ControlArray().construct(self,cMap,tgroup))
         return
@@ -1727,7 +1824,8 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
         """
         gets the starttime for the sequence from XTSM tags(a parsed 'StartTime' tag). This method is added on 12/12/13 by JZ.
         """
-        cMap=self.getOwnerXTSM().getDescendentsByType("ChannelMap")[0]
+        if DEBUG: print "class Sequence, func get_starttime"
+        cMap=self.getOwnerXTSM().head.getDescendentsByType("ChannelMap", first=True)[0]
         ht=cMap.getHardwaretime()        
         
         if hasattr(self,'StartTime'):
@@ -1745,6 +1843,7 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
         of 100s. Leaving the EndTime node blank will make the endtime equal to the 
         maximum requested time plus twice the resolution of the slowest board.
         """
+        if DEBUG: print "class Sequence, func get_endtime"
         maxlasttime=100000 # a default maximum sequence length in ms!!! 
         if hasattr(self,'EndTime'):
             #st=self.get_starttime()
@@ -1764,7 +1863,7 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
                     try: sam2et=self.TimingProffer.data['Sample'][:,3].max()
                     except ValueError: sam2et=0
 
-                    self.endtime=max(edgeet,int1et,int2et,sam1et,sam2et)+2*self.getOwnerXTSM().getDescendentsByType("ChannelMap")[0].hardwaretime
+                    self.endtime=max(edgeet,int1et,int2et,sam1et,sam2et)+2*self.getOwnerXTSM().head.getDescendentsByType("ChannelMap", first=True)[0].hardwaretime
                 else:               
                     self.endtime = maxlasttime
                     self.EndTime[0].addAttribute('parser_error','Invalid value: Coerced to '+str(maxlasttime)+' ms.')
@@ -1868,6 +1967,7 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
         Performs a first pass through all edges and intervals, parsing and collecting all ((Start/ /End)time/value/channel) entries 
         necessary to arbitrate clocking edges
         """
+        if DEBUG: print "class SubSequence, func collectTimingProffers"
         # Find the subsequence starttime and pass it to the subnode edge time,  interval and subsequence starttime, JZ on 12/12/13
         
         starttime=self.get_starttime()
@@ -1890,6 +1990,7 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
         """
         gets the starttime for the subsequence from XTSM tags(a parsed 'StartTime' tag) and add the starttime of its parent, return the absolute starttime . This method is added on 12/12/13 by JZ.
         """
+        if DEBUG: print "class SubSequence, func get_starttime"
         if hasattr(self,'StartTime'):
             if DEBUG: print self.Name.PCDATA
             #pdb.set_trace()
@@ -1904,6 +2005,7 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
         looks for "Iterations" subelement of SubSequence, and creates a copy
         for each iteration.  
         """
+        if DEBUG: print "class SubSequence, func replicate"
         self.dereplicate()  # remove any previously generated replications
         if not hasattr(self,"Iterate"):
             return
@@ -1911,10 +2013,18 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
         progenitor_time = self.StartTime[0].parse()
         # create a container subsequence for the iterations of the progenitor subsequence
         container_subsequence = SubSequence()
-        namer = copy.deepcopy(self.Name[0])
+        #pdb.set_trace()
+        
+        #namer = copy.deepcopy(self.Name[0])
+        #gnosis.xml.objectify.make_instance
+        namer = gnosis.xml.objectify.make_instance(self.Name[0].write_xml())#cp 2015-01-20
+        
         namer.set_value("_iterations_of_" + progenitor_name, REWRITE_NDG=True)
         container_subsequence.insert(namer, pos="LAST")
-        st = copy.deepcopy(self.StartTime[0])
+        
+        #st = copy.deepcopy(self.StartTime[0])
+        st = gnosis.xml.objectify.make_instance(self.StartTime[0].write_xml())#cp 2015-01-20
+        
         st.set_value(u"0", REWRITE_NDG=True)
         container_subsequence.insert(st)
         # create the iterated subsequences
@@ -1927,7 +2037,10 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
                 iters.addAttribute("parser_error", msg)
             iters_num = int(iters.Repetitions[0].parse())
             for it in range(iters_num):
-                newsubseq = copy.deepcopy(self)  # create a copy of the current subsequence
+                
+                #newsubseq = copy.deepcopy(self)  # create a copy of the current subsequence
+                newsubseq = gnosis.xml.objectify.make_instance(self.write_xml())#cp 2015-01-20
+        
                 newsubseq.remove_all("Iterate")  # prevent an endless replication loop (wouldn't happen anyway based on calling sequence)
                 #newsubseq.remove_all("Name") 
                 #newsubseq.insert(Name("_iter_"+str(it)+"_"+progenitor_name))
@@ -1947,6 +2060,7 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
         """
         removes the replicated copies of an iterated subsequence
         """
+        if DEBUG: print "class SubSequence, func dereplicate"
         if not hasattr(self,"SubSequence"): return
         for subseq in self.SubSequence:
             subseq.dereplicate()
@@ -2049,8 +2163,12 @@ class ChannelMap(gnosis.xml.objectify._XO_,XTSM_core):
         results are stored in the object as attribute tGroupClockLevels,
         which is a dictionary of (timingGroup# : timingGroupLevel) pairs
         """         
-        
-        tgroups=self.getDescendentsByType('TimingGroupData')
+        if hasattr(self, '_timing_group_lookuptable'):#getDescendents is slow CP 2015-01-20
+            tgroups = self._timing_group_lookuptable
+        else:
+            self._timing_group_lookuptable = self.getDescendentsByType('TimingGroupData')
+            tgroups = self._timing_group_lookuptable
+        #tgroups=self.getDescendentsByType('TimingGroupData')#getDescendents is slow CP 2015-01-20
         tGroupClockLevels=numpy.zeros(len(tgroups),numpy.byte)
         bumpcount=1
         while bumpcount!=0:
@@ -2073,7 +2191,8 @@ class ChannelMap(gnosis.xml.objectify._XO_,XTSM_core):
                             if tgroups[k].GroupNumber[0].PCDATA==clockgroup: break
                         tGroupClockLevels[k]=maxlevel+1
                         bumpcount+=1
-        tGroupNumbers = [int(a.GroupNumber.PCDATA) for a in self.getDescendentsByType('TimingGroupData')]
+        #tGroupNumbers = [int(a.GroupNumber.PCDATA) for a in self.getDescendentsByType('TimingGroupData')]#CP 2015-01-20 Slow
+        tGroupNumbers = [int(a.GroupNumber.PCDATA) for a in tgroups]
         self.tGroupClockLevels = dict(zip(tGroupNumbers,tGroupClockLevels)) # dictionary of tg#:tgLevel pairs
         return self.tGroupClockLevels
         
@@ -2143,7 +2262,12 @@ class ChannelMap(gnosis.xml.objectify._XO_,XTSM_core):
         """
         # First for each TimingGroupData in the channelmap, find its GroupNumber and Channelcount. Count how many channels are in this timing group. 
         # First find the number of timing groups in the channelmap.
-        timinggroup=self.getDescendentsByType('TimingGroupData')
+        if hasattr(self, '_timing_group_lookuptable'):#getDescendents is slow CP 2015-01-20
+            timinggroup = self._timing_group_lookuptable
+        else:
+            self._timing_group_lookuptable = self.getDescendentsByType('TimingGroupData')
+            timinggroup = self._timing_group_lookuptable
+        #timinggroup=self.getDescendentsByType('TimingGroupData')#getDescendents is slow CP 2015-01-20
         channel=self.getDescendentsByType('Channel')
         
         #The following define all the missing channels and assign default initial and holding values for them, including the channels on the PFGA board.
@@ -2199,8 +2323,10 @@ class Edge(gnosis.xml.objectify._XO_,XTSM_core):
         self.channel=c        
         if (not hasattr(self,'guid')):
             self.generate_guid(1)
-        if hasattr(self,'_fasttag'): return [tg,c,t,v,self._fasttag]
-        else: return [tg,c,t,v,-1]
+        if hasattr(self,'_fasttag'):
+            return [tg,c,t,v,self._fasttag]
+        else:
+            return [tg,c,t,v,-1]
         
     def parse_harvest(self,dense_time_array):
         '''
@@ -2228,7 +2354,8 @@ class Interval(gnosis.xml.objectify._XO_,XTSM_core):
     scopePeers=[['Channel','ChannelName','OnChannel']]
     def parse_proffer(self,startTime):
         """
-        returns parsed values for [[timinggroup,channel,starttime,endttime,Vresolution,Tresolution,edge]]
+        returns parsed values for
+        [[timinggroup,channel,starttime,endttime,Vresolution,Tresolution,edge]]
         times will be returned relative to the provided (numeric) start-time
         unfinished!
         """
@@ -2244,8 +2371,10 @@ class Interval(gnosis.xml.objectify._XO_,XTSM_core):
         self.c=c
         if (not hasattr(self,'guid')):
             self.generate_guid(1)
-        if hasattr(self,'_fasttag'): return [tg,c,st,et,vres,tres,self._fasttag]
-        else: return [tg,c,st,et,vres,tres,-1]
+        if hasattr(self,'_fasttag'):
+            return [tg,c,st,et,vres,tres,self._fasttag]
+        else:
+            return [tg,c,st,et,vres,tres,-1]
         
     def expected_samples(self, dense_time_array):
         """
@@ -3205,6 +3334,70 @@ class Parameter(gnosis.xml.objectify._XO_,XTSM_core):
             self.insert(gnosis.xml.objectify._XO_Value(str(value)))
         return None
 
+'''
+class XTSM_Element(gnosis.xml.objectify._XO_,XTSMobjectify.XTSM_core):
+    pass
+'''
+
+class Analysis_Space_Core(XTSM_core):
+    def __init__(self, name=None, value=None):
+        XTSM_core.__init__(self)
+    """
+    Default Class for all elements appearing in an XTSM Analysis_Space tree; contains generic methods
+    for traversing the XTSM tree-structure, inserting and editing nodes and attributes,
+    writing data out to XML-style strings, and performing parsing of node contents in
+    python-syntax as expressions
+    """
+    pass
+
+class AnalysisSpace(gnosis.xml.objectify._XO_,Analysis_Space_Core):
+    """
+    The toplevel object for an analysis space
+    """
+    
+    def _methods_to_xml(self):
+        if DEBUG: print("class data_guis.AnalysisSpace, func _methods_to_xml")
+        out=""
+        for meth in dir(self):
+            if type(getattr(self,meth))==type(self._methods_to_xml):
+                print "<Method><Name>"+meth+"</Name><Source><![CDATA["+inspect.getsource(getattr(self,meth))+"]]></Source></Method>"
+        return out    
+
+
+class Heap(gnosis.xml.objectify._XO_,Analysis_Space_Core):
+    """
+    docks created during objectification of XTSM - use _spawn method to
+    generate a pyqtgraph dock object from this XTSM element
+    """
+    def __init__(self):
+        if DEBUG: print "class Heap, function __init__"
+        for meth in self.Method:
+            try:
+                meth._src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
+            except Exception as e:
+                print e
+                print meth._src
+
+class Dock(gnosis.xml.objectify._XO_,Analysis_Space_Core):
+    """
+    docks created during objectification of XTSM - use _spawn method to
+    generate a pyqtgraph dock object from this XTSM element
+    """
+    def __init__(self):
+        if DEBUG: print "class Dock, function __init__"
+        for meth in self.Method:
+            try:
+                meth._src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
+            except Exception as e:
+                print e
+                print meth._src
+        
+class Method(gnosis.xml.objectify._XO_,Analysis_Space_Core):
+    def write_xml(self, out=None, tablevel=0, whitespace='True',CDATA_ESCAPE=True):
+        if DEBUG: print("class data_guis.Method, func write_xml")
+        return Analysis_Space_Core.write_xml(self,out=out, tablevel=tablevel, whitespace=whitespace,CDATA_ESCAPE=CDATA_ESCAPE)
+
+
 
 def main_test():
     """
@@ -3288,10 +3481,10 @@ class XTSM_Object(object):
                     InvalidSource(source)
         try:
             self.XTSM = gnosis.xml.objectify.make_instance(source)
-        except AttributeError as e:
+        except Exception as e:
             print "Error making instance of XTSM"
             print e
-            return
+            raise
         
     def parse(self, shotnumber = 0):
         """
@@ -3317,7 +3510,7 @@ class XTSM_Object(object):
         Returns the state of the XTSM object - if it still has active listeners
         will return True, otherwise False - NEEDS TO BE COMPLETED
         """
-        if DEBUG: print "This function needs to be completed - isActive"
+        print "This function needs to be completed - isActive"
         return False
         
     def deactivate(self,params={}):
@@ -3454,41 +3647,63 @@ class Command_Library:
 
     def combine_with_delaytrain(self, XTSM_obj, params, TESTMODE=False):
         """        
-        this algorithm is used to combine the raw timingstring data generated for multiple timing groups into
-        a single stream of data - for example, for some devices (particularly FPGA-based) higher level
-        functions require more complicated data inputs, despite the fact that their operation can be explained
-        and controlled by a combination of simple elements - consider a "delay train clocker", which repeatedly counts a
-        certain number of its own clock cycles before issuing one or more clock signals to slaved devices : two
-        pieces of information are required for each cycle - how many cycles to wait, and which devices to clock.
-        This can be represented as a combination of two timing groups - one which has a single channel which is
-        self-clocking (the "delaytrain"), and a second timing group which represents the clocking channels for the
-        slave devices.  Suppose the delaytrain clock cycle count is represented by a 32-bit integer, and there are
-        eight slave devices, requiring 8 bits to flag which channels should be triggered.  These two groups can
-        be entered in XTSM as if they are independent entities, and the timingstrings calculated as all others by
-        standard parsing algorithms.  In a final step their timingstrings must be delivered to the hardware, which
-        is most simply accomplished by combining the two fictional groups into a single group for the single piece
-        of hardware.  This algorithm takes each 32-bit representation of a delay time and combines it with an 8-bit
-        representation of clock-channel pulses, which requires a 40-bit per cycle representation streamed into the
-        hardware.  Since hardware transfer is typically arranged in 32- or 64-bit lanes, it is best to combine these
-        to 64-bit with fillers.  <-- these comments by NDG; original comments by JR below  -->
+        this algorithm is used to combine the raw timingstring data generated
+        for multiple timing groups into a single stream of data - for example,
+        for some devices (particularly FPGA-based) higher level functions
+        require more complicated data inputs, despite the fact that their
+        operation can be explained and controlled by a combination of simple
+        elements - consider a "delay train clocker", which repeatedly counts a
+        certain number of its own clock cycles before issuing one or more clock
+        signals to slaved devices : two pieces of information are required for
+        each cycle - how many cycles to wait, and which devices to clock.
+        This can be represented as a combination of two timing groups - one
+        which has a single channel which is self-clocking (the "delaytrain"),
+        and a second timing group which represents the clocking channels for
+        the slave devices.  Suppose the delaytrain clock cycle count is
+        represented by a 32-bit integer, and there are eight slave devices,
+        requiring 8 bits to flag which channels should be triggered.  These two
+        groups can be entered in XTSM as if they are independent entities, and
+        the timingstrings calculated as all others by standard parsing
+        algorithms.  In a final step their timingstrings must be delivered to
+        the hardware, which is most simply accomplished by combining the two
+        fictional groups into a single group for the single piece of hardware.
+        This algorithm takes each 32-bit representation of a delay time and
+        combines it with an 8-bit representation of clock-channel pulses, which
+        requires a 40-bit per cycle representation streamed into the hardware.
+        Since hardware transfer is typically arranged in 32- or 64-bit lanes,
+        it is best to combine these to 64-bit with fillers.
+        <-- these comments by NDG; original comments by JR below  -->
         
         Combines one or more timing groups with the delay train. Must have the
         same number of updates as the delay train. Final group will take the 
         place of the delay train and delete all others.
         Required params: Timing Groups Names.
-            The Timing Group Names should all be strings. Timing string values will be appended in the order that
-            the timing groups are input. Must include a delay train.
+            The Timing Group Names should all be strings. Timing string values
+            will be appended in the order that the timing groups are input.
+            Must include a delay train.
         Optional params: Length per Value, Length of Filler, Position of Filler
-            Length per Value is an integer representing the number of bytes each end-value should be. Default is the length of the original values combined with no filler.
-                Note: If this field is shorter than the combined length of the original values, this field will be ingored.
-                (Ex: Sync has values == 1 byte, Delaytrain has "values" == 4 bytes. Hence, Length per value has a default value of 5 and must be >= 5.)
-            Position of Filler should only be present if Length per Value > end-value length. This specifies the index at which filler will be placed.
-                If unspecified, all filler will be placed at the end of the end-value.
-                (Ex: Sync, Filler, Delaytrain has Position of filler == 1, since Sync takes the 0th position.)
-            Length of Filler should be an integer number of bytes for the first filler. This variable should only be present if directly preceeded by a Position of Filler variable.
+            Length per Value is an integer representing the number of bytes
+                each end-value should be. Default is the length of the original
+                values combined with no filler.
+                Note: If this field is shorter than the combined length of the
+                original values, this field will be ingored.
+                (Ex: Sync has values == 1 byte, Delaytrain has
+                "values" == 4 bytes. Hence, Length per value has a default
+                value of 5 and must be >= 5.)
+            Position of Filler should only be present if Length per
+                Value > end-value length. This specifies the index at which
+                filler will be placed. If unspecified, all filler will be
+                placed at the end of the end-value.
+                (Ex: Sync, Filler, Delaytrain has Position of filler == 1,
+                since Sync takes the 0th position.)
+            Length of Filler should be an integer number of bytes for the first
+                filler. This variable should only be present if directly
+                preceeded by a Position of Filler variable.
                 If unspecified, will take on the largest possible filler length.
-            Note: This Position of Filler/Length of Filler cycle can repeated. Each pair is executed sequentially.
+            Note: This Position of Filler/Length of Filler cycle can repeated.
+            Each pair is executed sequentially.
         """
+        if DEBUG: print "class Command_Library, func combine_with_delaytrain"
         BENCHMARK = False
 
         if BENCHMARK: t0=time.time()

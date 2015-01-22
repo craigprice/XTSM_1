@@ -69,6 +69,22 @@
     <xs:attributeGroup ref="XTSM_viewer_atts"/>
   </xs:complexType>
 
+    <xs:complexType name="Dock">
+    <xs:sequence>
+      <xs:element name="Name" type="Name" maxOccurs="1" minOccurs="1">
+        <xs:annotation>
+          <xs:appinfo>
+            <xtsm_viewer:topline value="true"/>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="Method" type="Method" maxOccurs="1" minOccurs="1"/>
+    </xs:sequence>
+    <xs:attributeGroup ref="XTSM_general_atts"/>
+    <xs:attributeGroup ref="XTSM_viewer_atts"/>
+  </xs:complexType>
+
+  
   <xs:complexType name="TimingGroupData">
     <xs:sequence>
       <xs:element name="Name" type="Name" maxOccurs="1" minOccurs="1">
@@ -416,6 +432,8 @@
       <xs:element name="Script" type="Script"  maxOccurs="unbounded" minOccurs="0"/>
       <xs:element name="HeapTo" type="HeapTo"  maxOccurs="unbounded" minOccurs="1"/>
       <xs:element name="Description" type="Description"  maxOccurs="1" minOccurs="0"/>
+      <xs:element name="DataCriteria" type="DataCriteria"  maxOccurs="1" minOccurs="0"/>
+      <xs:element name="Method" type="Method"  maxOccurs="1" minOccurs="0"/>
     </xs:sequence>
     <xs:attributeGroup ref="XTSM_general_atts"/>
     <xs:attributeGroup ref="XTSM_viewer_atts"/>

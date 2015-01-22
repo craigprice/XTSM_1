@@ -23,10 +23,13 @@ TODO:
 import uuid
 import time
 import sys
-from datetime import datetime
-from datetime import date   
+import datetime  
+import profile
+import cProfile
+import traceback
 import pdb
 import colorama
+import os
 colorama.init(strip=False)
 
 import msgpack
@@ -48,13 +51,14 @@ import glab_instrument
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt 
+import pstats
 
 import numpy
 
 import collections
 import sync
 from scipy.optimize import curve_fit
-DEBUG = True
+DEBUG = False
       
 NUM_RETAINED_XTSM=10
 
@@ -390,8 +394,13 @@ class CommandLibrary():
             exp_sync = sync.Experiment_Sync_Group(self.server, dc.name)
             dc.update({'_exp_sync':exp_sync})
         ax = params['_active_xtsm']
+        if DEBUG: print "!!!!"
+        if DEBUG: print ax
+        #pdb.set_trace()
         ax = XTSM_Transforms.strip_to_active(ax)
         exp_sync.active_xtsm = ax
+        if DEBUG: print "!!!!"
+        if DEBUG: print ax
         #pdb.set_trace()
         if params.has_key('socket_type'):
             if params['socket_type'] == 'Websocket':
@@ -527,22 +536,24 @@ class CommandLibrary():
         
         # turn the active_xtsm string into an object
         
+        if DEBUG: print "!!!!!comp"
+        if DEBUG: print exp_sync.active_xtsm
         xtsm_object = XTSMobjectify.XTSM_Object(exp_sync.active_xtsm)
         dc.update({'_active_xtsm_obj':xtsm_object})
         
         # parse the active xtsm to produce timingstrings
         message = {"server_console": 
-        "Started parsing shotnumber " + str(sn) + " at " + str(datetime.now()),
+        "Started parsing shotnumber " + str(sn) + " at " + str(datetime.datetime.now()),
          "data_context": dc.name}
         self.server.broadcast(simplejson.dumps(message, ensure_ascii = False).encode('utf8'))
         
         if not hasattr(xtsm_object, 'XTSM'):
-            if DEBUG: print "Error: No xtsm_object.XTSM:"
+            print "Error: No xtsm_object.XTSM:"
             if DEBUG: print params, xtsm_object
             self.server.bad_xtsm = xtsm_object
             return
         if not hasattr(xtsm_object.XTSM, 'head'):
-            if DEBUG: print "Error: No head in xtsm_object.XTSM:"
+            print "Error: No head in xtsm_object.XTSM:"
             if DEBUG: print params, xtsm_object.XTSM.write_xml()
             self.server.bad_xtsm = xtsm_object
             return
@@ -555,7 +566,7 @@ class CommandLibrary():
         if DEBUG: print "Parse Time: " , t1-t0, "s", "(postparse ", t1-tp, " s)"
         
         message = {"server_console":
-            "Finished parsing shotnumber " + str(sn) + " at " + str(datetime.now()),
+            "Finished parsing shotnumber " + str(sn) + " at " + str(datetime.datetime.now()),
             "data_context": dc.name}
         message = simplejson.dumps(message, ensure_ascii = False).encode('utf8')
         self.server.broadcast(message)
@@ -615,13 +626,18 @@ class CommandLibrary():
             analysis_space_xtsm = aspace.write_xml()
             gui_not_started = True
             for key in self.server.connection_manager.data_gui_servers:
-                if self.server.connection_manager.data_gui_servers[key].name == name:
+                if self.server.connection_manager.data_gui_servers[key].name == name and self.server.connection_manager.data_gui_servers[key].is_open_connection == True:
                     gui_not_started = False
             if gui_not_started:
-                self.server.command_queue.add(ServerCommand(self.server,self.server.connection_manager.add_data_gui_server,analysis_space_xtsm=analysis_space_xtsm,name=name))
+                if DEBUG: print "gui_not_started"
+                self.server.command_queue.add(ServerCommand(self.server,
+                                                            self.server.connection_manager.add_data_gui_server,
+                                                            analysis_space_xtsm=analysis_space_xtsm,
+                                                            name=name))
             else:
                 msg = {"IDLSocket_ResponseFunction":"check_consistency_with_xtsm","analysis_space_xtsm":analysis_space_xtsm}
                 for key in self.server.connection_manager.data_gui_servers:
+                    if DEBUG: print "check_consistency_with_xtsm"
                     self.server.command_queue.add(ServerCommand(self.server,
                                                     self.server.connection_manager.data_gui_servers[key].protocol.sendMessage,
                                                     simplejson.dumps(msg)))
@@ -641,10 +657,11 @@ class CommandLibrary():
         '''    
         
         if DEBUG: print "xtsm_return, sn:", sn
+        xtsm_xml = xtsm_object.XTSM.write_xml()
         message = {"data_context": dc.name,
                    "xtsm_return":
                    simplejson.dumps({"shotnumber":int(sn),
-                   "xtsm":xtsm_object.XTSM.write_xml()},
+                   "xtsm":xtsm_xml},
                      ensure_ascii = False).encode('utf8')}
         message = simplejson.dumps(message, ensure_ascii = False).encode('utf8')
         self.server.broadcast(message)             
@@ -658,7 +675,7 @@ class CommandLibrary():
             message = {"data_context": dc.name,
                        "xtsm_return":
                        simplejson.dumps({"shotnumber":int(sn),
-                       "xtsm":xtsm_object.XTSM.write_xml()},
+                       "xtsm":xtsm_xml},
                          ensure_ascii = False).encode('utf8')}
             message = simplejson.dumps(message, ensure_ascii = False).encode('utf8')
             self.server.broadcast(message)   
@@ -676,7 +693,7 @@ class CommandLibrary():
         if params.has_key('socket_type'):
             #Right now just for PXI_emulator
             if params['socket_type'] == 'Websocket':
-                print "sent back timing strings!"
+                if DEBUG: print "sent back timing strings!"
                 params['request']['protocol'].sendMessage(msg)
                 pass
             else:
@@ -716,11 +733,11 @@ class CommandLibrary():
             sn = 0
 
         xtsm_object = XTSMobjectify.XTSM_Object(active_xtsm)
-        if DEBUG: print "Started parsing shotnumber =", sn, "at", datetime.now()
+        if DEBUG: print "Started parsing shotnumber =", sn, "at", datetime.datetime.now()
         XTSMobjectify.preparse(xtsm_object)
         parserOutput = xtsm_object.parse(sn)
         XTSMobjectify.postparse(parserOutput)
-        if DEBUG: print "Finished parsing shotnumber =", sn, "at", datetime.now()
+        if DEBUG: print "Finished parsing shotnumber =", sn, "at", datetime.datetime.now()
 
         timingstringOutput = str(bytearray(parserOutput.package_timingstrings()))
         # create timingstring even though it isn't used
@@ -783,7 +800,7 @@ class CommandLibrary():
         #raw_databomb = msgpack.unpackb(params['databomb'])
         #self.server.databombs_for_data_gui.update({str(raw_databomb['shotnumber']):params['databomb']})
         
-        self.temp_plot(params, bomb_id,dc)
+        #self.temp_plot(params, bomb_id,dc)
         #pdb.set_trace()
         
         '''
@@ -798,10 +815,30 @@ class CommandLibrary():
                                         'data_context':dc.name,
                                         'databomb':params['databomb']},
                                          use_bin_type=True)  
-        for p in self.server.connection_manager.data_gui_servers:
-            print "sending len =", len(packed_message)/(1000*1000.0), "MB. asdf (2)", str(time.time()-TIMING)
-            self.server.send(packed_message,self.server.connection_manager.data_gui_servers[p], isBinary=True)             
-        print "End sever side sending asdf (3)", str(time.time()-TIMING)
+        #for p in self.server.connection_manager.data_gui_servers:
+        if DEBUG: print "sending len =", len(packed_message)/(1000*1000.0), "MB. asdf (2)", str(time.time()-TIMING)
+        #pdb.set_trace()
+        if params['data_context'] == 'PXI_emulator' and bool(self.server.connection_manager.data_gui_servers):
+            gui_k = self.server.connection_manager.data_gui_servers.iterkeys().next()
+            gui = self.server.connection_manager.data_gui_servers[gui_k]
+            try:
+                msg_command = ServerCommand(self.server,
+                                            gui.protocol.sendMessage,
+                                            packed_message,
+                                            isBinary=True)
+                self.server.command_queue.add(msg_command)
+            except AttributeError:  
+                self.server.reactor.callLater(10, self._send_databomb, gui, packed_message)
+        if DEBUG: print "End sever side sending asdf (3)", str(time.time()-TIMING)
+        
+    def _send_databomb(self, gui, msg):  
+        
+        msg_command = ServerCommand(self.server,
+                                    gui.protocol.sendMessage,
+                                    msg,
+                                    isBinary=True)
+        self.server.command_queue.add(msg_command)
+        return
         
     def temp_plot_qt(self,params,bomb_id, dc):
         print "plotting"
@@ -913,7 +950,7 @@ class CommandLibrary():
         #bottom_left_coord = (120,345)
         #top_right_coord = (340,180)
         bottom_left_coord = (300,150)#(x,y)
-        top_right_coord = (450,100)
+        top_right_coord = (350,100)
         #bottom_left_coord = (260,165)
         #top_right_coord = (271,185)
         region_of_interest = corrected_image[top_right_coord[1]:bottom_left_coord[0],
@@ -1133,7 +1170,7 @@ class CommandLibrary():
         
 
 class ServerCommand():
-    def __init__(self,server, command,*args, **kwargs):
+    def __init__(self,server, command, *args, **kwargs):
         """
         Constructs a server command object, to be executed in the command queue
         
@@ -1152,8 +1189,13 @@ class ServerCommand():
         try: 
             self.command(*self.args, **self.kwargs)
         except Exception as e:
-            if DEBUG: print e
-            pdb.set_trace()
+            print "Error: Failed to execute ServerCommand:"
+            print self.command
+            print "Error:", e
+            print e.message
+            traceback.print_stack()
+            traceback.print_exception(*sys.exc_info())
+           #pdb.set_trace()
 
         
 class SocketCommand():
@@ -1232,26 +1274,47 @@ class SocketCommand():
             ThisResponseFunction = getattr(command_library,
                                            self.params['IDLSocket_ResponseFunction'])
         except AttributeError:
-            if DEBUG: print ('Missing Socket_ResponseFunction:',
+            print ('Missing Socket_ResponseFunction:',
                    self.params['IDLSocket_ResponseFunction'])
         if DEBUG: print "self.params.keys()", self.params.keys()
         if DEBUG: print "Calling this ResponseFunction:",self.params['IDLSocket_ResponseFunction']
-        ThisResponseFunction(p)
+        
+        #'''
+        try:
+            t0 = time.time()
+            ThisResponseFunction(p)
+            print self.params['IDLSocket_ResponseFunction'] + " Time:", time.time()-t0
+        except Exception as e:
+            print "Error: Failed to execute IDLSocket_ResponseFunction"
+            print ('Missing Socket_ResponseFunction:',
+                   self.params['IDLSocket_ResponseFunction'])
+            print "self.params.keys()", self.params.keys()
+            print "Calling this ResponseFunction:",self.params['IDLSocket_ResponseFunction']
+            print "Error:", e
+            print e.message
+            traceback.print_stack()
+            traceback.print_exception(*sys.exc_info())
+        #'''
+        
+            
         '''
         if self.params['IDLSocket_ResponseFunction'] == 'compile_active_xtsm':
-            filenames = []
-            for i in range(1):
-                name = 'c:\psu_data\profile_stats_%d.txt' % i
-                profile.runctx('getattr(command_library, self.params["IDLSocket_ResponseFunction"])(self.params)',globals(),locals(), filename=name)
-            stats = pstats.Stats('c:\psu_data\profile_stats_0.txt')
-            for i in range(0, 1):
-                stats.add('c:\psu_data\profile_stats_%d.txt' % i)
+            today = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
+            location = '../profile_server/' + today + '/'
+            now = datetime.datetime.fromtimestamp(time.time()).strftime('%H-%M-%S')
+            name = location + 'profile_stats_' + now + '.prof'
+            try:
+                cProfile.runctx('getattr(command_library, self.params["IDLSocket_ResponseFunction"])(self.params)',globals(),locals(), filename=name)
+            except IOError:
+                os.makedirs(location)
+                cProfile.runctx('getattr(command_library, self.params["IDLSocket_ResponseFunction"])(self.params)',globals(),locals(), filename=name)
+            stats = pstats.Stats(name)
+            stats.add(name)
             stats.sort_stats('cumulative')
             stats.print_stats()
             pass
         else:
             ThisResponseFunction(p)
-        print "In class SocketCommand, function execute - End."
         '''
         #print "In class SocketCommand, function execute - End."
 

@@ -5,6 +5,7 @@ Created on Tue Apr 15 19:53:39 2014
 @author: Nate
 """
 import lxml.etree, StringIO
+import pdb
 
 def strip_to_active(xtsm_string):
     """
@@ -90,11 +91,15 @@ def remove_attributes(source,attributes):
     xsl+=attributes
     xsl+=""" "/>
     </xsl:stylesheet>"""
+    #pdb.set_trace()
     return apply_xsl(source,xsl)    
     
 def apply_xsl(source,xsl):
-    dom = lxml.etree.parse(StringIO.StringIO(source))
-    xslt = lxml.etree.parse(StringIO.StringIO(xsl))
+    parser = lxml.etree.XMLParser(strip_cdata=False)
+    dom = lxml.etree.XML(source, parser)
+    xslt = lxml.etree.XML(xsl, parser)
+    #dom = lxml.etree.parse(StringIO.StringIO(source))
+    #xslt = lxml.etree.parse(StringIO.StringIO(xsl))
     transform = lxml.etree.XSLT(xslt)
     newdom = transform(dom)
     return lxml.etree.tostring(newdom, pretty_print=True)
