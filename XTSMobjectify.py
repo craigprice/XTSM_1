@@ -3317,7 +3317,7 @@ class XTSM_Object(object):
         Returns the state of the XTSM object - if it still has active listeners
         will return True, otherwise False - NEEDS TO BE COMPLETED
         """
-        print "This function needs to be completed - isActive"
+        if DEBUG: print "This function needs to be completed - isActive"
         return False
         
     def deactivate(self,params={}):

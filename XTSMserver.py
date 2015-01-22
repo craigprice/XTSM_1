@@ -18,7 +18,7 @@ TODO:
     
 @author: Nate, Jed
 """
-print "......................Starting up Server......................."
+
 
 import uuid
 import time
@@ -72,7 +72,6 @@ from enthought.traits.api import Str as TraitedStr
 from twisted.internet import stdio
 from twisted.protocols import basic
 from twisted.internet import error
-
 
 import simplejson
 import socket
@@ -133,7 +132,7 @@ DEBUG_LINENO = 0
 DEBUG_TRACE = False
 TRACE_IGNORE=["popexecute","getChildNodes","getItemByFieldValue"]
 MAX_SCRIPT_SERVERS = 2
-DEBUG = False
+DEBUG = True
       
 if DEBUG_TRACE: sys.settrace(tracefunc)
 
@@ -209,7 +208,7 @@ class MulticastProtocol(DatagramProtocol):
                 compiled_xtsm = dc['_exp_sync'].compiled_xtsm[int(datagram['shotnumber_started'].strip())]  
                 scripts = compiled_xtsm.XTSM.getActiveSequence().getDescendentsByType('Script')  
             except Exception as e:
-                if DEBUG: print "Error in getting script, or no scripts found"
+                print "Error in getting script, or no scripts found"
                 return
             for sc in scripts:
                 if sc.ExecuteOnEvent.PCDATA == 'shot_started':
@@ -218,7 +217,6 @@ class MulticastProtocol(DatagramProtocol):
                                 'context' : {'self':self.server}}
                     self.server.reactor.callLater(time_to_execute,self.server._execute,command)
             return
-            
             
         
         if 'fake_shotnumber_started' in datagram.keys():#Need to fix this for rb analysis so that on receiving
@@ -239,13 +237,11 @@ class MulticastProtocol(DatagramProtocol):
             dc.update({'Test_instrument':glab_instrument.Glab_Instrument(params={'server':self.server,'create_example_pollcallback':True})})
             return
         
-        if 'server_ping' in datagram.keys() and datagram['server_ping'] == 'server_ready!':
-            if DEBUG: print "ping from server ready!", datagram
-            self.server.connection_manager.server_ready(datagram)
-            return        
         
         try:
-            datagram["server_ping"] 
+            datagram["server_ping"]  
+            if datagram["server_ping"] != "ping!":
+                return
         except KeyError:
             if DEBUG: print "unknown UDP message:\n", datagram
             return
@@ -279,7 +275,7 @@ class WSClientProtocol(WebSocketClientProtocol):
         self.connection_manager = self.factory.connection_manager
 
     def onOpen(self):
-        if DEBUG: print "class WSClientProtocol, func onOpen.", self.connection
+        if DEBUG: print("class WSClientProtocol, func onOpen.")
         self.connection.ip = self.transport.getPeer().host
         self.connection.port = self.transport.getPeer().port
         self.connection.connection_manager.connectLog(self)
@@ -525,7 +521,7 @@ class CommandProtocol(protocol.Protocol):
         """
         if DEBUG: print "class CommandProtocol, function dataReceived"
         if data[6:12] == "status":
-            if DEBUG: print self.server.xstatus()
+            print self.server.xstatus()
             self.transport.write("<XML>"+self.server.xstatus()+"</XML>")
             self.transport.loseConnection()
             return
@@ -620,7 +616,7 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
         
 
         address = "ws://localhost:" + str(wsport)
-        self.wsServerFactory = WebSocketServerFactory(address, debug=DEBUG)
+        self.wsServerFactory = WebSocketServerFactory(address, debug=True)
         self.wsServerFactory.setProtocolOptions(failByDrop=False)
         #self.wsServerFactory.parent = self
         self.wsServerFactory.protocol = WSServerProtocol
@@ -630,72 +626,6 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
         # listen on standard TCP port
         #global port
         #self.laud = self.server.reactor.listenTCP(port, self.wsServerFactory)
-        
-    def close_all_connections(self):
-        try:
-            if DEBUG: print "Closing:", self.wsServerFactory.protocol.id
-        except:
-            pass
-        
-        try:
-            self.wsServerFactory.protocol.sendClose()
-        except:
-            pass
-        
-        for key in self.peer_servers.keys():
-            try:
-                self.peer_servers[key].protocol.sendClose()
-            except Exception as e:
-                print e
-            
-        for key in self.script_servers.keys():
-            if DEBUG: print "Closing:", self.script_servers[key].protocol.id
-            try:
-                self.script_servers[key].protocol.sendClose()
-            except Exception as e:
-                print e
-            
-        for key in self.default_websocket_connections.keys():
-            try:
-                self.default_websocket_connections[key].protocol.sendClose()
-            except Exception as e:
-                print e
-            
-        for key in self.data_gui_servers.keys():
-            try:
-                self.data_gui_servers[key].protocol.sendClose()
-            except Exception as e:
-                print e
-            
-        for key in self.TCP_connections.keys():
-            try:
-                self.TCP_connections[key].protocol.sendClose()
-            except Exception as e:
-                print e
-            
-        pass        
-        
-    def server_ready(self, datagram):
-        
-        for key in self.peer_servers.keys():
-            if self.peer_servers[key].id == datagram['server_id']:
-                self.peer_servers[key]._connect_to_running_server()
-            
-        for key in self.script_servers.keys():
-            if self.script_servers[key].id == datagram['server_id']:
-                self.script_servers[key]._connect_to_running_server()
-            
-        for key in self.default_websocket_connections.keys():
-            if self.default_websocket_connections[key].id == datagram['server_id']:
-                self.default_websocket_connections[key]._connect_to_running_server()
-            
-        for key in self.data_gui_servers.keys():
-            if self.data_gui_servers[key].id == datagram['server_id']:
-                self.data_gui_servers[key]._connect_to_running_server()
-            
-        for key in self.TCP_connections.keys():
-            if self.TCP_connections[key].id == datagram['server_id']:
-                self.TCP_connections[key]._connect_to_running_server() 
         
     def is_connections_closed(self):
         if DEBUG: print "Checking connections"
@@ -952,7 +882,7 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
                 if DEBUG: print "Just Sent to " + address + ":"
                 if DEBUG and len(data) < 10000: print data
                 return True
-        print "Not Sent!"
+        if DEBUG: print "Not Sent!"
         return False
         
     def is_known_server(self,ping_payload):
@@ -1044,18 +974,13 @@ class GlabClient(XTSM_Server_Objects.XTSM_Server_Object):
         pass
 
     def on_close(self):
-        #closing the datagui window doesn't close the connection?
-        if DEBUG: print "class GlabClient, function on_close"
-        self.is_open_connection = False
-        
-    def _connect_to_running_server(self):
-        if DEBUG: print "class GlabClient, function _connect_to_running_server"
-        pass
+       self.is_open_connection = False
+       
     
     def close(self):
-        if DEBUG: print "Shutting down connection:", self.protocol.connection.ip
-        self.protocol.sendClose()
-        self.protocol.transport.loseConnection()
+       if DEBUG: print "Shutting down connection:", self.protocol.connection.ip
+       self.protocol.sendClose()
+       self.protocol.transport.loseConnection()
 
     def on_open(self):  
         self.last_broadcast_time = time.time()
@@ -1177,7 +1102,7 @@ class WebSocketConnection(GlabClient):
        self.server_time = time.time()
        self.last_broadcast_time = time.time()
 
-       wsClientFactory = WebSocketClientFactory(address, debug=DEBUG)
+       wsClientFactory = WebSocketClientFactory(address, debug = True)
        wsClientFactory.setProtocolOptions(failByDrop=False)
        wsClientFactory.protocol = WSClientProtocol
        wsClientFactory.connection_manager = self.server.connection_manager
@@ -1233,7 +1158,7 @@ class PeerServer(GlabClient):
        # Connect to the peer as a Client
        address = "ws://" + ping_payload['server_ip'] + ":" + ping_payload['server_port']
        #print address
-       wsClientFactory = WebSocketClientFactory(address, debug=DEBUG)
+       wsClientFactory = WebSocketClientFactory(address, debug = True)
        wsClientFactory.setProtocolOptions(failByDrop=False)
        wsClientFactory.protocol = WSClientProtocol
        wsClientFactory.connection_manager = self.server.connection_manager
@@ -1265,29 +1190,25 @@ class ScriptServer(GlabClient):
         #server doesn't accidentally  try to hand this server off to two
         #processes when it was just first created.
         if DEBUG: print "in ScriptServer class, __init__()"
-        
+    pass
     
     def open_connection(self):
         new_port = 9000 + len(self.connection_manager.script_servers)
         if DEBUG: print "About to open"
         script_server_path = os.path.abspath(script_server.__file__)
-        subprocess.Popen(['C:\\Python27\\python.exe',script_server_path]+['localhost',str(new_port),self.id])
-        if DEBUG: print "Done Opening"       
-        
+        subprocess.Popen(['C:\\Python27\\python.exe',script_server_path]+['localhost',str(new_port)])
+        if DEBUG: print "Done Opening"            
         # Connect to the new_script_server
         address = 'ws://localhost:'+str(new_port)
-        self.wsClientFactory = WebSocketClientFactory(address, debug=DEBUG)
-        self.wsClientFactory.setProtocolOptions(failByDrop=False)
-        self.wsClientFactory.protocol = WSClientProtocol
-        self.wsClientFactory.connection_manager = self.connection_manager
-        self.wsClientFactory.connection = self
+        wsClientFactory = WebSocketClientFactory(address, debug = True)
+        wsClientFactory.setProtocolOptions(failByDrop=False)
+        wsClientFactory.protocol = WSClientProtocol
+        wsClientFactory.connection_manager = self.connection_manager
+        wsClientFactory.connection = self
+        connectWS(wsClientFactory)  
         self.connection_manager.connectLog(self)  
         self.last_broadcast_time = time.time()
-        self.connection_manager.script_servers.update({self.id:self})
-        
-    def _connect_to_running_server(self):
-        if DEBUG: print "class ScriptServer, function _connect_to_running_server"
-        connectWS(self.wsClientFactory)
+        pass
     
     def on_message(self, payload, isBinary, protocol):
         #pdb.set_trace()
@@ -1316,8 +1237,8 @@ class ScriptServer(GlabClient):
 
     def on_open(self):
         self.in_use = True
-        if DEBUG: print "class ScriptServer, func on_open"
-        if DEBUG: print self, self.id
+        self.is_open_connection = True
+        self.connection_manager.script_servers.update({self.id:self})
         global MAX_SCRIPT_SERVERS
         if len(self.connection_manager.script_servers) < MAX_SCRIPT_SERVERS:
             script_command = commands.ServerCommand(self.server, self.connection_manager.add_script_server)
@@ -1326,14 +1247,13 @@ class ScriptServer(GlabClient):
         #self.protocol.sendMessage("output_from_script = 'Script Server Ready!'")
         self.last_connection_time = None
         self.output_from_script = None
-        self.is_open_connection = True
+        self.in_use = False
         if DEBUG: print 'Script Server Ready!'
         if hasattr(self,'commands_when_ready'):
             self.in_use = True
             script_information = {'script_body':self.commands_when_ready['script_body'],
                                   'context': self.commands_when_ready['context']}
             self.server.send(simplejson.dumps(script_information), self)
-        self.in_use = False
         
         
 class DataGUIServer(GlabClient):
@@ -1353,19 +1273,17 @@ class DataGUIServer(GlabClient):
         package = pkgutil.get_loader("data_gui")
         data_gui_file = package.filename
         data_gui_path = data_gui_file
-        subprocess.Popen(['C:\\Python27\\python.exe',data_gui_path]+['localhost',str(new_port),self.id])
+        subprocess.Popen(['C:\\Python27\\python.exe',data_gui_path]+['localhost',str(new_port)])
         if DEBUG: print "Done Opening"            
         # Connect to the data_gui_
         address = 'ws://localhost:'+str(new_port)
-        self.wsClientFactory = WebSocketClientFactory(address, debug=DEBUG)
-        self.wsClientFactory.setProtocolOptions(failByDrop=False)
-        self.wsClientFactory.protocol = WSClientProtocol
-        self.wsClientFactory.connection_manager = self.connection_manager
-        self.wsClientFactory.connection = self
+        wsClientFactory = WebSocketClientFactory(address, debug = True)
+        wsClientFactory.setProtocolOptions(failByDrop=False)
+        wsClientFactory.protocol = WSClientProtocol
+        wsClientFactory.connection_manager = self.connection_manager
+        wsClientFactory.connection = self
         #connectWS(wsClientFactory)  
-        #reactor.callLater(2,connectWS,self.wsClientFactory)
-        self.is_open_connection = False
-        self.connection_manager.data_gui_servers.update({self.id:self})
+        reactor.callLater(1,connectWS,wsClientFactory)
         self.connection_manager.connectLog(self)  
         self.last_broadcast_time = time.time()
         pass
@@ -1379,29 +1297,26 @@ class DataGUIServer(GlabClient):
             #payload = payload.decode('utf8')
             if DEBUG: print "Text message received in Client ws protocol:",payload
 
-    def _connect_to_running_server(self):
-        if DEBUG: print "class DataGUIServer, function _connect_to_running_server"
-        connectWS(self.wsClientFactory)
-
-    def on_close(self):
-       if DEBUG: print "class DataGUIServer, function on_close"
-       self.is_open_connection = False
-
     def on_open(self):
         if DEBUG: print 'In class DataGUIServer, func on_open'
         self.in_use = True
         self.is_open_connection = True
-        self.server.connection_manager.connectLog(self) 
+        self.connection_manager.data_gui_servers.update({self.id:self})
+        self.server.connection_manager.connectLog(self)  
         self.last_connection_time = None
-        msg = {"IDLSocket_ResponseFunction":"check_consistency_with_xtsm",
-               "analysis_space_xtsm":self.analysis_space_xtsm}
+        self.in_use = False
+        
+        '''
+        msg = {"IDLSocket_ResponseFunction":"check_consistency_with_xtsm","analysis_space_xtsm":self.analysis_space_xtsm}
         self.server.command_queue.add(commands.ServerCommand(self.server,
                                                     self.protocol.sendMessage,
                                                     simplejson.dumps(msg)))
+        '''
         
+        #'''
         try:
             #pdb.set_trace()
-            if DEBUG: print '<XTSM>'+self.analysis_space_xtsm+'</XTSM>'
+            print '<XTSM>'+self.analysis_space_xtsm+'</XTSM>'
             aspace_xtsm_object = XTSMobjectify.XTSM_Object('<XTSM>'+self.analysis_space_xtsm+'</XTSM>')
         except Exception as e:
             print "Error: Failed to objectify AnalysisSpace"
@@ -1417,11 +1332,12 @@ class DataGUIServer(GlabClient):
                 if script.ExecuteOnEvent.PCDATA == 'create_new_analysis_space':
                     msg = {"IDLSocket_ResponseFunction":"create_new_analysis_space",
                            "script_body":str(script.ScriptBody._seq[0])}
-                    if DEBUG: print "adding"
+                    print "adding"
                     self.server.command_queue.add(commands.ServerCommand(self.server,
                                                     self.protocol.sendMessage,
                                                     simplejson.dumps(msg)))
-        self.in_use = False
+        
+        #'''
      
         
 class GlabServerFactory(protocol.Factory):
@@ -1591,11 +1507,10 @@ class GlabPythonManager():
     and other things as time goes on...
     """
     def __init__(self):
-        if DEBUG: print "class GlabPythonManager, function __init__"
-        
         # intercept print statements
         #sys.stdout = Mediated_StdOut()
         
+        if DEBUG: print "debug: GlabPythonManager(), __init__"
         # general identifiers
         self.id = str(uuid.uuid1())
         self.hostid = platform.node()# The computer’s network name
@@ -1612,10 +1527,10 @@ class GlabPythonManager():
         self.reactor = reactor
         self.task = task
         try:
-            self.tcp_server = reactor.listenTCP(port, self.listener)
+            reactor.listenTCP(port, self.listener)
         except error.CannotListenError:
             time.sleep(10)
-            self.tcp_server = reactor.listenTCP(port, self.listener)
+            reactor.listenTCP(port, self.listener)
         #reactor.addSystemEventTrigger('before','shutdown',server_shutdown)
 
 
@@ -1718,7 +1633,6 @@ class GlabPythonManager():
         dc = sync.DataContext(dc_name, self.server)
         self.dataContexts.update({dc_name:dc})
         self.command_queue.add(commands.ServerCommand(self.server, self.connection_manager.add_script_server))
-        self.command_queue.add(commands.ServerCommand(self.server, self.connection_manager.add_script_server))
         self.command_queue.add(commands.ServerCommand(self.server, self.server_ping))
         self.ping_data={"server_id":self.id,
                             "server_name":self.name,
@@ -1735,7 +1649,6 @@ class GlabPythonManager():
                str(port), '(standard HTTP),',
                str(wsport) + ' (websocket)',
                str(udpbport) + ' (udp port)')
-        print "......................Main Server Running......................"
 
     def run(self):
         """
@@ -1818,6 +1731,7 @@ class GlabPythonManager():
 #        print 'q6 takes', e7-e6    
         
         response1=self.GPIB_device.converse(q7)
+        
         response2=self.GPIB_device.converse(q9)
         e2 = time.time()
 #        print 'q7,q9 takes', e8-e7
@@ -1834,7 +1748,7 @@ class GlabPythonManager():
 #            print "Error: byte order on this computer not expected. Expected python to be little"
 #            pdb.set_trace()
 
-        if DEBUG: print "Scope communication took", e2-e1,"s"
+        print "Scope communication took", e2-e1,"s"
         #pdb.set_trace()
         ydata=np.array(ystr,dtype=np.float)
 
@@ -1852,7 +1766,7 @@ class GlabPythonManager():
             ax.xaxis.set_ticks(np.linspace(0,10*tdiv,11))
             plt.show(block=False)
             plt.savefig(filename)
-            if DEBUG: print "Figure saved. No fitting is performed."
+            print "Figure saved. No fitting is performed."
             
        
         
@@ -2023,14 +1937,11 @@ class GlabPythonManager():
 
 
     def server_shutdown(self):
-        pass
-        '''
         port = reactor.listenTCP(portNumber, factory)
         port.stopListening()
         
         connector = reactor.connectTCP(host, port, factory)
         connector.disconnect()
-        '''
 
     def announce_data_listener(self,params):
         if DEBUG: print "class server, function announce_data_listener"
@@ -2041,18 +1952,17 @@ class GlabPythonManager():
         Exit routine; stops twisted reactor
         """
         if DEBUG: print "Closing Python Manager"
-
-        self.tcp_server.loseConnection()
-        self.tcp_server.stopListening()   
-        self.listener.doStop()
-        
         self.flush_all()
-        self.connection_manager.close_all_connections()
+        for key in self.connection_manager.peer_servers.keys():
+            self.connection_manager.peer_servers[key].protocol.sendClose()
+        for key in self.connection_manager.script_servers.keys():
+            self.connection_manager.script_servers[key].protocol.sendClose()
+        for key in self.connection_manager.data_gui_servers.keys():
+            self.connection_manager.data_gui_servers[key].protocol.sendClose()
         self.close_all()
         #self.connection_manager.laud.loseConnection()
         if DEBUG: print self.connection_manager.is_connections_closed()
-        reactor.callLater(0.5,reactor.stop)
-        #reactor.stop()
+        reactor.stop()
         if DEBUG: print "Done"
                 
     def flush_all(self):
@@ -2070,7 +1980,7 @@ class GlabPythonManager():
         
         if not hasattr(self,"ping_data"):
             #need to include a list called ping_data - which is updated as needed. by "ping_data fnctions in objects of the server.
-            #Nmaely this includes a list of instruments that are attached to the server.
+        #Nmaely this includes a list of instruments that are attached to the server.
             self.ping_data={"server_id":self.id,
                             "server_name":self.name,
                             "server_ip":self.ip,
@@ -2211,7 +2121,7 @@ class GlabPythonManager():
 #          del context['__builtin__']  # removes the backeffect of exec on context to add builtins
         sys.stdout = old_stdout
         if DEBUG: print "Context: " + str([context])
-        if DEBUG: pprint.pprint(context)
+        if DEBUG and len(context) < 10000: pprint.pprint(context)
         if hasattr(commands, 'callback_function'):
             if commands['callback_function'] != 'None':
                 callback = commands['callback_function']
@@ -2359,7 +2269,6 @@ class GlabPythonManager():
         '''A class for redirecting stdout to this Text widget.'''
         def write(self,str):
             self.text_area.write(str,False)
-            
     def initdisplay(self):
         # try a wx window control pane
         self.displayapp = wx.PySimpleApp()
@@ -2372,12 +2281,11 @@ class GlabPythonManager():
         myWxAppInstance = self.displayapp
         reactor.registerWxApp(myWxAppInstance)
         splash="<html><body><h2>GLab Python Manager</h2></body></html>"
-        if DEBUG: print self.xstatus()
-        if DEBUG: print self.xstatus("html")
+        print self.xstatus()
+        print self.xstatus("html")
         self.display.updateHTML(splash+self.xstatus("html"))
         #tried to redirect stdout to tkinter console, not working:
-        #sys.stdout = self.StdoutRedirector( self.display.statuswindow )   
-        
+        #sys.stdout = self.StdoutRedirector( self.display.statuswindow )
     def attach_poll_callback(self,poll,callback,poll_time, onTimeFromNow=False):
         """
         attaches a poll-and-callback event mechanism to the main event-loop
@@ -2493,7 +2401,6 @@ class GlabPythonManager():
 # do it all:
 #with GlabPythonManager() as theBeast:
 #    pass
-
 debug=True
 active_xtsm = ''
 
