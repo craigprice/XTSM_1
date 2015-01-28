@@ -13,7 +13,7 @@ NDG 9/6/12  -  Created
 
 Detailed description:
 ----------------------
-This argument takes two arguments:
+This argumenmt takes two arguments:
 
 first a pointer (returnarray) to the first element of a predefined 2D matrix of total size
 (number of channels on board)x(number of updates in sequence) note that these parameters can be extracted from
@@ -25,8 +25,8 @@ described below by example:
 A simple input timing string (should be passed in as second argument to function below) might look like the following:
 
 54,0,0,0,0,0,0,0,      //Total length of the timingstring in bytes  -  not yet used by dll
-2,  		//number of channels in group
-4,			//number of bytes used to represent values
+2,			//number of channels in group
+	,			//number of bytes used to represent values
 4,			//number of bytes used to represent repeat lengths
 5,0,0,0,		//number of updates in this sequence
 			//begin information for first channel
@@ -45,7 +45,7 @@ A simple input timing string (should be passed in as second argument to function
 the input string without comments is then:
 54,0,0,0,0,0,0,0,2,4,4,5,0,0,0,16,0,0,0,200,0,0,0,3,0,0,0,125,0,0,0,2,0,0,0,16,0,0,0,200,0,0,0,4,0,0,0,225,0,0,0,1,0,0,0
 
-this c-code should be compiled (labwindows/CVI is sufficient) to produce a .dll to execute on the system hosting the output cards.  For the 
+this c-code shuld be compiled (labwindows/CVI is sufficient) to produce a .dll to execute on the system hosting the output cards.  For the 
 rubidium experiment in the Gemelke lab, this should be on the PXI system. The header file SCAtoDCA.h should accompany
 this file in the Labwindows project.  
 
@@ -63,11 +63,13 @@ This routine was clocked at 1.5ms total time on a 10^5 element sequence (10^5 el
 End of Comments
 ----------------
 */
+
+
 /*	Prototypes of the functions to be exported to the DLL for future use */ 
 
-__declspec(dllexport) double tstodca44(unsigned int *returnarray, unsigned char* inputarray);
-__declspec(dllexport) double tstodca24(unsigned short *returnarray, unsigned char* inputarray);
-__declspec(dllexport) double tstodca14(unsigned char *returnarray, unsigned char* inputarray);
+double tstodca44(unsigned int *returnarray, unsigned char* inputarray);
+double tstodca24(unsigned short *returnarray, unsigned char* inputarray);
+double tstodca14(unsigned char *returnarray, unsigned char* inputarray);
 	
 // Functions are defined below	
 
