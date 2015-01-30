@@ -133,7 +133,7 @@ DEBUG_LINENO = 0
 DEBUG_TRACE = False
 TRACE_IGNORE=["popexecute","getChildNodes","getItemByFieldValue"]
 MAX_SCRIPT_SERVERS = 2
-DEBUG = False
+DEBUG = True
       
 if DEBUG_TRACE: sys.settrace(tracefunc)
 
@@ -203,7 +203,7 @@ class MulticastProtocol(DatagramProtocol):
             dc.get('_exp_sync').shotnumber = int(datagram['shotnumber_started'])
             
             if self.server.ip == '10.1.1.124':
-                print ("Shot started:", datagram['shotnumber_started'],
+                if DEBUG: print ("Shot started:", datagram['shotnumber_started'],
                        "pxi_time:", self.server.pxi_time,
                        "time.time():", float(time.time()))
             
@@ -776,6 +776,19 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
                        'seconds ago')
                 self.peer_servers[key].close()
                 #del self.peer_servers[key]
+        if not hasattr(self,'data_gui_servers'):
+            return
+        for key in self.data_gui_servers.keys():
+            if DEBUG: print "self.data_gui_servers[key].last_broadcast_time", self.data_gui_servers[key].last_broadcast_time
+            if self.data_gui_servers[key].is_open_connection == False:
+                if DEBUG: print ("Shutting down inactive data_gui_servers:",
+                       self.data_gui_servers[key].name,
+                       self.data_gui_servers[key].server_id,
+                       'Last Broadcast time:',
+                       str(time.time() -float(self.data_gui_servers[key].last_broadcast_time)),
+                       'seconds ago')
+                self.data_gui_servers[key].close()
+                del self.data_gui_servers[key]
         return # temporary disable
         self.__periodic_maintenance__()
 #        for peer in self.client_roles:
@@ -834,11 +847,12 @@ class ConnectionManager(XTSM_Server_Objects.XTSM_Server_Object):
         There should be no more than ~16 script servers
         """
         if len(self.data_gui_servers) > 0:
-            return
+            pass
+            #return
         if DEBUG: print "In class ConnectionManager, function, add_data_gui_server()"
         new_data_gui_server = DataGUIServer()
         new_data_gui_server.analysis_space_xtsm = analysis_space_xtsm
-        if DEBUG: print new_data_gui_server.analysis_space_xtsm
+        #if DEBUG: print new_data_gui_server.analysis_space_xtsm
         new_data_gui_server.name = name
         new_data_gui_server.is_open_connection = False
         new_data_gui_server.server = self.server
@@ -1274,9 +1288,10 @@ class ScriptServer(GlabClient):
     def open_connection(self):
         new_port = 9000 + len(self.connection_manager.script_servers)
         if DEBUG: print "About to open"
-        script_server_path = os.path.abspath(script_server.__file__)
-        subprocess.Popen(['C:\\Python27\\python.exe',script_server_path]+['localhost',str(new_port),self.id])
-        if DEBUG: print "Done Opening"       
+        ss_path = os.path.abspath(script_server.__file__)
+        p_path = file_locations.file_locations['pythonexe_path'][uuid.getnode()]+'python.exe'
+        subprocess.Popen([p_path,ss_path]+['localhost',str(new_port),self.id])
+        if DEBUG: print "Done Opening"
         
         # Connect to the new_script_server
         address = 'ws://localhost:'+str(new_port)
@@ -1357,8 +1372,10 @@ class DataGUIServer(GlabClient):
         package = pkgutil.get_loader("data_gui")
         data_gui_file = package.filename
         data_gui_path = data_gui_file
-        subprocess.Popen(['C:\\Python27\\python.exe',data_gui_path]+['localhost',str(new_port),self.id])
-        if DEBUG: print "Done Opening"            
+        p_path = file_locations.file_locations['pythonexe_path'][uuid.getnode()]+'python.exe'
+        subprocess.Popen([p_path,data_gui_path]+['localhost',str(new_port),self.id])
+        if DEBUG: print "Done Opening"
+            
         # Connect to the data_gui_
         address = 'ws://localhost:'+str(new_port)
         self.wsClientFactory = WebSocketClientFactory(address, debug=DEBUG)
@@ -1381,7 +1398,8 @@ class DataGUIServer(GlabClient):
             if DEBUG: print "Binary message received: {0} bytes"#, payload
         else:
             #payload = payload.decode('utf8')
-            if DEBUG: print "Text message received in Client ws protocol:",payload
+            if DEBUG: print "Text message received in Client ws protocol:"
+            if DEBUG and len(payload) < 10*1000: print payload
 
     def _connect_to_running_server(self):
         if DEBUG: print "class DataGUIServer, function _connect_to_running_server"
@@ -1405,7 +1423,7 @@ class DataGUIServer(GlabClient):
         
         try:
             #pdb.set_trace()
-            if DEBUG: print '<XTSM>'+self.analysis_space_xtsm+'</XTSM>'
+            #if DEBUG: print '<XTSM>'+self.analysis_space_xtsm+'</XTSM>'
             aspace_xtsm_object = XTSMobjectify.XTSM_Object('<XTSM>'+self.analysis_space_xtsm+'</XTSM>')
         except Exception as e:
             print "Error: Failed to objectify AnalysisSpace"

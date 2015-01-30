@@ -2,7 +2,32 @@
 """
 Created on Tue Mar 25 22:01:55 2014
 
-@author: Nate
+@author: Nate, CP
+
+This program emulates the action of the PXI/experiment system. It can request
+the active XTSM from the server, receive the timingstring, and then serve back
+a databomb composed of fake data.
+
+Usage:
+There is the option of either running the emulator as connecting through tcp,
+or by opening a wbsocket connection.
+
+After running this script, an instance of a "CommandLibrary" is in global
+scope - called "command_library". To command the emulator to communicate via
+websocket, one can for exampletype, 'command_library.request_active_xtsm()'
+ in the console. That will begin
+a chain reaction of requesting the active xtsm from the server, receiving the
+timingstrings, and sending a databomb back to the server.
+
+This script must be run *after* the main timing server starts up.
+
+Further, an instance of PXI_Emulator_TCP is in the global scope as well - 
+called "tcp". 
+
+To request the active xtsm from the timing server running on localhost, call,
+"tcp.constant_run()". Which will begin a loop of repeated active_xtsm requests
+and fake databombs being created.
+
 """
 
 import httplib, mimetypes, numpy, time, pdb
@@ -113,7 +138,7 @@ class MulticastProtocol(DatagramProtocol):
                 return
         else:
             if DEBUG: print "class PXI_emulator.MulticastProtocol, func datagramReceived"
-            if DEBUG and len(payload) < 10000: print datagram
+            if DEBUG and len(datagram) < 10000: print datagram
         
 
         
@@ -213,6 +238,90 @@ class Keyboard_Input(basic.LineReceiver):
             print '>s> ' + out
 
 
+class PXI_Emulator_TCP:
+    #The following was for PXI_emulator through TCP
+    def __init__(self):
+        pass
+    def send_compile_request(self,shotnumber=22):
+        if DEBUG: print "send_compile_request"
+        self.post_multipart("127.0.0.1:8083",'127.0.0.1:8083'
+                        ,[('IDLSocket_ResponseFunction','compile_active_xtsm')
+                        ,('shotnumber',str(shotnumber)),('Labview Version','1.0')
+                        #,('data_context','default:127.0.0.1'),('terminator','die')],[])
+                        ,('data_context','PXI_emulator'),('terminator','die')],[])
+    
+    def post_multipart(self,host, selector, fields, files):
+        """
+        Post fields and files to an http host as multipart/form-data.
+        fields is a sequence of (name, value) elements for regular form fields.
+        files is a sequence of (name, filename, value) elements for data to be uploaded as files
+        Return the server's response page.
+        """
+        content_type, body = self.encode_multipart_formdata(fields, files)
+        h = httplib.HTTP(host)
+        h.putrequest('POST', selector)
+        h.putheader('content-type', content_type)
+        h.putheader('content-length', str(len(body)))
+        h.endheaders()
+        h.send(body)
+        h.close()
+        #errcode, errmsg, headers = h.getreply()
+        return #h.file.read()
+    
+    def encode_multipart_formdata(self,fields, files):
+        """
+        fields is a sequence of (name, value) elements for regular form fields.
+        files is a sequence of (name, filename, value) elements for data to be uploaded as files
+        Return (content_type, body) ready for httplib.HTTP instance
+        """
+        BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
+        CRLF = '\n\r'
+        L = []
+        L.append('--' + BOUNDARY )
+        for (key, value) in fields:
+            L.append('Content-Disposition: form-data; name="%s"' % key)
+            L.append('')
+            L.append(value)
+            L.append('--' + BOUNDARY + '--')
+        #L.append('--' + BOUNDARY + '--')
+        L.append('')
+        body = CRLF.join(L)
+        content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
+        return content_type, body
+    
+    def get_content_type(self,filename):
+        return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        
+    def post_databomb(self,shotnumber=1):
+        """
+        Post a fictitious databomb of random data
+        """
+        msgdict={"sender":"PXI1Slot3/ai0:3","shotnumber":str(int(shotnumber)),"repnumber":-1}
+        msgdict.update({"somedata":numpy.random.random(10000)})
+        msg=msgpack.packb(msgdict)
+        self.post_multipart("127.0.0.1:8083",'127.0.0.1:8083'
+                        ,[('IDLSocket_ResponseFunction','databomb')
+                        ,('databomb',msg),('data_context','PXI_emulator'),('terminator','die')],[])
+        
+    def constant_run(self,delay=2,iter=100):
+        global shotnumber
+        msg = {'fake_shotnumber_started':shotnumber,
+               'time':time.time(),
+                'server_ip_in_charge':'10.1.1.124',
+                'server_port_in_charge':'8083'}
+        for a in range(iter):
+            self.send_compile_request(shotnumber)
+            time.sleep(delay)
+            #post_databomb(shotnumber)
+            print "New Fake shot started. shotnumber =", shotnumber
+            self.post_multipart("127.0.0.1:8083",'127.0.0.1:8083',
+                           [('fake_shotnumber_started',str(shotnumber)),
+                          ('time',str(time.time())),
+                            ('server_ip_in_charge','10.1.1.124'),
+                            ('server_port_in_charge','8083'),
+                            ('data_context','PXI_emulator'),
+                            ('terminator','die')],[])
+            shotnumber+=1
 
 
 def main():
@@ -235,111 +344,19 @@ def main():
         command_library.factory = factory
         command_library.multicast = multicast
         factory.command_library = command_library
+        print "........................WS Server Running......................."
     except twisted.internet.error.CannotListenError:
         print "Can't listen"
         #server_shutdown()
+       
+    
+    global tcp
+    tcp = PXI_Emulator_TCP()
+        
+        
+    reactor.run()
+    #command_library.request_active_xtsm()
+        
     
 if __name__ == '__main__':
     main()
-
-'''
-factory = WebSocketServerFactory(address + ":9084", debug = False)
-factory.setProtocolOptions(failByDrop=False)
-factory.protocol = MyServerProtocol
-try:
-    reactor.listenTCP(9084, factory)
-    factory.command_library = command_library
-    command_library.factory = factory
-except twisted.internet.error.CannotListenError:
-    print "Can't listen"
-    return
-    #server_shutdown()
-'''
-
-
-reactor.run()
-
-
-#The following was for PXI_emulator through TCP
-def send_compile_request(shotnumber=22):
-    if DEBUG: print "send_compile_request"
-    post_multipart("127.0.0.1:8083",'127.0.0.1:8083'
-                    ,[('IDLSocket_ResponseFunction','compile_active_xtsm')
-                    ,('shotnumber',str(shotnumber)),('Labview Version','1.0')
-                    #,('data_context','default:127.0.0.1'),('terminator','die')],[])
-                    ,('data_context','PXI_emulator'),('terminator','die')],[])
-
-def post_multipart(host, selector, fields, files):
-    """
-    Post fields and files to an http host as multipart/form-data.
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return the server's response page.
-    """
-    content_type, body = encode_multipart_formdata(fields, files)
-    h = httplib.HTTP(host)
-    h.putrequest('POST', selector)
-    h.putheader('content-type', content_type)
-    h.putheader('content-length', str(len(body)))
-    h.endheaders()
-    h.send(body)
-    h.close()
-    #errcode, errmsg, headers = h.getreply()
-    return #h.file.read()
-
-def encode_multipart_formdata(fields, files):
-    """
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return (content_type, body) ready for httplib.HTTP instance
-    """
-    BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-    CRLF = '\n\r'
-    L = []
-    L.append('--' + BOUNDARY )
-    for (key, value) in fields:
-        L.append('Content-Disposition: form-data; name="%s"' % key)
-        L.append('')
-        L.append(value)
-        L.append('--' + BOUNDARY + '--')
-    #L.append('--' + BOUNDARY + '--')
-    L.append('')
-    body = CRLF.join(L)
-    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-    return content_type, body
-
-def get_content_type(filename):
-    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-    
-def post_databomb(shotnumber=1):
-    """
-    Post a fictitious databomb of random data
-    """
-    msgdict={"sender":"PXI1Slot3/ai0:3","shotnumber":str(int(shotnumber)),"repnumber":-1}
-    msgdict.update({"somedata":numpy.random.random(10000)})
-    msg=msgpack.packb(msgdict)
-    post_multipart("127.0.0.1:8083",'127.0.0.1:8083'
-                    ,[('IDLSocket_ResponseFunction','databomb')
-                    ,('databomb',msg),('data_context','PXI_emulator'),('terminator','die')],[])
-    
-def constant_run(delay=2,iter=100):
-    global shotnumber
-    msg = {'fake_shotnumber_started':shotnumber,
-           'time':time.time(),
-            'server_ip_in_charge':'10.1.1.124',
-            'server_port_in_charge':'8083'}
-    for a in range(iter):
-        send_compile_request(shotnumber)
-        time.sleep(delay)
-        #post_databomb(shotnumber)
-        print "New Fake shot started. shotnumber =", shotnumber
-        post_multipart("127.0.0.1:8083",'127.0.0.1:8083',
-                       [('fake_shotnumber_started',str(shotnumber)),
-                      ('time',str(time.time())),
-                        ('server_ip_in_charge','10.1.1.124'),
-                        ('server_port_in_charge','8083'),
-                        ('data_context','PXI_emulator'),
-                        ('terminator','die')],[])
-        shotnumber+=1
-        
-#command_library.request_active_xtsm()

@@ -4,11 +4,12 @@ Created on Mon Nov 03 10:50:30 2014
 
 @author: User
 """
-
+import pprint
 import lxml.etree as ET
 
-dom = ET.parse("C:\\wamp\\www\\MetaViewer\\transforms\\default.xsd")
-xslt = ET.parse("C:\\wamp\\www\\MetaViewer\\transforms\\XTSM_xsd_to_xsl_light.xsl")
+parser = ET.XMLParser(remove_blank_text=True)
+dom = ET.parse("C:\\wamp\\www\\MetaViewer\\transforms\\default.xsd", parser)
+xslt = ET.parse("C:\\wamp\\www\\MetaViewer\\transforms\\XTSM_xsd_to_xsl_light.xsl", parser)
 transform = ET.XSLT(xslt)
 newdom = transform(dom)
 print(ET.tostring(newdom, pretty_print=True))

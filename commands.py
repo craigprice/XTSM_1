@@ -58,6 +58,7 @@ import numpy
 import collections
 import sync
 from scipy.optimize import curve_fit
+import timing_diagram
 DEBUG = False
       
 NUM_RETAINED_XTSM=10
@@ -394,13 +395,13 @@ class CommandLibrary():
             exp_sync = sync.Experiment_Sync_Group(self.server, dc.name)
             dc.update({'_exp_sync':exp_sync})
         ax = params['_active_xtsm']
-        if DEBUG: print "!!!!"
-        if DEBUG: print ax
+        #if DEBUG: print "!!!!"
+        #if DEBUG: print ax
         #pdb.set_trace()
         ax = XTSM_Transforms.strip_to_active(ax)
         exp_sync.active_xtsm = ax
-        if DEBUG: print "!!!!"
-        if DEBUG: print ax
+        #if DEBUG: print "!!!!"
+        #if DEBUG: print ax
         #pdb.set_trace()
         if params.has_key('socket_type'):
             if params['socket_type'] == 'Websocket':
@@ -536,8 +537,8 @@ class CommandLibrary():
         
         # turn the active_xtsm string into an object
         
-        if DEBUG: print "!!!!!comp"
-        if DEBUG: print exp_sync.active_xtsm
+        #if DEBUG: print "!!!!!comp"
+        #if DEBUG: print exp_sync.active_xtsm
         xtsm_object = XTSMobjectify.XTSM_Object(exp_sync.active_xtsm)
         dc.update({'_active_xtsm_obj':xtsm_object})
         
@@ -563,6 +564,8 @@ class CommandLibrary():
         tp = time.time()
         XTSMobjectify.postparse(parserOutput)            
         t1 = time.time()
+        #td = timing_diagram.TimingDiagram()
+        #td.print_diagram(xtsm_object)
         if DEBUG: print "Parse Time: " , t1-t0, "s", "(postparse ", t1-tp, " s)"
         
         message = {"server_console":
@@ -684,6 +687,7 @@ class CommandLibrary():
         # send back the timingstrings
         #pdb.set_trace()
         tsbytes = bytearray(parserOutput.package_timingstrings())
+        print "!!!"
         #timing_diagram.TimingString(tsbytes)
         timingstringOutput = str(tsbytes)
         #print parserOutput.timing_string_ints
@@ -1279,42 +1283,41 @@ class SocketCommand():
         if DEBUG: print "self.params.keys()", self.params.keys()
         if DEBUG: print "Calling this ResponseFunction:",self.params['IDLSocket_ResponseFunction']
         
-        #'''
-        try:
-            t0 = time.time()
-            ThisResponseFunction(p)
-            print self.params['IDLSocket_ResponseFunction'] + " Time:", time.time()-t0
-        except Exception as e:
-            print "Error: Failed to execute IDLSocket_ResponseFunction"
-            print ('Missing Socket_ResponseFunction:',
-                   self.params['IDLSocket_ResponseFunction'])
-            print "self.params.keys()", self.params.keys()
-            print "Calling this ResponseFunction:",self.params['IDLSocket_ResponseFunction']
-            print "Error:", e
-            print e.message
-            traceback.print_stack()
-            traceback.print_exception(*sys.exc_info())
-        #'''
+        PROFILE = False
+        if not PROFILE:
+            try:
+                t0 = time.time()
+                ThisResponseFunction(p)
+                print self.params['IDLSocket_ResponseFunction'] + " Time:", time.time()-t0
+            except Exception as e:
+                print "Error: Failed to execute IDLSocket_ResponseFunction"
+                print ('Missing Socket_ResponseFunction:',
+                       self.params['IDLSocket_ResponseFunction'])
+                print "self.params.keys()", self.params.keys()
+                print "Calling this ResponseFunction:",self.params['IDLSocket_ResponseFunction']
+                print "Error:", e
+                print e.message
+                traceback.print_stack()
+                traceback.print_exception(*sys.exc_info())
         
             
-        '''
-        if self.params['IDLSocket_ResponseFunction'] == 'compile_active_xtsm':
-            today = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
-            location = '../profile_server/' + today + '/'
-            now = datetime.datetime.fromtimestamp(time.time()).strftime('%H-%M-%S')
-            name = location + 'profile_stats_' + now + '.prof'
-            try:
-                cProfile.runctx('getattr(command_library, self.params["IDLSocket_ResponseFunction"])(self.params)',globals(),locals(), filename=name)
-            except IOError:
-                os.makedirs(location)
-                cProfile.runctx('getattr(command_library, self.params["IDLSocket_ResponseFunction"])(self.params)',globals(),locals(), filename=name)
-            stats = pstats.Stats(name)
-            stats.add(name)
-            stats.sort_stats('cumulative')
-            stats.print_stats()
-            pass
-        else:
-            ThisResponseFunction(p)
-        '''
+        if PROFILE:
+            if self.params['IDLSocket_ResponseFunction'] == 'compile_active_xtsm':
+                today = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
+                location = '../profile_server/' + today + '/'
+                now = datetime.datetime.fromtimestamp(time.time()).strftime('%H-%M-%S')
+                name = location + 'profile_stats_' + now + '.prof'
+                try:
+                    cProfile.runctx('getattr(command_library, self.params["IDLSocket_ResponseFunction"])(self.params)',globals(),locals(), filename=name)
+                except IOError:
+                    os.makedirs(location)
+                    cProfile.runctx('getattr(command_library, self.params["IDLSocket_ResponseFunction"])(self.params)',globals(),locals(), filename=name)
+                stats = pstats.Stats(name)
+                stats.add(name)
+                stats.sort_stats('cumulative')
+                stats.print_stats()
+                pass
+            else:
+                ThisResponseFunction(p)
         #print "In class SocketCommand, function execute - End."
 

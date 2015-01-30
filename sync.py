@@ -44,9 +44,13 @@ import file_locations
 
 
 import numpy
-from enthought.traits.api import HasTraits
-from enthought.traits.api import Int as TraitedInt
-from enthought.traits.api import Str as TraitedStr
+#from enthought.traits.api import HasTraits
+#from enthought.traits.api import Int as TraitedInt
+#from enthought.traits.api import Str as TraitedStr
+
+from traits.api import HasTraits
+from traits.api import Int as TraitedInt
+from traits.api import Str as TraitedStr
 
 import collections
 DEBUG = False

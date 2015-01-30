@@ -219,20 +219,27 @@ class XTSM_core(object):
         Returns the first XTSM subelement of itemType type with field itemField equal to itemFieldValue
         Note: will search all descendent subelements!
         """
-        hits=set()
+        hits = set()
         if hasattr(self,itemType):
             for item in getattr(self,itemType): # advance to matching element
-                if getattr(item,itemField).PCDATA==itemFieldValue:
-                    if multiple: hits=hits.union({item})
-                    else: return item
+                if getattr(item,itemField).PCDATA == itemFieldValue:
+                    if multiple:
+                        hits=hits.union({item})
+                    else:
+                        return item
         for subelm in self.getChildNodes():
-            if not hasattr(subelm,'getItemByFieldValue'): continue
-            item=subelm.getItemByFieldValue(itemType,itemField,itemFieldValue,multiple)
-            if item!=None and item!={}:
-                if multiple: hits=hits.union(item) 
-                else: return item
-        if multiple: return hits
-        else: return None 
+            if not hasattr(subelm,'getItemByFieldValue'):
+                continue
+            item = subelm.getItemByFieldValue(itemType,itemField,itemFieldValue,multiple)
+            if item != None and item != {}:
+                if multiple:
+                    hits = hits.union(item) 
+                else:
+                    return item
+        if multiple:
+            return hits
+        else:
+            return None 
 
     def getItemByFieldValueSet(self,itemType,FieldValueSet):
         """
@@ -766,6 +773,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         self.get_edgeSources()
         if TIMING: timing.append(("get_edge_sources",time.time()))
             
+        #pdb.set_trace()
         #Need to fix problem with duplicate edge values at different times.
         #Only considering digital Boards. Possible problems may occur with
         #intervals on digital boards and any further edges. CP 2015-01-21
@@ -780,32 +788,28 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             times_equal = sort_ge[3,1:-1]==sort_ge[3,0:-2]
             #These are the consequtive edges that have the same value at different times.
             duplicates = numpy.logical_and(channel_equal, times_equal)
-            remove =  sort_ge_T[numpy.where(duplicates)[0]+1]
-            print remove
+            #remove =  sort_ge_T[numpy.where(duplicates)[0]+1]
+            #print remove
             #if len(check_dups) > 0 or len(remove) > 0:
-            if len(duplicates) > 0:
+            if len(numpy.where(duplicates)[0]) > 0:
                 #print "CHECK:!!", (check_dups == remove).all()
                 print "WARNING! --- Needed to remove duplicate edges:"
                 print "         --- Timing Group:", self.tGroupNode.Name.PCDATA
                 print "         ---", self.tGroupNode.Description.PCDATA
                 for dup in sort_ge_T[numpy.where(duplicates)[0]+1]:
                     fast_tag = dup[4]
-                    #pdb.set_trace()
                     node = self.tGroupNode.getOwnerXTSM().body.Sequence._fasttag_dict[fast_tag]
                     node.addAttribute("parser_warning","edge discarded as duplicate")
-                    #chan_node = self.tGroupNode.getItemByFieldValue('Channel',
-                    #                                                'TimingGroupIndex',
-                    #                                                 dup[1])
-                    #print 
-                    #print "         --- ChannelName:", chan_node.ChannelName.PCDATA
                     print "         --- OnChannel:", node.OnChannel.PCDATA
                     print "         --- Time:", dup[3]
-                self.groupEdges = numpy.delete(sort_ge, numpy.where(duplicates)[0]+1, 1)
+                pass
+                #self.groupEdges = numpy.delete(sort_ge, numpy.where(duplicates)[0]+1, 1)
                      
         # coerce explicit timing edges to a multiple of the parent clock's timebase
         self.coerce_explicitEdgeSources() #LRJ 3-7-2014, edge coercion will be done inside of construct_denseT so that clockers and outputs agree on times.
         if TIMING: timing.append(("coerce_explicitEdgeSources",time.time()))        
 
+        #pdb.set_trace()
         # create a list of all times an update is needed for this timing group   
         self.construct_denseT()
         if TIMING: timing.append(("construct_denseT",time.time()))  
@@ -829,6 +833,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             self.sort_edgeSources()
             if TIMING: timing.append(("sort_edgeSources",time.time()))
             
+            pdb.set_trace()
             # create a channelData object for every channel; accumulates all edges for each channel
             self.channels = {channum:channelData(self,channum) for channum in range(self.numchan)} 
             if TIMING: timing.append(("channel creations",time.time()))       
@@ -949,7 +954,10 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         (using the parent's resolution allows us to subresolution step.)
         """
         if DEBUG: print "class ControlArray, func coerce_explicitEdgeSources"
-        self.lasttimecoerced=numpy.float64(numpy.ceil(numpy.float64(self.seqendtime)/numpy.float64(self.clockgenresolution)))*numpy.float64(self.clockgenresolution)    
+        temp_numerator = numpy.float64(self.seqendtime)
+        temp_denomerator = numpy.float64(self.clockgenresolution)
+        temp_0 = numpy.float64(numpy.ceil(temp_numerator/temp_denomerator))
+        self.lasttimecoerced = temp_0*numpy.float64(self.clockgenresolution)    
 
 
     def construct_denseT(self):
@@ -969,6 +977,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             if DEBUG: print "old denseT: ", t1-t0
             t0=time.time()
         
+        #pdb.set_trace()
         # first create a sorted list of all times at beginning or end of interval, at an edge, or beginning or start of sequence
         self.alltimes=numpy.unique(numpy.concatenate([self.groupIntervals[2:4,].flatten(),self.groupEdges[2,],[self.channelMap.hardwaretime.astype(numpy.float64), numpy.float64(self.lasttimecoerced)]]))
         #self.alltimes=XTSM_cwrappers.merge_sorted([self.groupIntervals[2:4,].flatten(),self.groupEdges[2,],numpy.array([self.channelMap.hardwaretime,self.lasttimecoerced],dtype=numpy.float64)])
@@ -1547,9 +1556,15 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             intedges[2,:] = ctimes  # set reduced times
             intedges[0,:] = ctimes  # set times
             
-        else: # algorithm for a delay train pulser (returns only delay count between successive pulses in slot 0, times in slot 2)
-            # negative time values (such as for digital clocking channel) appear as ridiculously large positive times.
-            # remove the large positive time, offset all times by 2ns, and add in a new start time                   
+        else:
+            '''
+            Algorithm for a delay train pulser (returns only delay count
+            between successive pulses in slot 0, times in slot 2)
+            Negative time values (such as for digital clocking channel) appear
+            as ridiculously large positive times.
+            Remove the large positive time, offset all times by 2ns, and add
+            in a new start time 
+            '''                  
             delays=ctimes[1:]-ctimes[:-1]
             delays=numpy.append(delays,self.channelMap.hardwaretime) #LRJ 10-29-2013 final delay time set to hardware time
             intedges=numpy.empty((5,ctimes.shape[0]),dtype=numpy.float64)
@@ -1587,7 +1602,6 @@ class channelData():
                     self.holdingval = 0
             else:
                 self.holdingval = 0
-            
              
             # retrieve intedges
             if self.isclock:
@@ -1607,12 +1621,15 @@ class channelData():
                 # for a non-clock channel, start with explicitly defined edges
                 # step through each interval, reparse and append data
                 #t0=time.time()
+                if self.parent.tGroup == 4:
+                    pdb.set_trace()     
                 try: 
                     #replace times in groupEdges with the nearest coerced time in denseT using the edge_harvest method of ControlArray
                     edgesonchannel = parent.groupEdges[:,(parent.groupEdges[1,:]==self.channel).nonzero()[0]]                    
-                    self.intedges = numpy.empty((5L,edgesonchannel.shape[1]))                    
+                    self.intedges = numpy.empty((5L,edgesonchannel.shape[1]))             
                     for i in range(edgesonchannel.shape[1]):
                         self.intedges[:,i] = self.parent.sequence._fasttag_dict[edgesonchannel[4,i]].parse_harvest(parent.denseT)
+                        print numpy.asarray(self.intedges).transpose()
                 except IndexError:
                     self.intedges = numpy.empty((5,0))
                 try: self.chanIntervals = parent.groupIntervals[:,(parent.groupIntervals[1,:]==self.channel).nonzero()[0]]
@@ -1623,6 +1640,7 @@ class channelData():
                    interval = parent.sequence._fasttag_dict[intervalInd]
                    try:
                        self.intedges = numpy.hstack((self.intedges,interval.parse_harvest(parent.denseT)))
+                       print numpy.asarray(self.intedges).transpose()
                    except:
                        pdb.set_trace()
                 #t1=time.time()
@@ -1631,11 +1649,19 @@ class channelData():
             if ((not self.isclock) and (not self.isinput)):
                 #t0=time.time()
                 # add first and last edge if necessary
+                if self.parent.tGroup == 4:
+                    pdb.set_trace()     
                 if self.intedges.shape[1]>0:
                     if self.intedges[2,0]!=0:
-                        self.intedges = numpy.hstack([numpy.array([[parent.denseT.searchsorted(parent.channelMap.hardwaretime),self.channel,parent.channelMap.hardwaretime,self.initval,-1]]).transpose(),self.intedges])
+                        temp_val_0 = parent.denseT.searchsorted(parent.channelMap.hardwaretime)
+                        temp_arr = [[temp_val_0,self.channel,parent.channelMap.hardwaretime,self.initval,-1]]
+                        self.intedges = numpy.hstack([numpy.array(temp_arr).transpose(),self.intedges])
+                        print numpy.asarray(self.intedges).transpose()
                     if self.intedges[2,-1] != parent.lasttimecoerced:
-                        self.intedges = numpy.hstack([self.intedges,numpy.array([[parent.denseT.searchsorted(parent.lasttimecoerced),self.channel,parent.lasttimecoerced,self.holdingval,-1]]).transpose()])
+                        temp_last_time = parent.denseT.searchsorted(parent.lasttimecoerced)
+                        temp_arr = [[temp_last_time,self.channel,parent.lasttimecoerced,self.holdingval,-1]]
+                        self.intedges = numpy.hstack([self.intedges,numpy.array(temp_arr).transpose()])
+                        print numpy.asarray(self.intedges).transpose()
                 else: 
                     self.intedges = numpy.hstack([numpy.array([[parent.denseT.searchsorted(parent.channelMap.hardwaretime),self.channel,parent.channelMap.hardwaretime,self.initval,-1]]).transpose(),self.intedges]) 
                     self.intedges = numpy.hstack([self.intedges,numpy.array([[parent.denseT.searchsorted(parent.lasttimecoerced),self.channel,parent.lasttimecoerced,self.holdingval,-1]]).transpose()])
@@ -1656,6 +1682,8 @@ class channelData():
             self.intedges[2,:] = self.parent.denseT
             self.intedges[3,:] = values
             #t1=time.time()
+        if self.parent.tGroup == 4:
+            pdb.set_trace()
         self.intedges=self.intedges[:,self.intedges[2,:].argsort()]  # added 10/8/14 NDG,JZ,CP  to solve missing edge elements which follow an interval in source XTSM
 #        try: 
 #            if self.chanObj.TimingGroupIndex.PCDATA==u'19': pdb.set_trace() 
@@ -1709,16 +1737,21 @@ class channelData():
         
     def timingstring_construct(self):
         """
-        inserts the timingstring fragment for this channel into the parent ControlArray's existing timingstring at position tsptr;
-        also enforces min and max values, channel calibration expressions, and scales to byte-form (these should be split to ancillary methods for maintainability)
+        inserts the timingstring fragment for this channel into the parent
+        ControlArray's existing timingstring at position tsptr;
+        also enforces min and max values, channel calibration expressions, and
+        scales to byte-form (these should be split to ancillary methods for
+        maintainability)
         """
         if DEBUG: print "class channelData, func timingstring_construct"
         length=self.intedges.shape[1]
         # first a header denoting this channel's length in bytes as 4bytes, LSB leading
-        self.parent.timingstring[self.parent.tsptr:(self.parent.tsptr+4)]=numpy.asarray([int(length*(self.parent.bytesperrepeat+self.parent.bytespervalue))], dtype='<u4').view('u1')
-        self.parent.tsptr+=4
+        temp_chan_len = int(length*(self.parent.bytesperrepeat+self.parent.bytespervalue))
+        temp_value = numpy.asarray([temp_chan_len], dtype='<u4').view('u1')
+        self.parent.timingstring[self.parent.tsptr:(self.parent.tsptr+4)] = temp_value
+        self.parent.tsptr += 4
         self.intedges=self.intedges.transpose()
-        if length>0 and self.parent.method!="Digital_DelayTrain":
+        if length>0 and self.parent.method != "Digital_DelayTrain":
             # Perform channel hardware limit transformations here:
             if not hasattr(self.parent,'repasint'): self.apply_channelTransforms()
             # calculate repeats
@@ -1740,11 +1773,17 @@ class channelData():
             except TypeError:
                 pass
             # copy into timingstring
-            self.parent.timingstring[self.parent.tsptr:(self.parent.tsptr+length*(self.parent.bytesperrepeat+self.parent.bytespervalue))]=interweaver.view('u1').reshape(interweaver.shape[0]*(self.parent.bytesperrepeat+self.parent.bytespervalue))
-            self.parent.tsptr+=length*(self.parent.bytesperrepeat+self.parent.bytespervalue)
+            temp_tsptr = (self.parent.tsptr+length*(self.parent.bytesperrepeat+self.parent.bytespervalue))
+            temp_value_0 = (self.parent.bytesperrepeat+self.parent.bytespervalue)
+            temp_value_1 = interweaver.view('u1').reshape(interweaver.shape[0]*temp_value_0)
+            self.parent.timingstring[self.parent.tsptr:temp_tsptr] = temp_value_1
+            self.parent.tsptr += length*(self.parent.bytesperrepeat+self.parent.bytespervalue)
         else: # delay train algorithm
             if length>0:
-                self.parent.timingstring[self.parent.tsptr:(self.parent.tsptr+length*(self.parent.bytesperrepeat+self.parent.bytespervalue))]=numpy.asarray((self.intedges[:,0]/self.parent.parentgenresolution).round(), dtype='<u'+str(self.parent.bytesperrepeat)).view('u1')  # NEED THIS ALGORITHM!
+                temp_tsptr = (self.parent.tsptr+length*(self.parent.bytesperrepeat+self.parent.bytespervalue))
+                temp_ts_value = (self.intedges[:,0]/self.parent.parentgenresolution).round()
+                temp_dtype = '<u'+str(self.parent.bytesperrepeat)
+                self.parent.timingstring[self.parent.tsptr:temp_tsptr]=numpy.asarray(temp_ts_value, dtype=temp_dtype).view('u1')  # NEED THIS ALGORITHM!
                 self.parent.tsptr+=length*(self.parent.bytesperrepeat+self.parent.bytespervalue)
                 
 class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
@@ -2330,7 +2369,8 @@ class Edge(gnosis.xml.objectify._XO_,XTSM_core):
         
     def parse_harvest(self,dense_time_array):
         '''
-        Returns an edge array entry with coerced times from denseT that are nearest to an edge's requested time
+        Returns an edge array entry with coerced times from denseT that are
+        nearest to an edge's requested time
         ''' 
         idx=dense_time_array.searchsorted(self.time)
         if dense_time_array[idx]!=self.time: 
@@ -2343,11 +2383,19 @@ class Edge(gnosis.xml.objectify._XO_,XTSM_core):
         self.value=self.Value[0].parse({'T':self.time,'TI':self.time})
         return numpy.array([idx,self.channel,self.time,self.value,self._fasttag])
 
+
 '''
+class Value(gnosis.xml.objectify._XO_,XTSM_core):
+    pass
 class Value(gnosis.xml.objectify._XO_,XTSM_core):
     def __init__(self, value=None):
         XTSM_core.__init__(self, value)
         self.value = value
+    #def parse(self):
+    #    #v=self.PCDATA
+    #    #eval(html.fromstring(self.PCDATA.replace('#','&')).text,globals(),tscope)
+    #    
+    #    gnosis.xml.objectify._XO_,XTSM_core.parse(self)
 '''
 
 class Interval(gnosis.xml.objectify._XO_,XTSM_core):
@@ -2387,7 +2435,6 @@ class Interval(gnosis.xml.objectify._XO_,XTSM_core):
         Returns all edges according to times in this interval
         first index (timinggroup number) replaced with time index
         """
-        
         startind=dense_time_array.searchsorted(self.starttime)
         endind=dense_time_array.searchsorted(self.endtime)        
         self.T=dense_time_array[startind:(endind+1)]        
