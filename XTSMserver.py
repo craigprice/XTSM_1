@@ -44,6 +44,7 @@ import textwrap
 import pickle
 #import roperdarknoise as rdn
 import pstats
+import unittest
 
 import msgpack
 import msgpack_numpy
@@ -133,7 +134,7 @@ DEBUG_LINENO = 0
 DEBUG_TRACE = False
 TRACE_IGNORE=["popexecute","getChildNodes","getItemByFieldValue"]
 MAX_SCRIPT_SERVERS = 2
-DEBUG = True
+DEBUG = False
       
 if DEBUG_TRACE: sys.settrace(tracefunc)
 
@@ -1752,6 +1753,7 @@ class GlabPythonManager():
         ps.server = self.server
         ps.connection_manager = self.server.connection_manager
         ps.open_connection(self.ping_data)
+        self.parser_test_info()
         if DEBUG: print ('Listening on ports:',
                str(port), '(standard HTTP),',
                str(wsport) + ' (websocket)',
@@ -2367,9 +2369,82 @@ class GlabPythonManager():
                 return self.clients_by_role[address.split("role:")[1]]
             except AttributeError:
                 return ""
+                      
+        
+    def parser_test_info(self, path='../test_xtsm/2015-02-02/',
+                         SAVING=False, CHECKING=True):
+        
+        xtsm_files = [
+            os.path.join(path,f)
+            for f in os.listdir(path)
+            if os.path.join(path,f)[os.path.join(path,f).rfind('.'):].strip() == '.xtsm'
+        ]
+        
+        for f in xtsm_files:
+            text = open(f, 'r').read()
+            t0 = time.time()
+            text = XTSM_Transforms.strip_to_active(text)
+            xtsm_object = XTSMobjectify.XTSM_Object(text)
+            t1 = time.time()
+            XTSMobjectify.preparse(xtsm_object)     
+            t2 = time.time()
+            for s in xtsm_object.XTSM.body[0].Sequence:
+                t2_2 = time.time()
+                s.parse()
+                parserOutput = s.ParserOutput[0]
+                t3 = time.time()
+                XTSMobjectify.postparse(parserOutput)            
+                t4 = time.time()
+                tsbytes = str(bytearray(parserOutput.package_timingstrings()))               
+                
+                seq_info = {'xtsm':text,
+                            'objectify_time':t1 - t0,
+                            'preparse_time':t2 - t1,
+                            'parse_time':t3 - t2_2,
+                            'postparse_time':t4 - t3,
+                            'sequence_name':s.Name.PCDATA,
+                            'tsbytes':tsbytes}
+                            
+                if SAVING:
+                    with open(f[:f.rfind('.')] + s.Name.PCDATA + '.pkl', 'wb') as output:
+                        pickle.dump(seq_info, output, pickle.HIGHEST_PROTOCOL)
+                        
+                if CHECKING:
+                    with open(f[:f.rfind('.')] + s.Name.PCDATA + '.pkl', 'rb') as myfile:
+                        old_seq_info = pickle.load(myfile)
+                        if seq_info['xtsm'] != old_seq_info['xtsm']:
+                            print 'Error:', 'xtsm', 'doesnt match'
+                            pdb.set_trace()
+                        time_diff = seq_info['objectify_time'] - old_seq_info['objectify_time']
+                        if time_diff > 0.1*old_seq_info['objectify_time'] and time_diff > 10/1000.0:
+                            print ('Error:', 'objectify_time', 'is',
+                            seq_info['objectify_time'], 'old time is',
+                            old_seq_info['objectify_time'])
+                            pdb.set_trace()
+                        time_diff = seq_info['preparse_time'] - old_seq_info['preparse_time']
+                        if time_diff > 0.1*old_seq_info['preparse_time'] and time_diff > 10/1000.0:
+                            print ('Error:', 'preparse_time', 'is',
+                            seq_info['preparse_time'], 'old time is',
+                            old_seq_info['preparse_time'])
+                            pdb.set_trace()
+                        time_diff = seq_info['postparse_time'] - old_seq_info['postparse_time']
+                        if time_diff > 0.1*old_seq_info['postparse_time'] and time_diff > 10/1000.0:
+                            print ('Error:', 'postparse_time', 'is',
+                            seq_info['postparse_time'], 'old time is',
+                            old_seq_info['postparse_time'])
+                            pdb.set_trace()
+                        if seq_info['sequence_name'] != old_seq_info['sequence_name']:
+                            print 'Error:', 'sequence_name', 'doesnt match'
+                            pdb.set_trace()
+                        if seq_info['tsbytes'] != old_seq_info['tsbytes']:
+                            print 'Error:', 'tsbytes', 'doesnt match'
+                            pdb.set_trace()
+                        
+        print "Parser reports no changes or slowing down"
+        return
         
         
-    
+    """
     class display():
         pass
     class IORedirector(object):
@@ -2380,6 +2455,7 @@ class GlabPythonManager():
         '''A class for redirecting stdout to this Text widget.'''
         def write(self,str):
             self.text_area.write(str,False)
+    """
             
     '''        
     def initdisplay(self):

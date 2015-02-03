@@ -23,12 +23,14 @@ import simplejson
 import collections 
 import profile
 import pstats
+import os
 import commands
 import sync
+import decimal
 
 #from IPy import IP
 
-DEBUG = True
+DEBUG = False
 
 XO_IGNORE=['PCDATA']  # ignored elements on XML_write operations
 
@@ -247,9 +249,12 @@ class XTSM_core(object):
         FieldValueSet should be a dictionary of field:value pairs
         """
         for step,pair in enumerate(FieldValueSet.items()):
-            if step==0: hits=self.getItemByFieldValue(itemType,pair[0],pair[1],True)
-            else: hits=hits.intersection(self.getItemByFieldValue(itemType,pair[0],pair[1],True))
-            if len(hits)==0: return hits
+            if step==0:
+                hits=self.getItemByFieldValue(itemType,pair[0],pair[1],True)
+            else:
+                hits=hits.intersection(self.getItemByFieldValue(itemType,pair[0],pair[1],True))
+            if len(hits)==0:
+                return hits
         return hits.pop()
 
     def getItemByAttributeValue(self,attribute,Value,multiple=False):
@@ -260,15 +265,21 @@ class XTSM_core(object):
         hits=set()
         if hasattr(self,attribute):
             if getattr(self,attribute)==Value: 
-                if multiple: hits=hits.union({self})
-                else: return self
+                if multiple:
+                    hits=hits.union({self})
+                else:
+                    return self
         for subelm in self.getChildNodes():
             a=subelm.getItemByAttributeValue(attribute,Value,multiple) 
             if a: 
-                if multiple: hits=hits.union({a})
-                else: return a
-        if multiple: return hits
-        else: return None
+                if multiple: 
+                    hits=hits.union({a})
+                else:
+                    return a
+        if multiple:
+            return hits
+        else:
+            return None
                 
     def parse(self,additional_scope=None):
         """
@@ -641,8 +652,14 @@ class body(gnosis.xml.objectify._XO_,XTSM_core):
                     aseq=self.getItemByFieldValue('Sequence','Name',self.SequenceSelector[0].current_value) # identify active sequence by name and begin collection
                     aseq.parse()
                 except Exception as Error:
-                    print Error
-                    print traceback.format_exc()
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    msg = ('Error in Parsing:', Error,
+                    'XTSMobjectify, line:', 
+                    exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                    print msg
+                    self.addAttribute("parser_error", msg) 
+                    
             elif self.__parent__.SequenceSelector:
                 if not hasattr(self.__parent__.SequenceSelector[0],'current_value'): 
                     self.__parent__.SequenceSelector[0].parse() # parse SS if not done already
@@ -650,9 +667,21 @@ class body(gnosis.xml.objectify._XO_,XTSM_core):
                     aseq=self.getItemByFieldValue('Sequence','Name',self.__parent__.SequenceSelector[0].current_value) # identify active sequence by name and begin collection
                     aseq.parse()
                 except Exception as Error:
-                    print Error
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    msg = ('Error in Parsing:', Error,
+                    'XTSMobjectify, line:', 
+                    exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                    print msg
+                    self.addAttribute("parser_error", msg) 
         except Exception as Error:
-            print Error
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            msg = ('Error in Parsing:', Error,
+            'XTSMobjectify, line:', 
+            exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+            print msg
+            self.addAttribute("parser_error", msg) 
         aseq.addAttribute("current_value","active")
         return aseq.ParserOutput[0]
 
@@ -833,7 +862,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             self.sort_edgeSources()
             if TIMING: timing.append(("sort_edgeSources",time.time()))
             
-            pdb.set_trace()
+            #pdb.set_trace()
             # create a channelData object for every channel; accumulates all edges for each channel
             self.channels = {channum:channelData(self,channum) for channum in range(self.numchan)} 
             if TIMING: timing.append(("channel creations",time.time()))       
@@ -873,13 +902,17 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         self.tGroupNode=self.channelMap.getItemByFieldValue('TimingGroupData','GroupNumber',str(self.tGroup))
         self.clockgenresolution=numpy.float64(self.channelMap.tGroupClockResolutions[self.tGroup])
         self.numchan=int(self.tGroupNode.ChannelCount.PCDATA)
-        try: self.range=numpy.float64((self.tGroupNode.Range.PCDATA))
-        except AttributeError: self.range=numpy.float64(self.tGroupNode.Scale.PCDATA)
+        try: 
+            self.range=numpy.float64((self.tGroupNode.Range.PCDATA))
+        except AttributeError: 
+            self.range=numpy.float64(self.tGroupNode.Scale.PCDATA)
         self.ResolutionBits=int(self.tGroupNode.ResolutionBits.PCDATA)
         # math.ceil returns the smallest integer not less than the argument.         
         self.bytespervalue=int(math.ceil(self.ResolutionBits/8.))
-        try: self.direction={"IN":"INPUT","OUT":"OUTPUT"}[str(self.tGroupNode.Direction.PCDATA).upper().strip().split('PUT')[0]]
-        except AttributeError: self.direction="OUTPUT"        
+        try: 
+            self.direction={"IN":"INPUT","OUT":"OUTPUT"}[str(self.tGroupNode.Direction.PCDATA).upper().strip().split('PUT')[0]]
+        except AttributeError: 
+            self.direction="OUTPUT"        
         # The following lines introduces the calibrition for the channel value.
         if not self.tGroupNode.DACCalibration.PCDATA==None:
             self.DACCalibration=numpy.float64(self.tGroupNode.DACCalibration.PCDATA) #LRJ 11-8-2013
@@ -887,9 +920,12 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             self.DACCalibration= numpy.float64((pow(numpy.float64(2.),numpy.float64(self.ResolutionBits-1))-1)/(self.range/numpy.float64(2.)))
             
         
-        if hasattr(self.tGroupNode,'SoftwareTrigger'): self.swTrigger=True 
-        if hasattr(self.tGroupNode,'DelayTrain'): self.dTrain=True 
-        else: self.dTrain=False
+        if hasattr(self.tGroupNode,'SoftwareTrigger'): 
+            self.swTrigger=True 
+        if hasattr(self.tGroupNode,'DelayTrain'): 
+            self.dTrain=True 
+        else: 
+            self.dTrain=False
         # if not self-clocked, get data about clocker
         if (self.tGroupNode.ClockedBy.PCDATA != u'self'):
             self.clocksourceNode=self.channelMap.getChannel(self.tGroupNode.ClockedBy.PCDATA)
@@ -898,19 +934,23 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
                                                                   self.clocksourceNode.TimingGroup.PCDATA)
             self.parentgenresolution=self.channelMap.tGroupClockResolutions[int(self.clocksourceTGroup.GroupNumber.PCDATA)]
             self.bytesperrepeat=4
-            if self.ResolutionBits==u'1': self.ResolutionBits=0
+            if self.ResolutionBits==u'1': 
+                self.ResolutionBits=0
         else: 
             self.parentgenresolution=self.clockgenresolution
             self.bytesperrepeat=4
         # Find the end time for the sequence
-        if hasattr(self.sequence,'endtime'): self.seqendtime=self.sequence.endtime
-        else: self.seqendtime=self.sequence.get_endtime()
+        if hasattr(self.sequence,'endtime'): 
+            self.seqendtime=self.sequence.endtime
+        else: 
+            self.seqendtime=self.sequence.get_endtime()
         # if delay train group, use ResolutionBits for time-resolution
         try: 
             if self.dTrain: 
                 self.bytespervalue=0
                 self.bytesperrepeat=int(math.ceil(self.ResolutionBits/8.))
-        except AttributeError: pass
+        except AttributeError: 
+            pass
 
     def get_edgeSources(self):
         
@@ -922,17 +962,20 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         # Find the edge that belongs to this timinggroup        
         if len(self.sequence.TimingProffer.data['Edge'])>0:
             self.groupEdges=(self.sequence.TimingProffer.data['Edge'])[(((self.sequence.TimingProffer.data['Edge'])[:,0]==int(self.tGroup)).nonzero())[0],]
-        else: self.groupEdges=self.sequence.TimingProffer.data['Edge']
+        else: 
+            self.groupEdges=self.sequence.TimingProffer.data['Edge']
         
         # Find the interval that belongs to this timinggroup       
         if len(self.sequence.TimingProffer.data['Interval'])>0:
             self.groupIntervals=(self.sequence.TimingProffer.data['Interval'])[(((self.sequence.TimingProffer.data['Interval'])[:,0]==int(self.tGroup)).nonzero())[0],]
-        else: self.groupIntervals=self.sequence.TimingProffer.data['Interval']
+        else: 
+            self.groupIntervals=self.sequence.TimingProffer.data['Interval']
         
         # Find the samples that belong to this timinggroup       
         if len(self.sequence.TimingProffer.data['Sample'])>0:
             self.groupSamples=(self.sequence.TimingProffer.data['Sample'])[(((self.sequence.TimingProffer.data['Sample'])[:,0]==int(self.tGroup)).nonzero())[0],]
-        else: self.groupSamples=self.sequence.TimingProffer.data['Sample']
+        else:
+            self.groupSamples=self.sequence.TimingProffer.data['Sample']
         
         # transpose to match IDL syntax
         self.groupEdges=self.groupEdges.transpose().astype(numpy.float64) # NDG 051714 to float64
@@ -1002,9 +1045,12 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
                         # define the times in this window using universal time
                         T=numpy.linspace(starttime,endtime,(endtime-starttime)/Tres+1).astype(numpy.float64)
                         self.denseT=numpy.append(self.denseT,T)
-                    else: self.denseT=numpy.append(self.denseT,starttime)   
-                else: self.denseT=numpy.append(self.denseT,starttime)
-            else: self.denseT=numpy.append(self.denseT,starttime)
+                    else:
+                        self.denseT=numpy.append(self.denseT,starttime)   
+                else:
+                    self.denseT=numpy.append(self.denseT,starttime)
+            else:
+                self.denseT=numpy.append(self.denseT,starttime)
         
         # This line add the endtime to the end of the denseT.       
         self.denseT=numpy.append(self.denseT,numpy.float64(self.lasttimecoerced))
@@ -1028,13 +1074,18 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         #Build an array indicating the clocking chain for the timing group. 
         #Format is an array of timing group numbers. For example tg 3 would give [2,6,0] which indicates that tg3 is clocked by tg 2 is clocked by tg 6 is clocked by tg 0
         self.channelMap.getClocks()
-        try: self.clkchain=numpy.array([self.channelMap.Clocks[self.tGroup][0]],dtype=numpy.float64)
-        except KeyError: self.clkchain=numpy.array([],dtype=numpy.float64)
-        for elem in range(self.getDictMaxValue(self.channelMap.tGroupClockLevels)-self.channelMap.tGroupClockLevels[self.tGroup]):
-            try :
+        try: 
+            self.clkchain=numpy.array([self.channelMap.Clocks[self.tGroup][0]],dtype=numpy.float64)
+        except KeyError:
+            self.clkchain=numpy.array([],dtype=numpy.float64)
+        temp_val = self.getDictMaxValue(self.channelMap.tGroupClockLevels)-self.channelMap.tGroupClockLevels[self.tGroup]
+        for elem in range(temp_val):
+            try:
                 self.clkchain=numpy.append(self.clkchain,self.channelMap.Clocks[self.clkchain[elem]][0])
-            except KeyError :pass
-            except IndexError: pass
+            except KeyError:
+                pass
+            except IndexError:
+                pass
        
       
 
@@ -1066,7 +1117,8 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             allclcks.append(self.denseT)  # adds denseT array to a list of arrays to be merged
             self.denseT=XTSM_cwrappers.merge_sorted(allclcks,track_indices=True)  # calls the efficient c-routine
             del allclcks[-1]  # drop the last element of allclcks which points to the original denseT
-        else: self.denseT=XTSM_cwrappers.merge_sorted([self.denseT])  # if there are no clocking channels, we only need to strip duplicates from denseT
+        else: 
+            self.denseT=XTSM_cwrappers.merge_sorted([self.denseT])  # if there are no clocking channels, we only need to strip duplicates from denseT
 
        
         self.allclcks={i:clck for clck,i in zip(allclcks,[cc for cc in self.cStrings])}
@@ -1076,7 +1128,9 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             if DEBUG: print "new denseT time:" , t1-t0
             if DEBUG: print "equality check", numpy.array_equal(old_denseT, self.denseT)
             if DEBUG: print "denseT types old/new:" , old_denseT.dtype, self.denseT.dtype
-            if not numpy.array_equal(old_denseT, self.denseT): pass
+            if not numpy.array_equal(old_denseT, self.denseT): 
+                pass
+                
 
     def construct_denseT_old(self):
         """
@@ -1220,7 +1274,7 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
             if not channelclocks[i]:
                 channeltimes[index - 1] = final_update
         ### NDG 3-11-14                
-                
+        
         if hasattr(self.tGroupNode, 'ParserInstructions') and hasattr(self.tGroupNode.ParserInstructions, 'Pulser'):
             if str.upper(str(self.tGroupNode.ParserInstructions.Pulser.PCDATA)) == 'YES': # for automatic pulses
                 while not (ptrs == fptrs).all():
@@ -1229,12 +1283,13 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
                     #LRJ 10-30-2013 hitstrue disables unused channels
                     lineindex=0
                     hitstrue=[]
+                    #Are the equality testing below against floats? If so, likely a place for bugs - CP 2015-02-02
                     for ct in channeltimes[ptrs]:
-                            if self.channels.values()[lineindex].intedges.shape[1] == 2 and ct==time:
-                                hitstrue.append(False)
-                            else:
-                                hitstrue.append(ct==time)
-                            lineindex+=1  
+                        if self.channels.values()[lineindex].intedges.shape[1] == 2 and ct==time:
+                            hitstrue.append(False)
+                        else:
+                            hitstrue.append(ct==time)
+                        lineindex+=1  
                     hits = [ct == time for ct in channeltimes[ptrs]] # find active pointers
                     bits = bitarray(hitstrue) # assign bits based on whether a matching time was found
                     # populate output arrays
@@ -1343,10 +1398,16 @@ class ControlArray(gnosis.xml.objectify._XO_,XTSM_core):
         #print "repas actual: ", ts-tr
         #t10=time.time()
         if pulse:
-            # the following lines reproduce some confusing lines in prior repasint for channels which have only two 
-            # update times (previously reasoned to be 'unused' channels - though that is not always the case (clocking channels for unused timinggroups, which need holding values clocked in, for example))  
-            # once it is established this routine reproduces the old routine's output, these lines should be removed
-            # and the entire timing system retested.
+            '''
+            The following lines reproduce some confusing lines in prior
+            repasint for channels which have only two update times (previously
+            reasoned to be 'unused' channels - though that is not always the
+            case (clocking channels for unused timinggroups, which need holding
+            values clocked in, for example))  
+            Once it is established this routine reproduces the old routine's
+            output, these lines should be removed and the entire timing system
+            retested.
+            '''
             twoedgechannels=[i for i,p,f in zip(range(0,Nchan),ptrs,fptrs) if f-p==2]
             for twoedgechannel in twoedgechannels:
                 changetimeindex1 = channeltimes[ptrs[twoedgechannel]]
@@ -1621,18 +1682,23 @@ class channelData():
                 # for a non-clock channel, start with explicitly defined edges
                 # step through each interval, reparse and append data
                 #t0=time.time()
-                if self.parent.tGroup == 4:
-                    pdb.set_trace()     
+                #if self.parent.tGroup == 4:
+                #    pdb.set_trace()  
+                pass
+                #pdb.set_trace()
                 try: 
                     #replace times in groupEdges with the nearest coerced time in denseT using the edge_harvest method of ControlArray
                     edgesonchannel = parent.groupEdges[:,(parent.groupEdges[1,:]==self.channel).nonzero()[0]]                    
                     self.intedges = numpy.empty((5L,edgesonchannel.shape[1]))             
                     for i in range(edgesonchannel.shape[1]):
-                        self.intedges[:,i] = self.parent.sequence._fasttag_dict[edgesonchannel[4,i]].parse_harvest(parent.denseT)
-                        print numpy.asarray(self.intedges).transpose()
+                        temp_tag = self.parent.sequence._fasttag_dict[edgesonchannel[4,i]]
+                        self.intedges[:,i] = temp_tag.parse_harvest(parent.denseT)
+                        #print numpy.asarray(self.intedges).transpose()
                 except IndexError:
                     self.intedges = numpy.empty((5,0))
-                try: self.chanIntervals = parent.groupIntervals[:,(parent.groupIntervals[1,:]==self.channel).nonzero()[0]]
+                try: 
+                    temp_0 = (parent.groupIntervals[1,:]==self.channel).nonzero()[0]
+                    self.chanIntervals = parent.groupIntervals[:,temp_0]
                 except IndexError:
                     self.chanIntervals = numpy.empty((7,0))
                 for intervalInd in self.chanIntervals[6,]:
@@ -1640,31 +1706,134 @@ class channelData():
                    interval = parent.sequence._fasttag_dict[intervalInd]
                    try:
                        self.intedges = numpy.hstack((self.intedges,interval.parse_harvest(parent.denseT)))
-                       print numpy.asarray(self.intedges).transpose()
-                   except:
-                       pdb.set_trace()
+                       pass
+                       #print numpy.asarray(self.intedges).transpose()
+                   except Exception as Error:
+                       exc_type, exc_obj, exc_tb = sys.exc_info()
+                       fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                       msg = ('Error in Parsing:', Error,
+                       'XTSMobjectify, line:', 
+                       exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                       print msg
+                       self.parent.addAttribute("parser_error", msg)
+                pass
                 #t1=time.time()
                 #print "harvest: ", t1-t0
 
             if ((not self.isclock) and (not self.isinput)):
                 #t0=time.time()
                 # add first and last edge if necessary
-                if self.parent.tGroup == 4:
-                    pdb.set_trace()     
+                #if self.parent.tGroup == 4:
+                #    pdb.set_trace()     
                 if self.intedges.shape[1]>0:
                     if self.intedges[2,0]!=0:
                         temp_val_0 = parent.denseT.searchsorted(parent.channelMap.hardwaretime)
                         temp_arr = [[temp_val_0,self.channel,parent.channelMap.hardwaretime,self.initval,-1]]
                         self.intedges = numpy.hstack([numpy.array(temp_arr).transpose(),self.intedges])
-                        print numpy.asarray(self.intedges).transpose()
-                    if self.intedges[2,-1] != parent.lasttimecoerced:
+                        
+                        #The above is possibly an error - replace with the following:
+                        temp_val_02 = self.parent.find_closest(parent.denseT, [parent.channelMap.hardwaretime])[0]#CP 2015-02-02
+                        if temp_val_0 != temp_val_02:
+                            exc_type, exc_obj, exc_tb = sys.exc_info()
+                            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                            msg = ('Error in Parsing: searchsorted routine is',
+                            'likely yielding the wrong intedge time error in',
+                            'XTSMobjectify, line:', 
+                            exc_type, fname, exc_tb.tb_lineno,
+                            'Wanted channelMap.hardwaretime:',
+                            decimal.Decimal(parent.channelMap.hardwaretime),
+                            'at index', temp_val_0, 'instead got:',
+                            decimal.Decimal(parent.denseT[temp_val_0]),
+                            'close values in denseT off by one:',
+                            decimal.Decimal(parent.denseT[temp_val_0-1]), 'and,',
+                            decimal.Decimal(parent.denseT[temp_val_0+1]))
+                            print msg
+                            self.parent.addAttribute("parser_error",msg)
+    
+                            #If stopped here, see the above comment. CP
+                            #pdb.set_trace()                        
+                        
+                    if self.intedges[2,-1] != parent.lasttimecoerced:#Is this inequality testing against a float a bug? CP 2015-02-02
                         temp_last_time = parent.denseT.searchsorted(parent.lasttimecoerced)
                         temp_arr = [[temp_last_time,self.channel,parent.lasttimecoerced,self.holdingval,-1]]
                         self.intedges = numpy.hstack([self.intedges,numpy.array(temp_arr).transpose()])
-                        print numpy.asarray(self.intedges).transpose()
+                        
+                        #The above is possibly an error - replace with the following:
+                        temp_last_time2 = self.parent.find_closest(parent.denseT, [parent.lasttimecoerced])[0]#CP 2015-02-02
+                        if temp_last_time != temp_last_time2:
+                            exc_type, exc_obj, exc_tb = sys.exc_info()
+                            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                            msg = ('Error in Parsing: searchsorted routine is',
+                            'likely yielding the wrong intedge time error in',
+                            'XTSMobjectify, line:', 
+                            exc_type, fname, exc_tb.tb_lineno,
+                            'Wanted lasttimecoerced:',
+                            decimal.Decimal(parent.lasttimecoerced),
+                            'at index', temp_last_time, 'instead got:',
+                            decimal.Decimal(parent.denseT[temp_last_time]),
+                            'close values in denseT off by one:',
+                            decimal.Decimal(parent.denseT[temp_last_time-1]),
+                            'and,',
+                            decimal.Decimal(parent.denseT[temp_last_time+1]))
+                            #If stopped here, see the above comment. CP
+                            #pdb.set_trace()   
+                            print msg
+                            self.parent.addAttribute("parser_error",msg)
+                        
                 else: 
-                    self.intedges = numpy.hstack([numpy.array([[parent.denseT.searchsorted(parent.channelMap.hardwaretime),self.channel,parent.channelMap.hardwaretime,self.initval,-1]]).transpose(),self.intedges]) 
-                    self.intedges = numpy.hstack([self.intedges,numpy.array([[parent.denseT.searchsorted(parent.lasttimecoerced),self.channel,parent.lasttimecoerced,self.holdingval,-1]]).transpose()])
+                    temp_time = parent.denseT.searchsorted(parent.channelMap.hardwaretime)
+                    temp_arr = [[temp_time,self.channel,parent.channelMap.hardwaretime,self.initval,-1]]
+                    self.intedges = numpy.hstack([numpy.array(temp_arr).transpose(),self.intedges]) 
+                   
+                    #The above is possibly an error - replace with the following:
+                    temp_time2 = self.parent.find_closest(parent.denseT, [parent.channelMap.hardwaretime])[0]#CP 2015-02-02
+                    if temp_time != temp_time2:
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                        msg = ('Error in Parsing: searchsorted routine is',
+                        'likely yielding the wrong intedge time error in',
+                        'XTSMobjectify, line:', 
+                        exc_type, fname, exc_tb.tb_lineno,
+                        'Wanted channelMap.hardwaretime:',
+                        decimal.Decimal(parent.channelMap.hardwaretime),
+                        'at index', temp_time, 'instead got:',
+                        decimal.Decimal(parent.denseT[temp_time]),
+                        'close values in denseT off by one:',
+                        decimal.Decimal(parent.denseT[temp_time-1]),
+                        'and,',
+                        decimal.Decimal(parent.denseT[temp_time+1]))
+                        #If stopped here, see the above comment. CP
+                        #pdb.set_trace()   
+                        print msg
+                        self.parent.addAttribute("parser_error",msg)
+                   
+                    temp_time = parent.denseT.searchsorted(parent.lasttimecoerced)
+                    temp_arr = [[temp_time,self.channel,parent.lasttimecoerced,self.holdingval,-1]]
+                    self.intedges = numpy.hstack([self.intedges,numpy.array(temp_arr).transpose()])
+                    
+                    #The above is possibly an error - replace with the following:
+                    temp_time2 = self.parent.find_closest(parent.denseT, [parent.lasttimecoerced])[0]#CP 2015-02-02
+                    if temp_time != temp_time2:
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                        msg = ('Error in Parsing: searchsorted routine is',
+                        'likely yielding the wrong intedge time error in',
+                        'XTSMobjectify, line:', 
+                        exc_type, fname, exc_tb.tb_lineno,
+                        'Wanted lasttimecoerced:',
+                        decimal.Decimal(parent.lasttimecoerced),
+                        'at index', temp_time, 'instead got:',
+                        decimal.Decimal(parent.denseT[temp_time]),
+                        'close values in denseT off by one:',
+                        decimal.Decimal(parent.denseT[temp_time-1]),
+                        'and,',
+                        decimal.Decimal(parent.denseT[temp_time+1]))
+                        #If stopped here, see the above comment. CP
+                        #pdb.set_trace()     
+                        print msg
+                        self.parent.addAttribute("parser_error",msg)                    
+                        
+                    
                 #t1=time.time()
                 #print "first/last edge insert: ", t1-t0
 
@@ -1682,8 +1851,8 @@ class channelData():
             self.intedges[2,:] = self.parent.denseT
             self.intedges[3,:] = values
             #t1=time.time()
-        if self.parent.tGroup == 4:
-            pdb.set_trace()
+        #if self.parent.tGroup == 4:
+        #    pdb.set_trace()
         self.intedges=self.intedges[:,self.intedges[2,:].argsort()]  # added 10/8/14 NDG,JZ,CP  to solve missing edge elements which follow an interval in source XTSM
 #        try: 
 #            if self.chanObj.TimingGroupIndex.PCDATA==u'19': pdb.set_trace() 
@@ -1868,7 +2037,7 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
         ht=cMap.getHardwaretime()        
         
         if hasattr(self,'StartTime'):
-            if not self.StartTime[0].PCDATA == None :
+            if not self.StartTime[0].PCDATA == None:
                 starttime=self.StartTime[0].parse()
                 self.starttime=starttime+2*ht
             else: self.starttime=2*ht
@@ -1905,7 +2074,16 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
                     self.endtime=max(edgeet,int1et,int2et,sam1et,sam2et)+2*self.getOwnerXTSM().head.getDescendentsByType("ChannelMap", first=True)[0].hardwaretime
                 else:               
                     self.endtime = maxlasttime
-                    self.EndTime[0].addAttribute('parser_error','Invalid value: Coerced to '+str(maxlasttime)+' ms.')
+                    
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    msg = ('Error in Parsing: Invalid value: Coerced to',
+                    str(maxlasttime), 'ms.',
+                    'XTSMobjectify, line:', 
+                    exc_type, fname, exc_tb.tb_lineno)
+                    print msg
+                    self.EndTime[0].addAttribute("parser_error",msg)
+                    
         return self.endtime
                 
 # The following lines are not used - board initialization and holding values are inserted into intedges now without
@@ -2031,12 +2209,20 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
         """
         if DEBUG: print "class SubSequence, func get_starttime"
         if hasattr(self,'StartTime'):
-            if DEBUG: print self.Name.PCDATA
+            #if DEBUG: print self.Name.PCDATA
             #pdb.set_trace()
             substarttime=self.StartTime[0].parse()
             try:
                 self.starttime=substarttime+self.__parent__.get_starttime()
-            except: print 'Subsequence StartTime Ivalid.'    
+            except: 
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                msg = ('Error in Parsing: Subsequence StartTime Invalid.',
+                'XTSMobjectify, line:', 
+                exc_type, fname, exc_tb.tb_lineno)
+                print msg
+                self.addAttribute("parser_error",msg) 
+            
         return self.starttime
 
     def replicate(self):
@@ -2212,22 +2398,28 @@ class ChannelMap(gnosis.xml.objectify._XO_,XTSM_core):
         bumpcount=1
         while bumpcount!=0:
             maxlevel=max(tGroupClockLevels)
-            if maxlevel>len(tgroups): pass #raise exception for circular loop
+            if maxlevel>len(tgroups):
+                pass #raise exception for circular loop
             bumpcount=0
             tgn=[]
             for s in range(len(tgroups)):
                 if hasattr(tgroups[s],"GroupNumber"):
                     gn=int(tgroups[s].GroupNumber[0].PCDATA)
-                else: pass
+                else:
+                    pass
                     # raise 'All timing groups must have groupnumbers; offending <TimingGroupData> node has position '+s+' in channelmap'
-                if maxlevel==0: tgn=[tgn,gn]
+                if maxlevel==0:
+                    tgn=[tgn,gn]
                 if (tGroupClockLevels[s] == maxlevel):
-                    if hasattr(tgroups[s],'ClockedBy'): clocksource=tgroups[s].ClockedBy.PCDATA
-                    else: pass # raise 'TimingGroup '+gn+' must have a channel as clock source (<ClockedBy> node)' 
+                    if hasattr(tgroups[s],'ClockedBy'):
+                        clocksource=tgroups[s].ClockedBy.PCDATA
+                    else:
+                        pass # raise 'TimingGroup '+gn+' must have a channel as clock source (<ClockedBy> node)' 
                     if (clocksource != 'self'):
                         clockgroup=self.getChannel(clocksource).TimingGroup[0].PCDATA
                         for k in range(len(tgroups)):
-                            if tgroups[k].GroupNumber[0].PCDATA==clockgroup: break
+                            if tgroups[k].GroupNumber[0].PCDATA==clockgroup:
+                                break
                         tGroupClockLevels[k]=maxlevel+1
                         bumpcount+=1
         #tGroupNumbers = [int(a.GroupNumber.PCDATA) for a in self.getDescendentsByType('TimingGroupData')]#CP 2015-01-20 Slow
@@ -2243,7 +2435,8 @@ class ChannelMap(gnosis.xml.objectify._XO_,XTSM_core):
         (first establishes a timingGroup heirarchy if not already existent on node)        
         Untested - should follow block at line 627 in IDL version
         """
-        if (not hasattr(self,'tGroupClockLevels')): self.createTimingGroupHeirarchy()
+        if (not hasattr(self,'tGroupClockLevels')):
+            self.createTimingGroupHeirarchy()
         cl=max(self.tGroupClockLevels.values()) 
         res={}        
         while (cl >=0):
@@ -2262,18 +2455,25 @@ class ChannelMap(gnosis.xml.objectify._XO_,XTSM_core):
                 if hasattr(tgNode,'ClockedBy'):
                     if tgNode.ClockedBy[0].PCDATA!='self':
                         clocksource=tgNode.ClockedBy[0].PCDATA
-                        clockgroup=self.getItemByFieldValue('TimingGroupData','GroupNumber',self.getChannel(clocksource).TimingGroup[0].PCDATA)
+                        clockgroup=self.getItemByFieldValue('TimingGroupData',
+                                                            'GroupNumber',
+                                                            self.getChannel(clocksource).TimingGroup[0].PCDATA)
                         if hasattr(clockgroup,'ClockPeriod'):
                             if hasattr(clockgroup.ClockPeriod[0],'current_value'):
                                 timerperiod=clockgroup.ClockPeriod[0].current_value
-                            else: timerperiod=clockgroup.ClockPeriod[0].PCDATA
-                        else: timerperiod=numpy.float64(0.0002)
+                            else: 
+                                timerperiod=clockgroup.ClockPeriod[0].PCDATA
+                        else:
+                            timerperiod=numpy.float64(0.0002)
                         clockperiod=numpy.ceil(numpy.float64(clockperiod)/numpy.float64(timerperiod))*numpy.float64(timerperiod)
                 if hasattr(tg,'current_value'):
                     tgNode.current_value=str(clockperiod)
-                else: tgNode.addAttribute('current_value',str(clockperiod))
-                try: res.update({tg:numpy.float64(clockperiod)})  # this needs to be converted to a numeric value, not a string !!!!!
-                except ValueError: res.update({tg:numpy.float64(0.0002)})
+                else:
+                    tgNode.addAttribute('current_value',str(clockperiod))
+                try: 
+                    res.update({tg:numpy.float64(clockperiod)})  # this needs to be converted to a numeric value, not a string !!!!!
+                except ValueError:
+                    res.update({tg:numpy.float64(0.0002)})
             cl-=1
         self.tGroupClockResolutions=res
         #self.hardwaretime=self.getDictMaxValue(self.tGroupClockResolutions)
@@ -2373,6 +2573,30 @@ class Edge(gnosis.xml.objectify._XO_,XTSM_core):
         nearest to an edge's requested time
         ''' 
         idx=dense_time_array.searchsorted(self.time)
+        
+        #The above is possibly an error - replace with the following:
+        idx2 = self.find_closest(dense_time_array, [self.time])[0]#CP 2015-02-02
+        if idx != idx2:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            msg = ('Error in Parsing: searchsorted routine is',
+            'likely yielding the wrong intedge time error in',
+            'XTSMobjectify, line:', 
+            exc_type, fname, exc_tb.tb_lineno,
+            'Wanted time:',
+            decimal.Decimal(self.time),
+            'at index', idx, 'instead got:',
+            decimal.Decimal(dense_time_array[idx]),
+            'close values in denseT off by one:',
+            decimal.Decimal(dense_time_array[idx-1]),
+            'and,',
+            decimal.Decimal(dense_time_array[idx+1]))
+            #If stopped here, see the above comment. CP
+            #pdb.set_trace()    
+            print msg
+            self.addAttribute("parser_error",msg)               
+            
+        
         if dense_time_array[idx]!=self.time: 
             try:
                 if abs(dense_time_array[idx]-self.time)>abs(dense_time_array[idx-1]-self.time):
@@ -2436,8 +2660,36 @@ class Interval(gnosis.xml.objectify._XO_,XTSM_core):
         first index (timinggroup number) replaced with time index
         """
         startind=dense_time_array.searchsorted(self.starttime)
-        endind=dense_time_array.searchsorted(self.endtime)        
-        self.T=dense_time_array[startind:(endind+1)]        
+        endind=dense_time_array.searchsorted(self.endtime)
+        
+        
+        startind2 = self.find_closest(dense_time_array, [self.starttime])[0]  #CP 2015-02-02
+        endind2 = self.find_closest(dense_time_array, [self.endtime])[0]     #CP 2015-02-02
+        if startind != startind2 or endind != endind2:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            msg = ('Error in Parsing: searchsorted routine is',
+            'likely yielding the wrong intedge time error in',
+            'XTSMobjectify, line:', 
+            exc_type, fname, exc_tb.tb_lineno,
+            'Wanted starttime or endtime:',
+            decimal.Decimal(self.starttime), 'or,',
+            decimal.Decimal(self.endtime),
+            'at index', startind, 'or,', endind, 'instead got:',
+            decimal.Decimal(dense_time_array[startind]), 'or,',
+            decimal.Decimal(dense_time_array[endind]),
+            'close values in denseT off by one:',
+            decimal.Decimal(dense_time_array[startind-1]), 'or,',
+            decimal.Decimal(dense_time_array[endind-1]),
+            'and,',
+            decimal.Decimal(dense_time_array[startind+1]), 'or,',
+            decimal.Decimal(dense_time_array[endind+1]))
+            #If stopped here, see the above comment. CP
+            #pdb.set_trace()
+            print msg
+            self.addAttribute("parser_error",msg)
+        
+        self.T=dense_time_array[startind:(endind+1)]       
         TI=self.T-self.starttime
         self.V=self.Value[0].parse({'T':self.T,'TI':TI})
         numelm=self.T.size
@@ -2531,7 +2783,8 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
             unfound=[d for d in self.dependencies if not self.dependencies[d]]
             self.addAttribute("parser_error","undetermined dependent(s): "+", ".join(unfound))
         if DEBUG: print self.dependencies
-        if len(self.dependencies)==0: self.execute() # if no dependencies, execute immediately
+        if len(self.dependencies)==0:
+            self.execute() # if no dependencies, execute immediately
     
     def __generate_listener__(self):
         """
@@ -2726,8 +2979,15 @@ class Script(gnosis.xml.objectify._XO_,XTSM_core):
                     #self.__parent__.get_tag() == InstrumentCommand
                     if getattr(self,cont[0]).get_tag() == cont[1]:
                         self.script_destination = action(self)
-            except:
-                print "Error: No Remote Tag. sending to self"
+            except Exception as Error:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                msg = ('Error in Parsing:', 'No Remote Tag. sending to self',
+                Error,
+                'XTSMobjectify, line:', 
+                exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                print msg
+                self.addAttribute("parser_error", msg)
                 self.script_destination = self.server.ip
                     
         sn = xtsm_owner.getItemByFieldValue("Parameter","Name","shotnumber").Value.PCDATA
@@ -3050,7 +3310,8 @@ class Figure(gnosis.xml.objectify._XO_,XTSM_core,live_content.Live_Content):
         data returned as anything else will be appended immediately to self.data
         """
         if not self.type: self.guess_format()
-        if self.type=='Script': return
+        if self.type=='Script':
+            return
         self.dependencies={}
         for ditem in glab_figure.plot_types[self.type].ditems:
             try: 
@@ -3059,7 +3320,8 @@ class Figure(gnosis.xml.objectify._XO_,XTSM_core,live_content.Live_Content):
                     self.dependencies.append({ditem:found})
                 else: self.data.append({ditem:found})
             except self.cannotFindDataWarning: 
-                if glab_figure.plot_types[self.type][ditem]['required']: raise self.MissingDataError
+                if glab_figure.plot_types[self.type][ditem]['required']:
+                    raise self.MissingDataError
                 else: pass
 
     def find_data_component(self,name):
@@ -3079,38 +3341,53 @@ class Figure(gnosis.xml.objectify._XO_,XTSM_core,live_content.Live_Content):
         for namev in softstring.variants(name):
             try: 
                 nt=getattr(self,namev)[0]
-                try: return nt.DataLink
-                except AttributeError: pass
-                try: return nt.DataNode
-                except AttributeError: return nt.PCDATA
-            except AttributeError: pass
+                try:
+                    return nt.DataLink
+                except AttributeError:
+                    pass
+                try:
+                    return nt.DataNode
+                except AttributeError:
+                    return nt.PCDATA
+            except AttributeError:
+                pass
         # look for datanodes
         DataNodeList=[item for sublist in [[self.DataNode],[self.__parent__.DataNode]] for item in sublist]
         try: 
             for dn in DataNodeList:
                 try: 
-                    if dn.Name[0].PCDATA in softstring.variants(name): return dn
-                except AttributeError: pass
-        except AttributeError: pass
+                    if dn.Name[0].PCDATA in softstring.variants(name):
+                        return dn
+                except AttributeError:
+                    pass
+        except AttributeError:
+            pass
         # check if parent has an autogen method
-        try: return self.__parent__._figuredata_autogen(name,self)
+        try:
+            return self.__parent__._figuredata_autogen(name,self)
         except AttributeError: pass
         # find in variable scope
-        if not self.scoped: self.buildScope()
-        if name in self.scope: return self.scope[name]
+        if not self.scoped:
+            self.buildScope()
+        if name in self.scope: 
+            return self.scope[name]
         # find in nearby script
         ScriptList=[item for sublist in [[self.Script],[self.__parent__.Script]] for item in sublist]
         try: 
             for sc in ScriptList:
                 for so in sc.ScriptOutput:
                     try: 
-                        if so.Name[0].PCDATA in softstring.variants(name): return so
-                    except AttributeError: pass
+                        if so.Name[0].PCDATA in softstring.variants(name):
+                            return so
+                    except AttributeError:
+                        pass
         except AttributeError: pass
         try: 
             for sc in ScriptList:
-                if name in sc.assignments: return sc
-        except AttributeError: pass
+                if name in sc.assignments:
+                    return sc
+        except AttributeError:
+            pass
         # give up and return
         raise self.cannotFindDataWarning
         return
@@ -3323,6 +3600,36 @@ class Sample(gnosis.xml.objectify._XO_,XTSM_core):
         # find the corresponding update times from the timing group's sample times
         startind=dense_time_array.searchsorted(self.starttime)
         endind=dense_time_array.searchsorted(self.endtime)        
+        
+        #The above is likely an error - replace with the following:
+        startind2 = self.find_closest(dense_time_array, [self.starttime])[0]  #CP 2015-02-02
+        endind2 = self.find_closest(dense_time_array, [self.endtime])[0]     #CP 2015-02-02   
+        
+        if startind != startind2 or endind != endind2:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            msg = ('Error in Parsing: searchsorted routine is',
+            'likely yielding the wrong intedge time error in',
+            'XTSMobjectify, line:', 
+            exc_type, fname, exc_tb.tb_lineno,
+            'Wanted starttime or endtime:',
+            decimal.Decimal(self.starttime), 'or,',
+            decimal.Decimal(self.endtime),
+            'at index', startind, 'or,', endind, 'instead got:',
+            decimal.Decimal(dense_time_array[startind]), 'or,',
+            decimal.Decimal(dense_time_array[endind]),
+            'close values in denseT off by one:',
+            decimal.Decimal(dense_time_array[startind-1]), 'or,',
+            decimal.Decimal(dense_time_array[endind-1]),
+            'and,',
+            decimal.Decimal(dense_time_array[startind+1]), 'or,',
+            decimal.Decimal(dense_time_array[endind+1]))
+            print msg
+            self.addAttribute("parser_error",msg)
+            #If stopped here, see the above comment. CP
+            #pdb.set_trace()  
+            
+            
         # The update times for this interval are extracted using the indices. 
         T=dense_time_array[startind:(endind+1)]        
         TI=T-self.starttime
@@ -3421,9 +3728,15 @@ class Heap(gnosis.xml.objectify._XO_,Analysis_Space_Core):
         for meth in self.Method:
             try:
                 meth._src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
-            except Exception as e:
-                print e
-                print meth._src
+            except Exception as Error:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                msg = ('Error in Parsing:', Error,
+                'XTSMobjectify, line:', 
+                exc_type, fname, exc_tb.tb_lineno, traceback.format_exc(),
+                'Method Source:', meth._src)
+                print msg
+                self.addAttribute("parser_error", msg)
 
 class Dock(gnosis.xml.objectify._XO_,Analysis_Space_Core):
     """
@@ -3435,9 +3748,15 @@ class Dock(gnosis.xml.objectify._XO_,Analysis_Space_Core):
         for meth in self.Method:
             try:
                 meth._src=meth.write_xml().split('<Method>')[1].split('</Method>')[0]
-            except Exception as e:
-                print e
-                print meth._src
+            except Exception as Error:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                msg = ('Error in Parsing:', Error,
+                'XTSMobjectify, line:', 
+                exc_type, fname, exc_tb.tb_lineno, traceback.format_exc(),
+                'Method Source:', meth._src)
+                print msg
+                self.addAttribute("parser_error", msg)
         
 class Method(gnosis.xml.objectify._XO_,Analysis_Space_Core):
     def write_xml(self, out=None, tablevel=0, whitespace='True',CDATA_ESCAPE=True):
@@ -3528,10 +3847,14 @@ class XTSM_Object(object):
                     InvalidSource(source)
         try:
             self.XTSM = gnosis.xml.objectify.make_instance(source)
-        except Exception as e:
-            print "Error making instance of XTSM"
-            print e
-            raise
+        except Exception as Error:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            msg = ('Error making instance of XTSM:', Error,
+            'XTSMobjectify, line:', 
+            exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+            print msg
+            self.addAttribute("parser_error", msg)
         
     def parse(self, shotnumber = 0):
         """
@@ -3572,8 +3895,9 @@ class Command_Library:
     """
     Houses a list of commands for pre/post parsing instructions.
     
-    Note: Any functions which require additional values beyond "self" and "xtsm_obj" 
-        should receive them all as a single variable, aka a 1D array of extra variables.
+    Note: Any functions which require additional values beyond "self" and
+        "xtsm_obj" should receive them all as a single variable, aka a 1D
+        array of extra variables.
     """
     def __init__(self):
         pass
@@ -3586,18 +3910,31 @@ class Command_Library:
         same number of updates as the delay train. Final group will take the 
         place of the delay train and delete all others.
         Required params: Timing Groups Names.
-            The Timing Group Names should all be strings. Timing string values will be appended in the order that
+            The Timing Group Names should all be strings. Timing string value
+            will be appended in the order that
             the timing groups are input. Must include a delay train.
         Optional params: Length per Value, Length of Filler, Position of Filler
-            Length per Value is an integer representing the number of bytes each end-value should be. Default is the length of the original values combined with no filler.
-                Note: If this field is shorter than the combined length of the original values, this field will be ingored.
-                (Ex: Sync has values == 1 byte, Delaytrain has "values" == 4 bytes. Hence, Length per value has a default value of 5 and must be >= 5.)
-            Position of Filler should only be present if Length per Value > end-value length. This specifies the index at which filler will be placed.
-                If unspecified, all filler will be placed at the end of the end-value.
-                (Ex: Sync, Filler, Delaytrain has Position of filler == 1, since Sync takes the 0th position.)
-            Length of Filler should be an integer number of bytes for the first filler. This variable should only be present if directly preceeded by a Position of Filler variable.
+            Length per Value is an integer representing the number of bytes
+            each end-value should be. Default is the length of the original
+            values combined with no filler.
+                Note: If this field is shorter than the combined length of the
+                original values, this field will be ingored.
+                (Ex: Sync has values == 1 byte, Delaytrain has
+                "values" == 4 bytes. Hence, Length per value has a default
+                value of 5 and must be >= 5.)
+            Position of Filler should only be present if Length per
+            Value > end-value length. This specifies the index at which filler
+            will be placed.
+                If unspecified, all filler will be placed at the end of the
+                end-value.
+                (Ex: Sync, Filler, Delaytrain has Position of filler == 1,
+                since Sync takes the 0th position.)
+            Length of Filler should be an integer number of bytes for the first
+            filler. This variable should only be present if directly preceeded
+            by a Position of Filler variable.
                 If unspecified, will take on the largest possible filler length.
-            Note: This Position of Filler/Length of Filler cycle can repeated. Each pair is executed sequentially.
+            Note: This Position of Filler/Length of Filler cycle can repeated.
+            Each pair is executed sequentially.
         """
         # File params as either a timing group or a filler number.
         timing_group_names = []
@@ -3672,7 +4009,14 @@ class Command_Library:
                 except NameError:
                     try:
                         newstring_body = numpy.zeros((num_updates[0], group_values[0]), dtype = "uint8")
-                    except ValueError: print 'valueError Found!'
+                    except ValueError as Error:
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                        msg = ('Error valueError Found!:', Error,
+                        'XTSMobjectify, line:', 
+                        exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                        print msg
+                        self.addAttribute("parser_error", msg)
                     
             else:
                 try:
@@ -3859,12 +4203,25 @@ def preparse(xtsm_obj):
                     command_name(xtsm_obj, command_vars)
                 else:
                     command_name(xtsm_obj)
-            except Exception as e:
+            except Exception as Error:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                msg = ('Error:', Error,
+                'XTSMobjectify, line:', 
+                exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                print msg
+                xtsm_obj.addAttribute("parser_error", msg)
                 command_name(xtsm_obj)
-        except AttributeError:
+        except AttributeError as Error:
             # If the command field is not blank, print missing command error.
             if command.Name.PCDATA != None:
-                print 'Missing command function: ' + command.Name.PCDATA
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                msg = ('Missing command function: ' + command.Name.PCDATA,
+                Error, 'XTSMobjectify, line:', 
+                exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                print msg
+                xtsm_obj.addAttribute("parser_error", msg)
 
 def postparse(timingstring):
     """
@@ -3880,10 +4237,15 @@ def postparse(timingstring):
     for command in timingstring.XTSM.head.PostParseInstructions.ParserCommand:
         # Check if the command exists in the Command Library. If so, execute it.
         try: command_name = getattr(timingstring.Command_Library, str(command.Name.PCDATA))
-        except AttributeError:
+        except AttributeError as Error:
             # If the command field is not blank, print missing command error.
             if command.Name.PCDATA != None:
-                print 'Missing command function: ' + command.Name.PCDATA
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                msg = ('Missing command function: ' + command.Name.PCDATA,
+                Error, 'XTSMobjectify, line:', 
+                exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                print msg
             continue # skip the command 
         command_vars = []
         try:
