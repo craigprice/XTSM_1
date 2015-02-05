@@ -1753,7 +1753,7 @@ class GlabPythonManager():
         ps.server = self.server
         ps.connection_manager = self.server.connection_manager
         ps.open_connection(self.ping_data)
-        self.parser_test_info()
+        #self.parser_test_info()
         if DEBUG: print ('Listening on ports:',
                str(port), '(standard HTTP),',
                str(wsport) + ' (websocket)',

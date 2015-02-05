@@ -23,6 +23,7 @@ import simplejson
 import collections 
 import profile
 import pstats
+import tokenize
 import os
 import commands
 import sync
@@ -290,30 +291,109 @@ class XTSM_core(object):
         side-effect: if scope not already built, will build
         entirely untested
         """
-        if (not hasattr(self,'PCDATA')): return None  # catch unparsable
-        if (self.PCDATA==None): return None
-        if not isinstance(self.PCDATA,basestring): return None
+        if (not hasattr(self,'PCDATA')): 
+            return None  # catch unparsable
+        if (self.PCDATA==None):
+            return None
+        if not isinstance(self.PCDATA,basestring):
+            return None
         suc=False        
         try:        # try to directly convert to floating point
             self._parseValue=numpy.float64(self.PCDATA)
             suc=True
         except ValueError:    # if necessary, evaluate as expression
-            if (not self.scoped): self.buildScope()  # build variable scope
-            if additional_scope!=None:       
-                tscope=dict(self.scope.items()+additional_scope.items())
-            else: tscope=self.scope
+            if (not self.scoped):
+                self.buildScope()  # build variable scope
+            if additional_scope != None:       
+                tscope = dict(self.scope.items()+additional_scope.items())
+            else:
+                tscope=self.scope
             try: 
                 self._parseValue=eval(html.fromstring(self.PCDATA.replace('#','&')).text,globals(),tscope)  # evaluate expression
                 suc=True
-            except NameError as NE:
-                self.addAttribute('parse_error',NE.message)
+            except NameError as Error:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                msg = ('NameError in Parsing:', Error,
+                'XTSMobjectify, line:', 
+                exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                print msg
+                self.addAttribute("parser_error", msg) 
         if suc:
+            if self.get_tag().strip() == 'Value':
+                self.apply_calibration(additional_scope)
             if hasattr(self._parseValue,'__len__'):
                 if isinstance(self._parseValue,basestring) or len(self._parseValue)<2:
                     self.addAttribute('current_value',str(self._parseValue))
-            else: self.addAttribute('current_value',str(self._parseValue))  # tag the XTSM
+            else:
+                self.addAttribute('current_value',str(self._parseValue))  # tag the XTSM
             return self._parseValue
-        else: return None
+        else:
+            return None
+    
+    def apply_calibration(self, additional_scope=None):
+        try:
+            chan_name = self.__parent__.OnChannel.PCDATA.strip()
+            ch = self.getOwnerXTSM().head.getItemByFieldValue('Channel',
+                                                              'ChannelName',
+                                                              chan_name)
+            calibration = ch.Calibration
+        except AttributeError:
+            return # No Calibration exists to be applied
+            
+        self.stringio = StringIO.StringIO(self.PCDATA)
+        self.names = []
+        def handle_token(type, token, (srow, scol), (erow, ecol), line):
+            print "%d,%d-%d,%d:\t%s\t%s" % \
+                (srow, scol, erow, ecol, tokenize.tok_name[type], repr(token))
+            if tokenize.tok_name[type] == 'NAME':
+                self.names.append(repr(token))
+        
+        tokenize.tokenize(self.stringio.readline, handle_token)     
+        
+        if len(self.names) == 0:
+            return
+        unit = self.names[-1]
+        try:
+            calibration_function = getattr(calibration, unit)
+        except Exception as Error:
+            return
+        try:
+            self._parseValue = calibration_function(self._parseValue)
+        except Exception as Error:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            msg = ('Error in calibrations:', Error,
+            'XTSMobjectify, line:', 
+            exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+            print msg
+            self.addAttribute("parser_error", msg) 
+
+        '''
+        expression = ''
+        if expression.find('value') != -1:
+            try:
+                if (not self.scoped):
+                    self.buildScope()  # build variable scope
+                if additional_scope != None:       
+                    tscope = dict(self.scope.items()+additional_scope.items())
+                else:
+                    tscope=self.scope
+                tscope.update({'value':numpy.asarray(self._parseValue)})
+                print self._parseValue
+                self._parseValue = eval(expression,globals(),tscope)  # evaluate expression
+                print self._parseValue
+            except Exception as Error:
+                pdb.set_trace()
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                msg = ('Error in applying Calibration:', Error,
+                'XTSMobjectify, line:', 
+                exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                print msg
+                self.addAttribute("parser_error", msg)
+        '''
+    
     
     def buildScope(self):
         """
@@ -1998,12 +2078,15 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
             '''
         # get the channelmap node from the XTSM object.
         cMap=self.getOwnerXTSM().head.getDescendentsByType("ChannelMap", first=True)[0]
-      
-        # Add undecleared channels to the ChannelMap node. The following line causes a problem
-        #in the postparse step. Since all the undecleared channels are created as nonclock channels, even that the
-        #channel is in the clocking group 6 (RIO01sync). Having initial edges on these channels are problematic 
-        #at the postparse step, where it combines the timing group RIO01/syn with delaytrain. by JZ 12/18
-    
+        '''
+        Add undecleared channels to the ChannelMap node. The following line
+        causes a problem in the postparse step. Since all the undecleared
+        channels are created as nonclock channels, even that the channel is in
+        the clocking group 6 (RIO01sync). Having initial edges on these
+        channels are problematic at the postparse step, where it combines the
+        timing group RIO01/syn with delaytrain. by JZ 12/18
+        '''
+        
         #cMap.creatMissingChannels()
         
         # Insert a initilization subsequence in the sequence and a holding subsequence
@@ -2181,12 +2264,14 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
 class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
     def collectTimingProffers(self,timingProffer):
         """
-        Performs a first pass through all edges and intervals, parsing and collecting all ((Start/ /End)time/value/channel) entries 
+        Performs a first pass through all edges and intervals, parsing and
+        collecting all ((Start/ /End)time/value/channel) entries 
         necessary to arbitrate clocking edges
         """
         if DEBUG: print "class SubSequence, func collectTimingProffers"
-        # Find the subsequence starttime and pass it to the subnode edge time,  interval and subsequence starttime, JZ on 12/12/13
         
+        # Find the subsequence starttime and pass it to the subnode edge time,
+        #interval and subsequence starttime, JZ on 12/12/13        
         starttime=self.get_starttime()
         
         if (hasattr(self,'Edge')):
@@ -2621,6 +2706,38 @@ class Value(gnosis.xml.objectify._XO_,XTSM_core):
     #    
     #    gnosis.xml.objectify._XO_,XTSM_core.parse(self)
 '''
+
+
+class Channel(gnosis.xml.objectify._XO_,XTSM_core):
+    def __init__(self):
+        XTSM_core.__init__(self)
+        
+class Calibration0(gnosis.xml.objectify._XO_,XTSM_core):
+    def __init__(self):
+        XTSM_core.__init__(self)
+        if hasattr(self, 'ScriptBody'):
+            self._execute()
+
+    def _execute(self):
+        #pdb.set_trace()
+        script = self.ScriptBody.PCDATA
+        old_stdout = sys.stdout
+        context = {'self':self}
+        if DEBUG: print "class Calibration, function _execute, script:", script
+        try:
+            capturer = StringIO.StringIO()
+            sys.stdout = capturer
+            t0=time.time()
+            exec script in globals(),context
+            if DEBUG: print "class Script, function _execute, context:", capturer.getvalue()
+            t1=time.time()
+            context.update({"_starttime":t0,"_exectime":(t1-t0),"_script_console":capturer.getvalue()})
+        except Exception as e: 
+            context.update({'_SCRIPT_ERROR':e})
+            print '_SCRIPT_ERROR'
+#          del context['__builtin__']  # removes the backeffect of exec on context to add builtins
+        sys.stdout = old_stdout
+
 
 class Interval(gnosis.xml.objectify._XO_,XTSM_core):
     scopePeers=[['Channel','ChannelName','OnChannel']]
@@ -3854,7 +3971,7 @@ class XTSM_Object(object):
             'XTSMobjectify, line:', 
             exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
             print msg
-            self.addAttribute("parser_error", msg)
+            #self.addAttribute("parser_error", msg)
         
     def parse(self, shotnumber = 0):
         """
