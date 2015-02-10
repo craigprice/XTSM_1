@@ -30,6 +30,8 @@ import sync
 import decimal
 import pprint
 
+import inspect
+
 #from IPy import IP
 
 DEBUG = False
@@ -80,11 +82,14 @@ class XTSM_core(object):
         Returns the indicies of array1 that are closest to the values of array2
         Array1 must be an ordered array
         '''
-        idx=array1.searchsorted(array2)
-        idx=numpy.clip(idx,1,len(array1)-1)
-        left=array1[idx-1]
-        right=array1[idx]
-        idx-=array2-left<right-array2
+        idx = array1.searchsorted(array2)
+        idx = numpy.clip(idx,1,len(array1)-1)
+        try:
+            left = array1[idx-1]
+        except:
+            left = array1[idx]
+        right = array1[idx]
+        idx -= array2-left < right-array2
         return idx
         
     def getDictMaxValue(self,dictionary): #LRJ 10-23-2013
@@ -2674,12 +2679,11 @@ class Edge(gnosis.xml.objectify._XO_,XTSM_core):
         #The above is possibly an error - replace with the following:
         idx2 = self.find_closest(dense_time_array, [self.time])[0]#CP 2015-02-02
         if idx != idx2:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            caller = inspect.getframeinfo(inspect.stack()[1][0])
             msg = ('Error in Parsing: searchsorted routine is',
             'likely yielding the wrong intedge time error in',
             'XTSMobjectify, line:', 
-            exc_type, fname, exc_tb.tb_lineno,
+            caller,
             'Wanted time:',
             decimal.Decimal(self.time),
             'at index', idx, 'instead got:',
@@ -2829,12 +2833,11 @@ class Interval(gnosis.xml.objectify._XO_,XTSM_core):
         startind2 = self.find_closest(dense_time_array, [self.starttime])[0]  #CP 2015-02-02
         endind2 = self.find_closest(dense_time_array, [self.endtime])[0]     #CP 2015-02-02
         if startind != startind2 or endind != endind2:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            caller = inspect.getframeinfo(inspect.stack()[1][0])
             msg = ('Error in Parsing: searchsorted routine is',
             'likely yielding the wrong intedge time error in',
             'XTSMobjectify, line:', 
-            exc_type, fname, exc_tb.tb_lineno,
+            caller,
             'Wanted starttime or endtime:',
             decimal.Decimal(self.starttime), 'or,',
             decimal.Decimal(self.endtime),
@@ -3769,12 +3772,11 @@ class Sample(gnosis.xml.objectify._XO_,XTSM_core):
         endind2 = self.find_closest(dense_time_array, [self.endtime])[0]     #CP 2015-02-02   
         
         if startind != startind2 or endind != endind2:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            caller = inspect.getframeinfo(inspect.stack()[1][0])
             msg = ('Error in Parsing: searchsorted routine is',
             'likely yielding the wrong intedge time error in',
             'XTSMobjectify, line:', 
-            exc_type, fname, exc_tb.tb_lineno,
+            caller,
             'Wanted starttime or endtime:',
             decimal.Decimal(self.starttime), 'or,',
             decimal.Decimal(self.endtime),

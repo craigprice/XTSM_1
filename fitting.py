@@ -172,7 +172,7 @@ class GaussianFit2D:
         t0=time.time()
         result = leastsq(self.residual_func, para,
                          args=(self.x, self.y, self.data),
-                            xtol=1e-2, ftol=1e-2, maxfev=50,
+                            xtol=0.3, ftol=0.3, maxfev=30,
                          #Dfun=self.derivatives, col_deriv=True,
                          full_output=True)
         print 'least square time', time.time() - t0, 's'
@@ -199,7 +199,7 @@ class GaussianFit2D:
         plt.plot(numpy.sum(fit, axis=0))
         plt.plot(numpy.sum(fit, axis=1))
         plt.imshow(numpy.hstack((data2, fit, residuals)),cmap = cm.Greys_r)
-        #plt.show()
+        plt.show()
     
 
 
