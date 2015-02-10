@@ -333,7 +333,13 @@ class XTSM_core(object):
             except NameError as Error:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                name = ''
+                try:
+                    name = self.__parent__.OnChannel.PCDATA
+                except:
+                    name = str(self)
                 msg = ('NameError in Parsing:', Error,
+                       "eval:", self.PCDATA, "Name:", name,
                 'XTSMobjectify, line:', 
                 exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
                 print msg
@@ -2685,7 +2691,7 @@ class Edge(gnosis.xml.objectify._XO_,XTSM_core):
             'XTSMobjectify, line:', 
             caller,
             'Wanted time:',
-            decimal.Decimal(self.time),
+            decimal.Decimal(self.time),  self.OnChannel.PCDATA,
             'at index', idx, 'instead got:',
             decimal.Decimal(dense_time_array[idx]),
             'close values in denseT off by one:',
@@ -2840,7 +2846,7 @@ class Interval(gnosis.xml.objectify._XO_,XTSM_core):
             caller,
             'Wanted starttime or endtime:',
             decimal.Decimal(self.starttime), 'or,',
-            decimal.Decimal(self.endtime),
+            decimal.Decimal(self.endtime), self.OnChannel.PCDATA,
             'at index', startind, 'or,', endind, 'instead got:',
             decimal.Decimal(dense_time_array[startind]), 'or,',
             decimal.Decimal(dense_time_array[endind]),
