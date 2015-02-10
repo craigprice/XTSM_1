@@ -508,13 +508,13 @@ function populate_file_info() {
 
 	var location;
 	if (document.getElementById("file_type").value === 'XTSM File') {
-		location = "sequences/";
+		location = "saved_sequences/";
 	} else if (document.getElementById("file_type").value === 'XSL Transform') {
 		location = "transforms/";
 	}
 	document.getElementById('file_info_div').innerHTML = 'File:&nbsp;<b>' + document.getElementById('folder_select').value + '/' + document.getElementById('file_select').value + '</b><div id="file_desc">Description:</div><br />Last Saved: <br />Last Saved By: ';
 	document.getElementById('load_file').value = ("c:/wamp/www/MetaViewer/" + location + document.getElementById('folder_select').value + "/" + document.getElementById('file_select').value).replace('//', '/');
-}
+	}
 
 function populate_files(folder_select) {
 	"use strict";
@@ -640,7 +640,7 @@ function default_save_name() {
 	var file_location, file_type, x, year, month, day, hour, minute, second, datetime, save_name;
 
 	if (document.getElementById("file_type").value === 'XTSM File') {
-		file_location = "sequences/";
+		file_location = "saved_sequences/";
 		file_type = ".xtsm";
 	} else if (document.getElementById("file_type").value === 'XSL Transform') {
 		file_location = "transforms/";
@@ -654,7 +654,7 @@ function default_save_name() {
 	minute = x.getMinutes();
 	second = x.getSeconds();
 	datetime = month + "-" + day + "-" + year + "/" + hour + "h_" + minute + "m_" + second + "s";
-	save_name = "c:/wamp/www/MetaViewer/" + file_location + datetime + file_type;
+	save_name = "../" + file_location + datetime + file_type;
 
 	return save_name;
 }
