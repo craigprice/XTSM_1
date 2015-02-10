@@ -1,0 +1,2478 @@
+<XTSM expanded="1" Note="Variables Parsed by IDL at Sun Aug 05 18:52:03 2012 in 84.908000 s.">
+  
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>700</Value>
+    <Name>ImageScaleFullMax</Name>
+  </Parameter>
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>0</Value>
+    <Name>ImageScaleFullMin</Name>
+  </Parameter>
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>20000</Value>
+    <Name>ImageScaleZoomMax</Name>
+  </Parameter>
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>-100</Value>
+    <Name>ImageScaleZoomMin</Name>
+  </Parameter>
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>60</Value>
+    <Name>BFS</Name>
+  </Parameter>
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>110</Value>
+    <Name>BFS2</Name>
+  </Parameter>
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>5.3</Value>
+    <Name>BFA</Name>
+  </Parameter>
+  <Parameter expanded="0">
+    <PostToContext>True</PostToContext>
+    <Value>4</Value>
+    <Name>NumLoad</Name>
+  </Parameter>
+  <head expanded="1">
+    <PreParseInstructions expanded="0">
+      <ParserCommand expanded="1">
+        <Name/>
+        <Value/>
+        <Value/>
+      </ParserCommand>
+    </PreParseInstructions>
+    <PostParseInstructions expanded="0">
+      <ParserCommand expanded="0">
+        <Description>Combine timing strings from timing groups with the delay train. You must list names of groups to combine (each in a seperate "value" field), including the delay train group. These groups must have the same number of updates. You can optionally include integer values for a byte-length-per-value, along with filler position and filler length, the latter two of which can be repeated indefinitely. For more info, see the parser's Command_Library.</Description>
+        <Name>combine_with_delaytrain</Name>
+        <Value>RIO01/sync</Value>
+        <Value>RIO01/delaytrain</Value>
+        <Value>8</Value>
+        <Value>1</Value>
+        <Value>3</Value>
+      </ParserCommand>
+    </PostParseInstructions>
+    <ChannelMap expanded="0">
+      <TimingGroupData expanded="0">
+        <Description expanded="1">PXIe-6536 Digital Output Board - 32 channels digital @ 200ns resolution.  Used to clock all analog output groups except two output channels on the PXIe-6124 multifunction card, remaining 29 outputs are for general purpose use in experiment</Description>
+        <Name expanded="1">PXI1Slot2/port0:3</Name>
+        <ClockedBy expanded="1">/PXI1Slot2/PXI_Trig7</ClockedBy>
+        <GroupNumber expanded="1">2</GroupNumber>
+        <ChannelCount expanded="1">32</ChannelCount>
+        <DACCalibration expanded="1"/>
+        <Range expanded="1">5</Range>
+        <ResolutionBits expanded="1">1</ResolutionBits>
+        <ClockPeriod expanded="1">0.0002</ClockPeriod>
+        <ParserInstructions expanded="1">
+          <RepresentAsInteger expanded="1">yes</RepresentAsInteger>
+        </ParserInstructions>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PFI1</ChannelName>
+        <Comments expanded="1">Sample clock from pxie-6536 to slot6 pxi-6733 - physically wired from output 0 to PFI1</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PFI2</ChannelName>
+        <Comments expanded="1">Sample clock to slot7 pxi-6723 - physically wired from output to PFI2</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PFI3</ChannelName>
+        <Comments expanded="1">Sample clock to slot8 pxi-6733 - physically wired from output to PFI3</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">2</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO03</Name>
+        <ChannelName expanded="1">FingerCCDTrigger</ChannelName>
+        <Comments expanded="1">Digital Output port 0 line 3</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">3</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO04</Name>
+        <ChannelName expanded="1">ScopeTrigger</ChannelName>
+        <Comments expanded="1">Digital Output port 0 line 4</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">4</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO05</Name>
+        <ChannelName expanded="1">DetectionShutter</ChannelName>
+        <Comments expanded="1">Delay time of 2 ms. 220us to open.</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">5</TimingGroupIndex>
+        <ConnectsTo expanded="1">Shutter 3 on rack mounted shutter control box</ConnectsTo>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO07</Name>
+        <ChannelName expanded="1">MOTShutter</ChannelName>
+        <Comments expanded="1">No light after 0.23ms. 1.18ms delay time.</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">7</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO06</Name>
+        <ChannelName expanded="1">FingerMolassesShutter</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">6</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO08</Name>
+        <ChannelName expanded="1">VerticalLatticeShutter</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">8</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO09</Name>
+        <ChannelName expanded="1">SRCLatticeShutter</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">9</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO10</Name>
+        <ChannelName expanded="1">RSCOptPumpShutter</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">10</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">RSCDepumpShutter</ChannelName>
+        <Comments expanded="1">Shutter delay time: 1.9 ms, rising time: 400 us</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">11</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">MOTRepumperShutter</ChannelName>
+        <Comments expanded="1">1.7ms delay to begin closing. 2.3ms delay to extinguish light</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">12</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="1">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">UHVCCDTrigger</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">13</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">UHVCameraShutter</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">15</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">1</HoldingValue>
+        <InitialValue expanded="1">1</InitialValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">UHVCoilSwitch</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">24</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">1</HoldingValue>
+        <InitialValue expanded="1">1</InitialValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">UHVCoilSwitchNorth</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">25</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">1</HoldingValue>
+        <InitialValue expanded="1">1</InitialValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO11</Name>
+        <ChannelName expanded="1">ApogeeTrigger</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">26</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <InitialValue expanded="1">0</InitialValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">/PXI1Slot2/DO27</Name>
+        <ChannelName expanded="1">GetterSwitch</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">27</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <InitialValue expanded="1">0</InitialValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel><Channel expanded="1">
+        <Name expanded="1">/PXI1Slot2/DO27</Name>
+        <ChannelName expanded="1">FieldTrigger</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">2</TimingGroup>
+        <TimingGroupIndex expanded="1">28</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <InitialValue expanded="1">0</InitialValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">RIO01/sync</Name>
+        <Description expanded="1">FPGA - based synchronous commands - upper half of the FPGA .vi; master clock source for experiment.  PXI-7951R, slot 5</Description>
+        <ClockedBy expanded="1">RIO_DelayTrain</ClockedBy>
+        <ClockPeriod expanded="1">0.0000125</ClockPeriod>
+        <GroupNumber expanded="1">6</GroupNumber>
+        <ChannelCount expanded="1">8</ChannelCount>
+        <DACCalibration expanded="1"/>
+        <Range expanded="1">5</Range>
+        <ResolutionBits expanded="1">1</ResolutionBits>
+        <ParserInstructions expanded="1">
+          <RepresentAsInteger expanded="1">yes</RepresentAsInteger>
+          <SparseControlArray expanded="1">no</SparseControlArray>
+          <Pulser expanded="1">yes</Pulser>
+        </ParserInstructions>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PXI_Trig7</ChannelName>
+        <Comments expanded="1">Analog Output Sample Clock Signal - clocks the PXIe 6124 analog output sample clock</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">6</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PXI_Trig6</ChannelName>
+        <Comments expanded="1">Multifunction Analog Input Sample Clock Signal - clocks the PXIe 6124 analog input sample clock</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">6</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot2/PXI_Trig5</ChannelName>
+        <Comments expanded="1">Multifunction Analog Output Sample Clock Signal - clocks the PXIe 6124 analog output sample clock</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">6</TimingGroup>
+        <TimingGroupIndex expanded="1">2</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">FractionalNClockTrain</ChannelName>
+        <Comments expanded="1">Triggers update of fractional-N synthesizer dividers for oscillator control </Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">6</TimingGroup>
+        <TimingGroupIndex expanded="1">3</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">RIO01/delaytrain</Name>
+        <Description expanded="1">FPGA - based delay train generator - upper half of the FPGA .vi; master clock source for experiment.  PXI-7951R, slot 5</Description>
+        <DelayTrain expanded="1">yes</DelayTrain>
+        <ClockedBy expanded="1">self</ClockedBy>
+        <ClockPeriod expanded="1">0.00001250</ClockPeriod>
+        <GroupNumber expanded="1">0</GroupNumber>
+        <ChannelCount expanded="1">1</ChannelCount>
+        <DACCalibration expanded="1"/>
+        <Range expanded="1">5</Range>
+        <ResolutionBits expanded="1">32</ResolutionBits>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">RIO_DelayTrain</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">0</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">PXI1Slot3/ao0:1</Name>
+        <Description expanded="1">PXI-6124 - 2 output analog board, -10/+10V 16-bit output resolution, timing resolution 400ns</Description>
+        <ClockedBy expanded="1">/PXI1Slot2/PXI_Trig5</ClockedBy>
+        <GroupNumber expanded="1">1</GroupNumber>
+        <ChannelCount expanded="1">2</ChannelCount>
+        <DACCalibration expanded="1">3244.9</DACCalibration>
+        <Range expanded="1">20</Range>
+        <ResolutionBits expanded="1">16</ResolutionBits>
+        <ActiveClockEdge expanded="1">rise</ActiveClockEdge>
+        <ClockPeriod expanded="1">0.0004</ClockPeriod>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">GuideBeamSine</ChannelName>
+        <Comments expanded="1">Channel 0 of Multifunction AO.</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">1</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">GuideBeamCosine</ChannelName>
+        <Comments expanded="1">Channel 1 of Multifunction AO</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">1</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">PXI1Slot6/ao0:31</Name>
+        <Description expanded="1">PXI-6723 - 32 output analog board, -10/+10V 13-bit output resolution, timing resolution 20us </Description>
+        <ClockedBy expanded="1">/PXI1Slot2/PFI1</ClockedBy>
+        <GroupNumber expanded="1">3</GroupNumber>
+        <ChannelCount expanded="1">32</ChannelCount>
+        <DACCalibration expanded="1">401.5</DACCalibration>
+        <Range expanded="1">20</Range>
+        <ResolutionBits expanded="1">13</ResolutionBits>
+        <ActiveClockEdge expanded="1">rise</ActiveClockEdge>
+        <ClockPeriod expanded="1">0.02</ClockPeriod>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO0</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO1</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO2</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">2</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO3</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">3</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO4</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">4</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO5</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">5</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO6</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">6</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot6/AO7</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">7</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SYMOTRepumperAmplitude</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">8</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SYMOTAmplitude</ChannelName>
+        <Comments expanded="1">1/e fall time = 3us. Light begins to shut off 18.5us after control signal sent.</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">9</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Finger Molasses AOM Amplitude</Name>
+        <ChannelName expanded="1">SYUHVMOTAmplitude</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">10</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">SrcMOTCoil</ChannelName>
+        <Comments expanded="1">Turn off time 170us. Delay time 40us.</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">11</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">4.5</InitialValue>
+        <HoldingValue expanded="1">4.5</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">SRCCompCoilNorthSouth</ChannelName>
+        <Comments expanded="1">Connect to control input of Compensation coil controller. Generate field along x direction. 92 mG/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">12</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 169 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">0.7</InitialValue>
+        <HoldingValue expanded="1">0.7</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">SRCCompCoilUpDown</ChannelName>
+        <Comments expanded="1">Generate field along vertical direction. 125 mG/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">13</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 171 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">2.1</InitialValue>
+        <HoldingValue expanded="1">2.1</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">SRCCompCoilEastWest</ChannelName>
+        <Comments expanded="1">Generate field towards the window. 173 mG/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">14</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 170 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">-0.5031</InitialValue>
+        <HoldingValue expanded="1">-0.5031</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="1">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">UHVCompCoilNorthSouth</ChannelName>
+        <Comments expanded="1">Generate field towards the window,for finger holding value at 1.33</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">15</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 168 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">3.345</InitialValue>
+        <HoldingValue expanded="1">3.345</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="1">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">UHVCompCoilUpDown</ChannelName>
+        <Comments expanded="1">Generate field towards the window, holding for finger -4</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">16</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 167 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">-1.51+2.5</InitialValue>
+        <HoldingValue expanded="1">-1.51+2.5</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="1">
+        <Name expanded="1">Source MOT Quadrupole Coil</Name>
+        <ChannelName expanded="1">UHVCompCoilEastWest</ChannelName>
+        <Comments expanded="1">Generate field towards the window, holding for figner -1.5</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">17</TimingGroupIndex>
+        <ConnectsTo expanded="1">Curr Set on D 164 Coil Current Controller</ConnectsTo>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">0</InitialValue>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SYDetectionAOM</ChannelName>
+        <Comments expanded="1">Generate field towards the window</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">18</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">D1LaserAOM</ChannelName>
+        <Comments expanded="1">Generate field towards the window</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">19</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="1">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">UHVCoilCurrentControl</ChannelName>
+        <Comments expanded="1">2A/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">20</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">5.5</InitialValue>
+        <HoldingValue expanded="1">5.5</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SYLatticeOpticalPumping</ChannelName>
+        <Comments expanded="1">Falling Time: 17 us ; Rising Time: 3 ms. contrast: 1000:1</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">21</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SYLatticeDepumping</ChannelName>
+        <Comments expanded="1">Rising Time:150 us ; Falling Time: 6 us;  Contrast:1000:1</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">22</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">GuideBeamUpAmp</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">23</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">GuideBeamDownAmp</ChannelName>
+        <Comments expanded="1"/>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">3</TimingGroup>
+        <TimingGroupIndex expanded="1">24</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">10</InitialValue>
+        <HoldingValue expanded="1">10</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">PXI1Slot7/ao0:7</Name>
+        <Description expanded="1">PXI-6723 - 8 output analog board, -10/+10V 16-bit output resolution, timing resolution 2us </Description>
+        <ClockedBy expanded="1">/PXI1Slot2/PFI2</ClockedBy>
+        <GroupNumber expanded="1">4</GroupNumber>
+        <ChannelCount expanded="1">8</ChannelCount>
+        <DACCalibration expanded="1">3276.8</DACCalibration>
+        <Range expanded="1">20</Range>
+        <ResolutionBits expanded="1">16</ResolutionBits>
+        <ActiveClockEdge expanded="1">rise</ActiveClockEdge>
+        <ClockPeriod expanded="1">0.002</ClockPeriod>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">MOTVCOTuning</ChannelName>
+        <Comments expanded="1">73 MHz/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">RepVCOTuning</ChannelName>
+        <Comments expanded="1">120 MHz/V</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1">0</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">VerticalLatticeAOM</ChannelName>
+        <Comments expanded="1">Channel 2 of AO (Slot 7). Rising time:3.5us ; Falling: 5 us ; Contrast:1000:1</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">2</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">9.9</InitialValue>
+        <HoldingValue expanded="1">9.9</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">SRCLatticeAOM</ChannelName>
+        <Comments expanded="1">Channel 3 of AO (Slot 7)</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">3</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <InitialValue expanded="1">9.9</InitialValue>
+        <HoldingValue expanded="1">9.9</HoldingValue>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot7/AO4</ChannelName>
+        <Comments expanded="1">Channel 1 of AO (Slot 7)</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">4</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot7/AO5</ChannelName>
+        <Comments expanded="1">Channel 1 of AO (Slot 7)</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">5</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot7/AO6</ChannelName>
+        <Comments expanded="1">Channel 1 of AO (Slot 7)</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">6</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot7/AO7</ChannelName>
+        <Comments expanded="1">Channel 7 of AO (Slot 7)</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">4</TimingGroup>
+        <TimingGroupIndex expanded="1">7</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <TimingGroupData expanded="0">
+        <Name expanded="1">PXI1Slot8/ao0:7</Name>
+        <Description expanded="1">PXI-6723 - 8 output analog board, -10/+10V 16-bit output resolution, timing resolution 2us </Description>
+        <ClockedBy expanded="1">/PXI1Slot2/PFI3</ClockedBy>
+        <GroupNumber expanded="1">5</GroupNumber>
+        <ChannelCount expanded="1">8</ChannelCount>
+        <DACCalibration expanded="1">3276.8</DACCalibration>
+        <Range expanded="1">20</Range>
+        <ResolutionBits expanded="1">16</ResolutionBits>
+        <ActiveClockEdge expanded="1">rise</ActiveClockEdge>
+        <ClockPeriod expanded="1">0.002</ClockPeriod>
+      </TimingGroupData>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO0</ChannelName>
+        <Comments expanded="1">Channel 0 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">0</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO1</ChannelName>
+        <Comments expanded="1">Channel 1 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">1</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO2</ChannelName>
+        <Comments expanded="1">Channel 2 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">2</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO3</ChannelName>
+        <Comments expanded="1">Channel 3 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">3</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <ChannelName expanded="1">/PXI1Slot8/AO4</ChannelName>
+        <Comments expanded="1">Channel 0 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">4</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO5</ChannelName>
+        <Comments expanded="1">Channel 5 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">5</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO6</ChannelName>
+        <Comments expanded="1">Channel 6 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">6</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+      <Channel expanded="0">
+        <Name expanded="1"/>
+        <ChannelName expanded="1">/PXI1Slot8/AO7</ChannelName>
+        <Comments expanded="1">Channel 7 of 8 Chan AO Board</Comments>
+        <TimingSysChannel expanded="1"/>
+        <TimingGroup expanded="1">5</TimingGroup>
+        <TimingGroupIndex expanded="1">7</TimingGroupIndex>
+        <ConnectsTo expanded="1"/>
+        <Group expanded="1"/>
+        <HoldingValue expanded="1"/>
+        <Calibration expanded="1"/>
+        <MinValue expanded="1"/>
+        <MaxValue expanded="1"/>
+        <MaxDuty expanded="1"/>
+        <MaxDuration expanded="1"/>
+        <MaxTriggers expanded="1"/>
+      </Channel>
+    </ChannelMap>
+    <Instrument lock="1" expanded="1">
+      <ServerIPAddress>10.1.1.178</ServerIPAddress>
+      <OnInstrument>CCD</OnInstrument>
+    </Instrument>
+  </head>
+  <body lock="1" expanded="1" disable="0">
+    <SequenceSelector _parseValue="UHVMOT_RSCFluorescence">'UHVMOTAbsorption'</SequenceSelector>
+    <Sequence expanded="1" guid="baac36a1-70d9-11e4-9019-0010187736b5">
+      <Name guid="baac36a2-70d9-11e4-9814-0010187736b5">UHVMOTAbsorption</Name>
+      <StartTime guid="baac36a3-70d9-11e4-b822-0010187736b5">0</StartTime>
+      <EndTime guid="baac36a4-70d9-11e4-8c21-0010187736b5">5000</EndTime>
+      <InstrumentCommand expanded="0" guid="9c74ce47-685f-11e4-bdf7-002590c1b7d1">
+        <OnInstrument guid="9c74ce48-685f-11e4-9b6b-002590c1b7d1">CCD</OnInstrument>
+        <Name guid="9c74ce49-685f-11e4-8eee-002590c1b7d1">3ImagesCCD</Name>
+        <PullData guid="9c74ce4a-685f-11e4-9c18-002590c1b7d1">True</PullData>
+        <Script expanded="0" script_destination="10.1.1.178" guid="9c74ce4b-685f-11e4-8e55-002590c1b7d1">
+          <Name guid="9c74ce4c-685f-11e4-82da-002590c1b7d1">take_picture_with_roper</Name>
+          <Description guid="9c74ce4d-685f-11e4-b4ef-002590c1b7d1"/>
+          <ExecuteOnEvent guid="9c74ce4e-685f-11e4-a74c-002590c1b7d1"/>
+          <ExecuteOnMainServer guid="9c74ce4f-685f-11e4-8629-002590c1b7d1">True</ExecuteOnMainServer>
+          <Time guid="9c74ce50-685f-11e4-8a0e-002590c1b7d1">0</Time>
+          <Remote guid="9c74ce51-685f-11e4-9822-002590c1b7d1">10.1.1.178</Remote>
+          <ScriptBody guid="9c74ce52-685f-11e4-960b-002590c1b7d1">
+#pdb.set_trace()
+print "hi"
+isInitialized = False
+if not self.server.dataContexts.has_key('PXI'):
+    pass
+    
+print "hi"
+for key in self.server.dataContexts['PXI'].dict:
+    #print "Checking if Initialized", self.server.dataContexts['default'].dict
+    if key == 'Roper_CCD':
+        isInitialized = True
+#print "df"
+print "hi"
+if not isInitialized:
+    print "Not initialized"
+    import Roper_CCD
+    isInitialized = False
+    self.server.dataContexts['PXI'].update({'Roper_CCD':Roper_CCD.Princeton_CCD(params={'server':self.server})})
+    #self.server.dataContexts['default'].dict['Roper_CCD'].set_autoframing()
+
+    # self.server.dataContexts['default'].dict['Roper_CCD'].set_param()
+    self.server.dataContexts['PXI'].dict['Roper_CCD'].set_param({"EXP_TIMING_MODE":3,
+                           "EXP_EXPOSURE":0.1, 
+                           "EXP_ACCUMS":1, 
+                           "EXP_SEQUENTS":3,
+                           #"PARAM_COOLING_FAN_CTRL":"COOLING_FAN_CTRL_ON",
+                           #"PARAM_COOLING_FAN_CTRL":"COOLING_FAN_CTRL_OFF",
+                           #"PARAM_TEMP_SETPOINT":0,
+                           "EXP_ANALOG_GAIN":1})  
+self.server.dataContexts['PXI'].dict['Roper_CCD'].start_acquisition()
+print "hi"
+print "Done with Script"</ScriptBody>
+        </Script>
+      </InstrumentCommand>
+      <AnalysisSpace expanded="1" guid="c293778f-a282-11e4-a124-0010187736b5">
+        <Name guid="c2937790-a282-11e4-851b-0010187736b5">Absorption</Name>
+        <Script expanded="1" guid="c2937791-a282-11e4-8e81-0010187736b5">
+          <Name guid="c2937792-a282-11e4-b24e-0010187736b5">Plot_CCD_Image</Name>
+          <Description guid="c2937793-a282-11e4-87f9-0010187736b5">Plotting</Description>
+          <ExecuteOnEvent guid="c2937794-a282-11e4-bc41-0010187736b5">databomb</ExecuteOnEvent>
+          <ExecuteOnMainServer guid="c2937795-a282-11e4-a277-0010187736b5">False</ExecuteOnMainServer>
+          <Time guid="c2937796-a282-11e4-b60d-0010187736b5">0</Time>
+          <Remote guid="c2937797-a282-11e4-b841-0010187736b5">True</Remote>
+          <ScriptBody guid="c2937798-a282-11e4-8848-0010187736b5"><![CDATA[import numpy
+self.apogee_raw_image_0_heap.push(_last_databomb['data'][1],_last_databomb['shotnumber'],0)
+self.apogee_raw_image_1_heap.push(_last_databomb['data'][2],_last_databomb['shotnumber'],0)
+self.div = numpy.divide(numpy.asarray(_last_databomb['data'][1],dtype=numpy.float),numpy.asarray(_last_databomb['data'][2],dtype=numpy.float))
+self.div = -numpy.log(self.div)
+self.apogee_log_divided_image_heap.push(self.div,_last_databomb['shotnumber'],0)
+self._console_namespace.update({"total_count":numpy.sum(self.div)})
+
+try:
+	self.div_imgset.append(self.div)
+except AttributeError:
+    self.div_imgset=[]
+    self.div_imgset.append(self.div)
+
+self.total_count = str(numpy.sum(self.div)/1E6)+' 1E6'
+
+
+self.raw_image_0_dock.imv.setImage(numpy.array([numpy.asarray(_last_databomb['data'][1])]))
+self.raw_image_1_dock.imv.setImage(numpy.array([numpy.asarray(_last_databomb['data'][2])]))
+self.divided_image_dock.imv.setImage(numpy.array([self.div]))]]></ScriptBody>
+        </Script>
+        <Heap guid="c2937799-a282-11e4-8805-0010187736b5" expanded="1">
+          <Name guid="c293779a-a282-11e4-9b83-0010187736b5">Raw_Image_With_Atoms</Name>
+          <DataCriteria guid="c293779b-a282-11e4-a5f3-0010187736b5">'10.1.1.110'</DataCriteria>
+          <Priority guid="c293779c-a282-11e4-b604-0010187736b5">0</Priority>
+          <Method guid="c293779d-a282-11e4-b90b-0010187736b5">print '_xtsm_heap.Name.PCDATA', _xtsm_heap.Name.PCDATA
+self.absorption_datastore = hdf5_liveheap.glab_datastore({'title':'Absorption'})
+#options = {"element_structure":[769,513],
+options = {"element_structure":[512,512],
+           "dataname":_xtsm_heap.Name.PCDATA,
+           "typecode":numpy.dtype("uint16"),#numpy.uint16 will not work
+           "datastore":self.absorption_datastore}
+self.apogee_raw_image_0_heap = hdf5_liveheap.glab_liveheap(options)
+self._console_namespace.update({'apogee_raw_image_0_heap':self.apogee_raw_image_0_heap})
+self._console_namespace.update({'absorption_datastore':self.absorption_datastore})
+</Method>
+        </Heap>
+        <Heap guid="c293779e-a282-11e4-9d0e-0010187736b5">
+          <Name guid="c293779f-a282-11e4-9301-0010187736b5">Raw_Image_No_Atoms</Name>
+          <DataCriteria guid="c29377a0-a282-11e4-866c-0010187736b5">'10.1.1.110'</DataCriteria>
+          <Method guid="c2939ea1-a282-11e4-bb54-0010187736b5">
+print '_xtsm_heap.Name.PCDATA', _xtsm_heap.Name.PCDATA
+#options = {"element_structure":[769,513],
+options = {"element_structure":[512,512],
+           "dataname":_xtsm_heap.Name.PCDATA,
+           "typecode":numpy.dtype("uint16"),#numpy.uint16 will not work
+           "datastore":self.absorption_datastore}
+self.apogee_raw_image_1_heap = hdf5_liveheap.glab_liveheap(options)
+self._console_namespace.update({'apogee_raw_image_1_heap':self.apogee_raw_image_1_heap})
+</Method>
+        </Heap>
+        <Heap guid="c2939ea2-a282-11e4-882a-0010187736b5">
+          <Name guid="c2939ea3-a282-11e4-8c85-0010187736b5">Log_Divided</Name>
+          <DataCriteria guid="c2939ea4-a282-11e4-a73e-0010187736b5">'10.1.1.110'</DataCriteria>
+          <Method guid="c2939ea5-a282-11e4-a24c-0010187736b5">
+print '_xtsm_heap.Name.PCDATA', _xtsm_heap.Name.PCDATA
+#options = {"element_structure":[769,513],
+options = {"element_structure":[512,512],
+           "dataname":_xtsm_heap.Name.PCDATA,
+           "typecode":numpy.dtype("float64"),#numpy.uint16 will not work
+           "datastore":self.absorption_datastore}
+self.apogee_log_divided_image_heap = hdf5_liveheap.glab_liveheap(options)
+self._console_namespace.update({'apogee_log_divided_image_heap':self.apogee_log_divided_image_heap})
+</Method>
+        </Heap>
+        <Dock expanded="1" guid="c2939ea6-a282-11e4-a732-0010187736b5">
+          <Name guid="c2939ea7-a282-11e4-ab17-0010187736b5">Raw_Image_0</Name>
+          <Method guid="c2939ea8-a282-11e4-bb33-0010187736b5">#'self' is the gui object.
+#variables created in this script will not be placed in the console namespace unless explicitly placed there.
+name = str(_xtsm_dock.Name.PCDATA)
+#d = pyqtgraph.dockarea.Dock(name, size=(500,500))
+#setattr(self, name+'_dock', d)
+#dock = getattr(self, name+'_dock')
+self.raw_image_0_dock = pyqtgraph.dockarea.Dock(name, size=(500,500))
+self.raw_image_0_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(self.raw_image_0_dock, 'top')
+self.raw_image_0_dock.updateStyle()
+
+
+self.raw_image_0_dock.imv = pyqtgraph.ImageView()
+imv = self.raw_image_0_dock.imv
+self.raw_image_0_dock.addWidget(imv)
+imv.setImage(self.imgstack, xvals=numpy.arange(self.imgstack.shape[0]))#.linspace(1., 3., ))
+
+
+# attempt to add to context menu (right mouse button) for cursor drop
+imv.view.menu.cursorDrop = QtGui.QAction("Drop Cursor", imv.view.menu)
+imv.view.menu.dropCursor = self.dropCursor
+imv.view.menu.cursorDrop.triggered.connect(imv.view.menu.dropCursor)
+imv.view.menu.addAction(imv.view.menu.cursorDrop)
+
+imv.acs = imv.view.menu.subMenus()
+
+global gui
+gui = self
+def newSubMenus():
+    global gui
+    self = gui
+    return [self.raw_image_0_dock.imv.view.menu.cursorDrop] + self.raw_image_0_dock.imv.acs
+imv.view.menu.subMenus = newSubMenus        
+imv.view.menu.valid = False
+imv.view.menu.view().sigStateChanged.connect(imv.view.menu.viewStateChanged)
+imv.view.menu.updateState()
+
+
+#cross hair
+imv.vLine = pyqtgraph.InfiniteLine(angle=90, movable=False)
+imv.hLine = pyqtgraph.InfiniteLine(angle=0, movable=False)
+imv.addItem(imv.vLine, ignoreBounds=True)
+imv.addItem(imv.hLine, ignoreBounds=True)
+
+imv.vb = imv.view
+
+def animate(evt):
+    global gui
+    self = gui
+    if self.raw_image_0_dock.imv.playTimer.isActive():
+        self.raw_image_0_dock.imv.playTimer.stop()
+        return
+    fpsin = self._imv_fps_in
+    fps = float(str(fpsin.text()).split("FPS")[0])
+    self.raw_image_0_dock.imv.play(fps)            
+
+#animation controls
+self._imv_fps_in = QtGui.QLineEdit('10 FPS')   
+self._imv_anim_b = QtGui.QPushButton('Animate')
+self._imv_anim_b.clicked.connect(animate)
+
+self._imv_layout_widg = pyqtgraph.LayoutWidget()
+self._imv_layout_widg.addWidget(QtGui.QLabel("Animation:"), row=0, col=0)
+self._imv_layout_widg.addWidget(self._imv_fps_in, row=0, col=1)
+self._imv_layout_widg.addWidget(self._imv_anim_b, row=0, col=2)
+     
+self.raw_image_0_dock.addWidget(self._imv_layout_widg)
+def mouseMoved(evt):
+    global gui
+    self = gui
+    pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+    if self.raw_image_0_dock.imv.scene.sceneRect().contains(pos):
+        mousePoint = self.raw_image_0_dock.imv.vb.mapSceneToView(pos)
+        self.raw_image_0_dock.imv.vLine.setPos(mousePoint.x())
+        self.raw_image_0_dock.imv.hLine.setPos(mousePoint.y())
+        index = (int(mousePoint.x()),int(mousePoint.y()))
+        x = "\lspan style='font-size: 12pt;color: blue'\gx=%0.1f,   " % mousePoint.x() #Need to escape the \lessthan, \greaterthan to use them
+        #x =  "X = " + str(int(mousePoint.x())) + "; "
+        y = "\lspan style='color: red'\gy=%0.1f\l/span\g,   " % mousePoint.y()
+        #y =  "Y = " + str(int(mousePoint.y())) + "; "
+        if index[0] \g 0 and index[0] \l len(self.imgstack[1][0]):
+            if index[1] \g 0 and index[1] \l len(self.imgstack[2][0]):
+                #Fix the next line so that the z axis is for the image that is displayed
+                try:
+                    z = "\lspan style='color: green'\gz=%0.1f\l/span\g" % self.imgstack[self.raw_image_0_dock.imv.currentIndex, index[0], index[1]]
+                    #z = "Z = " + str(self.imgstack[self.raw_image_0_dock.imv.currentIndex, index[0], index[1]])
+                except: 
+                    z="\lspan style='color: green'\gz=Error\l/span\g"
+                    #z=" Error "
+                    print "index:", index
+                    print "len(self.imgstack[1][0]:", len(self.imgstack[1][0])
+                    print "self.raw_image_0_dock.imv.currentIndex:", self.raw_image_0_dock.imv.currentIndex
+                self.curs_pos_label.setText(str(x)+str(y)+str(z))
+
+
+self.raw_image_0_dock.proxy = pyqtgraph.SignalProxy(imv.scene.sigMouseMoved, rateLimit=60, slot=mouseMoved)
+
+
+
+self._console_namespace.update({'raw_image_0_dock':self.raw_image_0_dock})
+
+</Method>
+        </Dock>
+        <Dock guid="c2939ea9-a282-11e4-a356-0010187736b5" expanded="1">
+          <Name guid="c2939eaa-a282-11e4-beea-0010187736b5">Raw_Image_1</Name>
+          <Method guid="c2939eab-a282-11e4-987b-0010187736b5">
+name = 'raw_image_no_atoms'
+self.raw_image_1_dock = pyqtgraph.dockarea.Dock(name, size=(500,500))
+self.raw_image_1_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(self.raw_image_1_dock, 'above', self._console_namespace['raw_image_0_dock'])
+self.raw_image_1_dock.updateStyle()
+
+
+self.raw_image_1_dock.imv = pyqtgraph.ImageView()
+imv = self.raw_image_1_dock.imv
+self.raw_image_1_dock.addWidget(imv)
+imv.setImage(self.imgstack, xvals=numpy.arange(self.imgstack.shape[0]))#.linspace(1., 3., ))
+
+
+# attempt to add to context menu (right mouse button) for cursor drop
+imv.view.menu.cursorDrop = QtGui.QAction("Drop Cursor", imv.view.menu)
+imv.view.menu.dropCursor = self.dropCursor
+imv.view.menu.cursorDrop.triggered.connect(imv.view.menu.dropCursor)
+imv.view.menu.addAction(imv.view.menu.cursorDrop)
+
+imv.acs = imv.view.menu.subMenus()
+
+global gui
+gui = self
+def newSubMenus():
+    global gui
+    self = gui
+    return [self.raw_image_1_dock.imv.view.menu.cursorDrop] + self.raw_image_1_dock.imv.acs
+imv.view.menu.subMenus = newSubMenus        
+imv.view.menu.valid = False
+imv.view.menu.view().sigStateChanged.connect(imv.view.menu.viewStateChanged)
+imv.view.menu.updateState()
+
+
+#cross hair
+imv.vLine = pyqtgraph.InfiniteLine(angle=90, movable=False)
+imv.hLine = pyqtgraph.InfiniteLine(angle=0, movable=False)
+imv.addItem(imv.vLine, ignoreBounds=True)
+imv.addItem(imv.hLine, ignoreBounds=True)
+
+imv.vb = imv.view
+
+def animate(evt):
+    global gui
+    self = gui
+    if self.raw_image_1_dock.imv.playTimer.isActive():
+        self.raw_image_1_dock.imv.playTimer.stop()
+        return
+    fpsin = self._imv_fps_in
+    fps = float(str(fpsin.text()).split("FPS")[0])
+    self.raw_image_1_dock.imv.play(fps)            
+
+#animation controls
+self._imv_fps_in = QtGui.QLineEdit('10 FPS')   
+self._imv_anim_b = QtGui.QPushButton('Animate')
+self._imv_anim_b.clicked.connect(animate)
+
+self._imv_layout_widg = pyqtgraph.LayoutWidget()
+self._imv_layout_widg.addWidget(QtGui.QLabel("Animation:"), row=0, col=0)
+self._imv_layout_widg.addWidget(self._imv_fps_in, row=0, col=1)
+self._imv_layout_widg.addWidget(self._imv_anim_b, row=0, col=2)
+     
+self.raw_image_1_dock.addWidget(self._imv_layout_widg)
+def mouseMoved(evt):
+    global gui
+    self = gui
+    pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+    if self.raw_image_1_dock.imv.scene.sceneRect().contains(pos):
+        mousePoint = self.raw_image_1_dock.imv.vb.mapSceneToView(pos)
+        self.raw_image_1_dock.imv.vLine.setPos(mousePoint.x())
+        self.raw_image_1_dock.imv.hLine.setPos(mousePoint.y())
+        index = (int(mousePoint.x()),int(mousePoint.y()))
+        x = "\lspan style='font-size: 12pt;color: blue'\gx=%0.1f,   " % mousePoint.x() #Need to escape the \lessthan, \greaterthan to use them
+        #x =  "X = " + str(int(mousePoint.x())) + "; "
+        y = "\lspan style='color: red'\gy=%0.1f\l/span\g,   " % mousePoint.y()
+        #y =  "Y = " + str(int(mousePoint.y())) + "; "
+        if index[0] \g 0 and index[0] \l len(self.imgstack[1][0]):
+            if index[1] \g 0 and index[1] \l len(self.imgstack[2][0]):
+                #Fix the next line so that the z axis is for the image that is displayed
+                try:
+                    z = "\lspan style='color: green'\gz=%0.1f\l/span\g" % self.imgstack[self.raw_image_1_dock.imv.currentIndex, index[0], index[1]]
+                    #z = "Z = " + str(self.imgstack[self.raw_image_1_dock.imv.currentIndex, index[0], index[1]])
+                except: 
+                    z="\lspan style='color: green'\gz=Error\l/span\g"
+                    #z=" Error "
+                    print "index:", index
+                    print "len(self.imgstack[1][0]:", len(self.imgstack[1][0])
+                    print "self.raw_image_1_dock.imv.currentIndex:", self.raw_image_1_dock.imv.currentIndex
+                self.curs_pos_label.setText(str(x)+str(y)+str(z))
+
+
+self.raw_image_1_dock.proxy = pyqtgraph.SignalProxy(imv.scene.sigMouseMoved, rateLimit=60, slot=mouseMoved)
+
+
+
+self._console_namespace.update({'raw_image_1_dock':self.raw_image_1_dock})
+
+</Method>
+        </Dock>
+        <Dock guid="c2939eac-a282-11e4-93b0-0010187736b5" expanded="1">
+          <Name guid="c2939ead-a282-11e4-bf07-0010187736b5">Divided_Image</Name>
+          <Method guid="c2939eae-a282-11e4-8ef7-0010187736b5">
+name = 'divided_image'
+self.divided_image_dock = pyqtgraph.dockarea.Dock(name, size=(500,500))
+self.divided_image_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(self.divided_image_dock, 'right', self._console_namespace['raw_image_0_dock'])
+self.divided_image_dock.updateStyle()
+
+
+self.divided_image_dock.imv = pyqtgraph.ImageView()
+imv = self.divided_image_dock.imv
+self.divided_image_dock.addWidget(imv)
+imv.setImage(self.imgstack, xvals=numpy.arange(self.imgstack.shape[0]))#.linspace(1., 3., ))
+
+
+# attempt to add to context menu (right mouse button) for cursor drop
+imv.view.menu.cursorDrop = QtGui.QAction("Drop Cursor", imv.view.menu)
+imv.view.menu.dropCursor = self.dropCursor
+imv.view.menu.cursorDrop.triggered.connect(imv.view.menu.dropCursor)
+imv.view.menu.addAction(imv.view.menu.cursorDrop)
+
+imv.acs = imv.view.menu.subMenus()
+
+global gui
+gui = self
+def newSubMenus():
+    global gui
+    self = gui
+    return [self.divided_image_dock.imv.view.menu.cursorDrop] + self.divided_image_dock.imv.acs
+imv.view.menu.subMenus = newSubMenus        
+imv.view.menu.valid = False
+imv.view.menu.view().sigStateChanged.connect(imv.view.menu.viewStateChanged)
+imv.view.menu.updateState()
+
+
+#cross hair
+imv.vLine = pyqtgraph.InfiniteLine(angle=90, movable=False)
+imv.hLine = pyqtgraph.InfiniteLine(angle=0, movable=False)
+imv.addItem(imv.vLine, ignoreBounds=True)
+imv.addItem(imv.hLine, ignoreBounds=True)
+
+imv.vb = imv.view
+
+def animate(evt):
+    global gui
+    self = gui
+    if self.divided_image_dock.imv.playTimer.isActive():
+        self.divided_image_dock.imv.playTimer.stop()
+        return
+    fpsin = self._imv_fps_in
+    fps = float(str(fpsin.text()).split("FPS")[0])
+    self.divided_image_dock.imv.play(fps)            
+
+#animation controls
+self._imv_fps_in = QtGui.QLineEdit('10 FPS')   
+self._imv_anim_b = QtGui.QPushButton('Animate')
+self._imv_anim_b.clicked.connect(animate)
+
+self._imv_layout_widg = pyqtgraph.LayoutWidget()
+self._imv_layout_widg.addWidget(QtGui.QLabel("Animation:"), row=0, col=0)
+self._imv_layout_widg.addWidget(self._imv_fps_in, row=0, col=1)
+self._imv_layout_widg.addWidget(self._imv_anim_b, row=0, col=2)
+     
+self.divided_image_dock.addWidget(self._imv_layout_widg)
+def mouseMoved(evt):
+    global gui
+    self = gui
+    pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+    if self.divided_image_dock.imv.scene.sceneRect().contains(pos):
+        mousePoint = self.divided_image_dock.imv.vb.mapSceneToView(pos)
+        self.divided_image_dock.imv.vLine.setPos(mousePoint.x())
+        self.divided_image_dock.imv.hLine.setPos(mousePoint.y())
+        index = (int(mousePoint.x()),int(mousePoint.y()))
+        x = "\lspan style='font-size: 12pt;color: blue'\gx=%0.1f,   " % mousePoint.x() #Need to escape the \lessthan, \greaterthan to use them
+        #x =  "X = " + str(int(mousePoint.x())) + "; "
+        y = "\lspan style='color: red'\gy=%0.1f\l/span\g,   " % mousePoint.y()
+        #y =  "Y = " + str(int(mousePoint.y())) + "; "
+        if index[0] \g 0 and index[0] \l len(self.imgstack[1][0]):
+            if index[1] \g 0 and index[1] \l len(self.imgstack[2][0]):
+                #Fix the next line so that the z axis is for the image that is displayed
+                try:
+                    z = "\lspan style='color: green'\gz=%0.1f\l/span\g" % self.imgstack[self.divided_image_dock.imv.currentIndex, index[0], index[1]]
+                    #z = "Z = " + str(self.imgstack[self.divided_image_dock.imv.currentIndex, index[0], index[1]])
+                except: 
+                    z="\lspan style='color: green'\gz=Error\l/span\g"
+                    #z=" Error "
+                    print "index:", index
+                    print "len(self.imgstack[1][0]:", len(self.imgstack[1][0])
+                    print "self.divided_image_dock.imv.currentIndex:", self.divided_image_dock.imv.currentIndex
+                self.curs_pos_label.setText(str(x)+str(y)+str(z))
+
+
+self.divided_image_dock.proxy = pyqtgraph.SignalProxy(imv.scene.sigMouseMoved, rateLimit=60, slot=mouseMoved)
+
+
+
+self._console_namespace.update({'divided_image_dock':self.divided_image_dock})
+
+</Method>
+        </Dock>
+        <Dock guid="c2939eaf-a282-11e4-b267-0010187736b5" expanded="1">
+          <Name guid="c2939eb0-a282-11e4-8c75-0010187736b5">cut_along_x</Name>
+          <Method guid="c2939eb1-a282-11e4-8d13-0010187736b5">name = 'cut_along_x'
+cut_along_x_dock = pyqtgraph.dockarea.Dock(name, size=(500,100))
+cut_along_x_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(cut_along_x_dock, 'bottom', self._console_namespace['raw_image_0_dock'])
+cut_along_x_dock.addWidget(QtGui.QLabel(name))
+cut_along_x_dock.win = pyqtgraph.GraphicsWindow()
+cut_along_x_dock.plot = cut_along_x_dock.win.addPlot(title=name)
+
+cut_along_x_dock.data = numpy.random.normal(size=(200))
+cut_along_x_dock.curve = cut_along_x_dock.plot.plot(y=cut_along_x_dock.data)
+
+cut_along_x_dock.addWidget(cut_along_x_dock.win)
+self._console_namespace.update({'cut_along_x_dock':cut_along_x_dock})
+</Method>
+        </Dock>
+        <Dock guid="c2939eb2-a282-11e4-9a54-0010187736b5">
+          <Name guid="c2939eb3-a282-11e4-9f14-0010187736b5">cut_along_y</Name>
+          <Method guid="c2939eb4-a282-11e4-9a8d-0010187736b5">
+name = 'cut_along_y'
+cut_along_y_dock = pyqtgraph.dockarea.Dock(name, size=(500,100))
+cut_along_y_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(cut_along_y_dock, 'right', self._console_namespace['cut_along_x_dock'])
+cut_along_y_dock.addWidget(QtGui.QLabel(name))
+cut_along_y_dock.win = pyqtgraph.GraphicsWindow()
+cut_along_y_dock.plot = cut_along_y_dock.win.addPlot(title=name)
+
+cut_along_y_dock.data = numpy.random.normal(size=(200))
+cut_along_y_dock.curve = cut_along_y_dock.plot.plot(y=cut_along_y_dock.data)
+
+cut_along_y_dock.addWidget(cut_along_y_dock.win)
+self._console_namespace.update({'cut_along_y_dock':cut_along_y_dock})
+</Method>
+        </Dock>
+        <Dock guid="c2939eb5-a282-11e4-9806-0010187736b5">
+          <Name guid="c2939eb6-a282-11e4-b7c2-0010187736b5">Console</Name>
+          <Method guid="c2939eb7-a282-11e4-b0fe-0010187736b5">
+name = 'Console'
+console_dock = pyqtgraph.dockarea.Dock(name, size=(250,1))
+console_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(console_dock, 'bottom')      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
+_console = pyqtgraph.console.ConsoleWidget(namespace=self._console_namespace)
+console_dock.addWidget(_console)
+self._console_namespace.update({'console_dock':console_dock})
+</Method>
+        </Dock>
+        <Dock guid="c2939eb8-a282-11e4-9c78-0010187736b5">
+          <Name guid="c293c5b0-a282-11e4-a21a-0010187736b5">Cursor</Name>
+          <Method guid="c293c5b1-a282-11e4-a516-0010187736b5">
+name = 'Cursor Interface'
+cursor_dock = pyqtgraph.dockarea.Dock(name, size=(1,1))
+cursor_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(cursor_dock, 'left', self._console_namespace['console_dock'])
+self.curs_pos_label = QtGui.QLabel("")
+cursor_dock.addWidget(QtGui.QLabel("Cursor Data:"))
+cursor_dock.addWidget(self.curs_pos_label)
+self._console_namespace.update({'cursor_dock':cursor_dock})
+</Method>
+        </Dock>
+        <Dock guid="c293c5b2-a282-11e4-abe5-0010187736b5">
+          <Name guid="c293c5b3-a282-11e4-9e76-0010187736b5">Control</Name>
+          <Method guid="c293c5b4-a282-11e4-aaf2-0010187736b5">
+name = 'Dock Control'
+control_dock = pyqtgraph.dockarea.Dock(name, size=(1, 1)) ## give this dock the minimum possible size
+control_dock.label.setText(QtCore.QString(name))
+self.dock_area.addDock(control_dock, 'bottom', self._console_namespace['cursor_dock'])      ## place d1 at left edge of dock area (it will fill the whole space since there are no other docks yet)
+self._layout_widget = pyqtgraph.LayoutWidget()        
+label = QtGui.QLabel(" -- DockArea -- ")
+saveBtn = QtGui.QPushButton('Save dock state')
+restoreBtn = QtGui.QPushButton('Restore dock state')
+restoreBtn.setEnabled(False)
+fileField = QtGui.QLineEdit('File')
+self._layout_widget.addWidget(label, row=0, col=0)
+self._layout_widget.addWidget(saveBtn, row=1, col=0)
+self._layout_widget.addWidget(restoreBtn, row=2, col=0)
+self._layout_widget.addWidget(fileField, row=3, col=0)
+control_dock.addWidget(self._layout_widget)
+state = None
+def save():
+    global state
+    state = self.dock_area.saveState()
+    print state['main']
+    #print self.dockstate_to_xml(state['main'])
+    print self.read_state()
+    restoreBtn.setEnabled(True)
+def load():
+    global state
+    self.dock_area.restoreState(state)
+saveBtn.clicked.connect(save)
+restoreBtn.clicked.connect(load)
+self._console_namespace.update({'control_dock':control_dock})
+</Method>
+        </Dock>
+      </AnalysisSpace>
+      <SubSequence expanded="1" guid="26c6d38f-3539-11e4-bceb-0010187736b5">
+        <StartTime guid="26c6d390-3539-11e4-9a81-0010187736b5">0</StartTime>
+        <Name guid="26c6d391-3539-11e4-ad76-0010187736b5">Ini</Name>
+        <Description guid="26c6d392-3539-11e4-bcf5-0010187736b5"/>
+        <Edge expanded="0" guid="26c6d39b-3539-11e4-9a7a-0010187736b5">
+          <OnChannel guid="26c6d39c-3539-11e4-a75a-0010187736b5">FingerMolassesShutter</OnChannel>
+          <Time guid="26c6d39d-3539-11e4-930f-0010187736b5">0</Time>
+          <Value guid="26c6d39e-3539-11e4-a27a-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="26c6d39b-3539-11e4-9a7a-0010187736b5">
+          <OnChannel guid="26c6d39c-3539-11e4-a75a-0010187736b5">MOTRepumperShutter</OnChannel>
+          <Time guid="26c6d39d-3539-11e4-930f-0010187736b5">0</Time>
+          <Value guid="26c6d39e-3539-11e4-a27a-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="26c6d39b-3539-11e4-9a7a-0010187736b5">
+          <OnChannel guid="26c6d39c-3539-11e4-a75a-0010187736b5">MOTShutter</OnChannel>
+          <Time guid="26c6d39d-3539-11e4-930f-0010187736b5">0</Time>
+          <Value guid="26c6d39e-3539-11e4-a27a-0010187736b5">1</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1" guid="baac36a5-70d9-11e4-8b1e-0010187736b5">
+        <StartTime expanded="0" guid="baac5db0-70d9-11e4-8373-0010187736b5">0</StartTime>
+        <Name expanded="0" guid="baac5db1-70d9-11e4-8707-0010187736b5">MOT Subsequence</Name>
+        <Description expanded="0" guid="baac5db2-70d9-11e4-a276-0010187736b5">Load MOT in the source and drop to the finger</Description>
+        <Iterate expanded="1" guid="9ad060cb-321f-11e4-b302-f0def100403f">
+          <Period disable="0" guid="9ad060cc-321f-11e4-a107-f0def100403f">500-20</Period>
+          <Repetitions guid="9ad060cd-321f-11e4-9ad3-f0def100403f">0</Repetitions>
+        </Iterate>
+        <SubSequence expanded="1" guid="baac36a5-70d9-11e4-8b1e-0010187736b5">
+          <StartTime expanded="0" guid="baac5db0-70d9-11e4-8373-0010187736b5">0</StartTime>
+          <Name expanded="0" guid="baac5db1-70d9-11e4-8707-0010187736b5">MOT Subsequence</Name>
+          <Description expanded="0" guid="baac5db2-70d9-11e4-a276-0010187736b5">Load MOT in the source and drop to the finger</Description>
+          <Edge expanded="0" guid="baac5db3-70d9-11e4-97d6-0010187736b5">
+            <Name expanded="0" guid="baac5db4-70d9-11e4-9490-0010187736b5">NS Compensation </Name>
+            <OnChannel expanded="0" guid="baac5db5-70d9-11e4-b892-0010187736b5">SRCCompCoilNorthSouth</OnChannel>
+            <Time expanded="0" guid="baac5db6-70d9-11e4-b069-0010187736b5">0</Time>
+            <Value expanded="0" guid="baac5db7-70d9-11e4-bd27-0010187736b5">1</Value>
+          </Edge>
+          <Edge expanded="0" guid="baac5db8-70d9-11e4-89d9-0010187736b5">
+            <Name expanded="0" guid="baac5db9-70d9-11e4-be81-0010187736b5">EW Compensation </Name>
+            <OnChannel expanded="0" guid="baac5dba-70d9-11e4-8ca1-0010187736b5">SRCCompCoilEastWest</OnChannel>
+            <Time expanded="0" guid="baac5dbb-70d9-11e4-b9bb-0010187736b5">0</Time>
+            <Value expanded="0" guid="baac5dbc-70d9-11e4-9d5b-0010187736b5">-0.5031</Value>
+          </Edge>
+          <Edge expanded="0" guid="baac5dbd-70d9-11e4-9577-0010187736b5">
+            <Name expanded="0" guid="baac5dbe-70d9-11e4-8554-0010187736b5">UD Compensation </Name>
+            <OnChannel expanded="0" guid="baac5dbf-70d9-11e4-ab81-0010187736b5">SRCCompCoilUpDown</OnChannel>
+            <Time expanded="0" guid="baac5dc0-70d9-11e4-82e1-0010187736b5">0</Time>
+            <Value expanded="0" guid="baac5dc1-70d9-11e4-95c4-0010187736b5">2.1</Value>
+          </Edge>
+          <Edge expanded="0" guid="baac84c1-70d9-11e4-855c-0010187736b5">
+            <Name expanded="0" guid="baac84c2-70d9-11e4-b9f4-0010187736b5">MOTCoilON</Name>
+            <OnChannel expanded="0" guid="baac84c3-70d9-11e4-a941-0010187736b5">SrcMOTCoil</OnChannel>
+            <Time expanded="0" guid="baac84c4-70d9-11e4-89b8-0010187736b5">0</Time>
+            <Value expanded="0" guid="baac84c5-70d9-11e4-93e0-0010187736b5">4.4</Value>
+          </Edge>
+          <Edge expanded="0" guid="baac84c6-70d9-11e4-af59-0010187736b5">
+            <Name expanded="0" guid="baac84c7-70d9-11e4-9c0a-0010187736b5">MOTBeamON</Name>
+            <OnChannel expanded="0" guid="baac84c8-70d9-11e4-97a7-0010187736b5">SYMOTAmplitude</OnChannel>
+            <Time expanded="0" guid="baac84c9-70d9-11e4-a224-0010187736b5">0</Time>
+            <Value expanded="0" guid="baac84ca-70d9-11e4-bc04-0010187736b5">10</Value>
+          </Edge>
+          <Edge expanded="0" guid="baac84cb-70d9-11e4-98af-0010187736b5">
+            <Name expanded="0" guid="baac84cc-70d9-11e4-bf31-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="baac84cd-70d9-11e4-b103-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+            <Time expanded="0" guid="baac84ce-70d9-11e4-bf28-0010187736b5">0</Time>
+            <Value expanded="0" guid="baac84cf-70d9-11e4-9256-0010187736b5">10</Value>
+          </Edge>
+          <Edge expanded="0" guid="baac84d0-70d9-11e4-a019-0010187736b5">
+            <Name expanded="0" guid="baac84d1-70d9-11e4-81cb-0010187736b5">MOTVCOTuningVoltage</Name>
+            <OnChannel expanded="0" guid="baac84d2-70d9-11e4-8b88-0010187736b5">MOTVCOTuning</OnChannel>
+            <Time expanded="0" guid="baac84d3-70d9-11e4-b61c-0010187736b5">0</Time>
+            <Value expanded="0" guid="baac84d4-70d9-11e4-b63d-0010187736b5">0.05</Value>
+          </Edge>
+          <Edge expanded="0" guid="baac84d5-70d9-11e4-8a06-0010187736b5">
+            <Name expanded="0" guid="baacabd1-70d9-11e4-96a5-0010187736b5">MOTVCOTuningVoltage</Name>
+            <OnChannel expanded="0" guid="baacabd2-70d9-11e4-9880-0010187736b5">RepVCOTuning</OnChannel>
+            <Time expanded="0" guid="baacabd3-70d9-11e4-b1ad-0010187736b5">0</Time>
+            <Value expanded="0" guid="baacabd4-70d9-11e4-b4ed-0010187736b5">0</Value>
+          </Edge>
+        </SubSequence>
+        <SubSequence expanded="1" guid="51fd4394-70c8-11e4-b70c-0010187736b5">
+          <StartTime expanded="0" guid="51fd4395-70c8-11e4-a10f-0010187736b5">405</StartTime>
+          <Name expanded="0" guid="51fd4396-70c8-11e4-875e-0010187736b5">MOT Compression</Name>
+          <Description expanded="0" guid="51fd4397-70c8-11e4-bf14-0010187736b5">Compress MOT in the source</Description>
+          <Interval guid="51fd6a8f-70c8-11e4-a4ac-0010187736b5" expanded="0">
+            <Name guid="51fd6a90-70c8-11e4-8989-0010187736b5"/>
+            <OnChannel guid="51fd6a91-70c8-11e4-b49c-0010187736b5">SrcMOTCoil</OnChannel>
+            <StartTime guid="51fd6a92-70c8-11e4-85cc-0010187736b5">0</StartTime>
+            <EndTime guid="51fd6a93-70c8-11e4-abd8-0010187736b5">5</EndTime>
+            <Value guid="51fd6a94-70c8-11e4-8c7c-0010187736b5">4.4+ (3.5-4.4)/5*TI</Value>
+            <Burst guid="51fd6a95-70c8-11e4-9de5-0010187736b5">
+              <Pulses guid="51fd6a96-70c8-11e4-b4ee-0010187736b5"/>
+              <Period guid="51fd6a97-70c8-11e4-b24e-0010187736b5"/>
+              <DutyHigh guid="51fd6a98-70c8-11e4-93d7-0010187736b5"/>
+              <Amplitude guid="51fd6a99-70c8-11e4-a308-0010187736b5"/>
+            </Burst>
+            <TResolution guid="51fd6a9a-70c8-11e4-a405-0010187736b5">0.025</TResolution>
+            <VResolution guid="51fd6a9b-70c8-11e4-bf6f-0010187736b5">0.001</VResolution>
+            <Description guid="51fd6a9c-70c8-11e4-aa80-0010187736b5"/>
+            <Comments guid="51fd6a9d-70c8-11e4-919e-0010187736b5"/>
+          </Interval>
+          <Interval guid="51fd6a8f-70c8-11e4-a4ac-0010187736b5" expanded="0">
+            <Name guid="51fd6a90-70c8-11e4-8989-0010187736b5"/>
+            <OnChannel guid="51fd6a91-70c8-11e4-b49c-0010187736b5">SRCCompCoilEastWest</OnChannel>
+            <StartTime guid="51fd6a92-70c8-11e4-85cc-0010187736b5">0</StartTime>
+            <EndTime guid="51fd6a93-70c8-11e4-abd8-0010187736b5">5</EndTime>
+            <Value guid="51fd6a94-70c8-11e4-8c7c-0010187736b5">-0.5031+ (5-0.5031)/5*TI</Value>
+            <Burst guid="51fd6a95-70c8-11e4-9de5-0010187736b5">
+              <Pulses guid="51fd6a96-70c8-11e4-b4ee-0010187736b5"/>
+              <Period guid="51fd6a97-70c8-11e4-b24e-0010187736b5"/>
+              <DutyHigh guid="51fd6a98-70c8-11e4-93d7-0010187736b5"/>
+              <Amplitude guid="51fd6a99-70c8-11e4-a308-0010187736b5"/>
+            </Burst>
+            <TResolution guid="51fd6a9a-70c8-11e4-a405-0010187736b5">0.025</TResolution>
+            <VResolution guid="51fd6a9b-70c8-11e4-bf6f-0010187736b5">0.001</VResolution>
+            <Description guid="51fd6a9c-70c8-11e4-aa80-0010187736b5"/>
+            <Comments guid="51fd6a9d-70c8-11e4-919e-0010187736b5"/>
+          </Interval>
+          <Interval guid="51fd6a8f-70c8-11e4-a4ac-0010187736b5" expanded="0">
+            <Name guid="51fd6a90-70c8-11e4-8989-0010187736b5"/>
+            <OnChannel guid="51fd6a91-70c8-11e4-b49c-0010187736b5">SRCCompCoilUpDown</OnChannel>
+            <StartTime guid="51fd6a92-70c8-11e4-85cc-0010187736b5">0</StartTime>
+            <EndTime guid="51fd6a93-70c8-11e4-abd8-0010187736b5">5</EndTime>
+            <Value guid="51fd6a94-70c8-11e4-8c7c-0010187736b5">2.2+ (5.5-2.2)/5*TI</Value>
+            <Burst guid="51fd6a95-70c8-11e4-9de5-0010187736b5">
+              <Pulses guid="51fd6a96-70c8-11e4-b4ee-0010187736b5"/>
+              <Period guid="51fd6a97-70c8-11e4-b24e-0010187736b5"/>
+              <DutyHigh guid="51fd6a98-70c8-11e4-93d7-0010187736b5"/>
+              <Amplitude guid="51fd6a99-70c8-11e4-a308-0010187736b5"/>
+            </Burst>
+            <TResolution guid="51fd6a9a-70c8-11e4-a405-0010187736b5">0.025</TResolution>
+            <VResolution guid="51fd6a9b-70c8-11e4-bf6f-0010187736b5">0.001</VResolution>
+            <Description guid="51fd6a9c-70c8-11e4-aa80-0010187736b5"/>
+            <Comments guid="51fd6a9d-70c8-11e4-919e-0010187736b5"/>
+          </Interval>
+          <Interval guid="51fd6a8f-70c8-11e4-a4ac-0010187736b5" expanded="0">
+            <Name guid="51fd6a90-70c8-11e4-8989-0010187736b5"/>
+            <OnChannel guid="51fd6a91-70c8-11e4-b49c-0010187736b5">SRCCompCoilNorthSouth</OnChannel>
+            <StartTime guid="51fd6a92-70c8-11e4-85cc-0010187736b5">0</StartTime>
+            <EndTime guid="51fd6a93-70c8-11e4-abd8-0010187736b5">5</EndTime>
+            <Value guid="51fd6a94-70c8-11e4-8c7c-0010187736b5">0.7+ (-2-0.7)/5*TI</Value>
+            <Burst guid="51fd6a95-70c8-11e4-9de5-0010187736b5">
+              <Pulses guid="51fd6a96-70c8-11e4-b4ee-0010187736b5"/>
+              <Period guid="51fd6a97-70c8-11e4-b24e-0010187736b5"/>
+              <DutyHigh guid="51fd6a98-70c8-11e4-93d7-0010187736b5"/>
+              <Amplitude guid="51fd6a99-70c8-11e4-a308-0010187736b5"/>
+            </Burst>
+            <TResolution guid="51fd6a9a-70c8-11e4-a405-0010187736b5">0.025</TResolution>
+            <VResolution guid="51fd6a9b-70c8-11e4-bf6f-0010187736b5">0.001</VResolution>
+            <Description guid="51fd6a9c-70c8-11e4-aa80-0010187736b5"/>
+            <Comments guid="51fd6a9d-70c8-11e4-919e-0010187736b5"/>
+          </Interval>
+          <Interval expanded="0" guid="51fe06e0-70c8-11e4-a407-0010187736b5">
+            <OnChannel guid="51fe06e1-70c8-11e4-88f7-0010187736b5">MOTVCOTuning</OnChannel>
+            <StartTime guid="51fe06e2-70c8-11e4-970c-0010187736b5">0</StartTime>
+            <EndTime guid="51fe06e3-70c8-11e4-97a2-0010187736b5">0.4</EndTime>
+            <Value guid="51fe06e4-70c8-11e4-94ba-0010187736b5">0.5/0.4*TI</Value>
+            <VResolution guid="51fe06e5-70c8-11e4-8f37-0010187736b5">0.002</VResolution>
+            <TResolution guid="51fe06e6-70c8-11e4-963d-0010187736b5">0.004</TResolution>
+          </Interval>
+          <Interval expanded="0" guid="51fe06e0-70c8-11e4-a407-0010187736b5">
+            <OnChannel guid="51fe06e1-70c8-11e4-88f7-0010187736b5">RepVCOTuning</OnChannel>
+            <StartTime guid="51fe06e2-70c8-11e4-970c-0010187736b5">0</StartTime>
+            <EndTime guid="51fe06e3-70c8-11e4-97a2-0010187736b5">1.5</EndTime>
+            <Value guid="51fe06e4-70c8-11e4-94ba-0010187736b5">0+(1.91-0)/1.5*TI</Value>
+            <VResolution guid="51fe06e5-70c8-11e4-8f37-0010187736b5">0.002</VResolution>
+            <TResolution guid="51fe06e6-70c8-11e4-963d-0010187736b5">0.004</TResolution>
+          </Interval>
+          <Edge expanded="0" guid="51fd6a9e-70c8-11e4-917f-0010187736b5">
+            <Name expanded="0" guid="51fd6a9f-70c8-11e4-a78d-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="51fd6aa0-70c8-11e4-94f3-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+            <Time expanded="0" guid="51fd6aa1-70c8-11e4-9d2a-0010187736b5">0</Time>
+            <Value expanded="0" guid="51fd6aa2-70c8-11e4-82ac-0010187736b5">-0.04</Value>
+          </Edge>
+          <Edge expanded="0" guid="51fd6a9e-70c8-11e4-917f-0010187736b5">
+            <Name expanded="0" guid="51fd6a9f-70c8-11e4-a78d-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="51fd6aa0-70c8-11e4-94f3-0010187736b5">MOTRepumperShutter0</OnChannel>
+            <Time expanded="0" guid="51fd6aa1-70c8-11e4-9d2a-0010187736b5">-2.0</Time>
+            <Value expanded="0" guid="51fd6aa2-70c8-11e4-82ac-0010187736b5">0</Value>
+          </Edge>
+          <Edge expanded="0" guid="51fd6a9e-70c8-11e4-917f-0010187736b5">
+            <Name expanded="0" guid="51fd6a9f-70c8-11e4-a78d-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="51fd6aa0-70c8-11e4-94f3-0010187736b5">RSCOptPumpShutter</OnChannel>
+            <Time expanded="0" guid="51fd6aa1-70c8-11e4-9d2a-0010187736b5">0</Time>
+            <Value expanded="0" guid="51fd6aa2-70c8-11e4-82ac-0010187736b5">1</Value>
+          </Edge>
+          <Edge expanded="0" guid="51fd6a9e-70c8-11e4-917f-0010187736b5">
+            <Name expanded="0" guid="51fd6a9f-70c8-11e4-a78d-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="51fd6aa0-70c8-11e4-94f3-0010187736b5">SYLatticeOpticalPumping</OnChannel>
+            <Time expanded="0" guid="51fd6aa1-70c8-11e4-9d2a-0010187736b5">1.6</Time>
+            <Value expanded="0" guid="51fd6aa2-70c8-11e4-82ac-0010187736b5">0.80</Value>
+          </Edge>
+          <Edge expanded="0" guid="51fd6a9e-70c8-11e4-917f-0010187736b5">
+            <Name expanded="0" guid="51fd6a9f-70c8-11e4-a78d-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="51fd6aa0-70c8-11e4-94f3-0010187736b5">SYMOTAmplitude</OnChannel>
+            <Time expanded="0" guid="51fd6aa1-70c8-11e4-9d2a-0010187736b5">0</Time>
+            <Value expanded="0" guid="51fd6aa2-70c8-11e4-82ac-0010187736b5">4</Value>
+          </Edge>
+        </SubSequence>
+        <SubSequence expanded="1" guid="51fd4394-70c8-11e4-b70c-0010187736b5">
+          <StartTime expanded="0" guid="51fd4395-70c8-11e4-a10f-0010187736b5">419</StartTime>
+          <Name expanded="0" guid="51fd4396-70c8-11e4-875e-0010187736b5">MOT Compression Off</Name>
+          <Description expanded="0" guid="51fd4397-70c8-11e4-bf14-0010187736b5">Compress MOT in the source</Description>
+          <Interval expanded="0" guid="51fe06e0-70c8-11e4-a407-0010187736b5">
+            <OnChannel guid="51fe06e1-70c8-11e4-88f7-0010187736b5">MOTVCOTuning</OnChannel>
+            <StartTime guid="51fe06e2-70c8-11e4-970c-0010187736b5">0</StartTime>
+            <EndTime guid="51fe06e3-70c8-11e4-97a2-0010187736b5">0.4</EndTime>
+            <Value guid="51fe06e4-70c8-11e4-94ba-0010187736b5">0.5+(0.1-0.5)/0.4*TI</Value>
+            <VResolution guid="51fe06e5-70c8-11e4-8f37-0010187736b5">0.002</VResolution>
+            <TResolution guid="51fe06e6-70c8-11e4-963d-0010187736b5">0.004</TResolution>
+          </Interval>
+          <Interval expanded="0" guid="51fe06e0-70c8-11e4-a407-0010187736b5">
+            <OnChannel guid="51fe06e1-70c8-11e4-88f7-0010187736b5">RepVCOTuning</OnChannel>
+            <StartTime guid="51fe06e2-70c8-11e4-970c-0010187736b5">0</StartTime>
+            <EndTime guid="51fe06e3-70c8-11e4-97a2-0010187736b5">1.6</EndTime>
+            <Value guid="51fe06e4-70c8-11e4-94ba-0010187736b5">1.91+((0-1.91)/1.6)*TI</Value>
+            <VResolution guid="51fe06e5-70c8-11e4-8f37-0010187736b5">0.002</VResolution>
+            <TResolution guid="51fe06e6-70c8-11e4-963d-0010187736b5">0.004</TResolution>
+          </Interval>
+          <Edge expanded="0" guid="51fd6a9e-70c8-11e4-917f-0010187736b5">
+            <Name expanded="0" guid="51fd6a9f-70c8-11e4-a78d-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="51fd6aa0-70c8-11e4-94f3-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+            <Time expanded="0" guid="51fd6aa1-70c8-11e4-9d2a-0010187736b5">0</Time>
+            <Value expanded="0" guid="51fd6aa2-70c8-11e4-82ac-0010187736b5">10</Value>
+          </Edge>
+          <Edge expanded="0" guid="51fd6a9e-70c8-11e4-917f-0010187736b5">
+            <Name expanded="0" guid="51fd6a9f-70c8-11e4-a78d-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="51fd6aa0-70c8-11e4-94f3-0010187736b5">MOTRepumperShutter0</OnChannel>
+            <Time expanded="0" guid="51fd6aa1-70c8-11e4-9d2a-0010187736b5">-2.0</Time>
+            <Value expanded="0" guid="51fd6aa2-70c8-11e4-82ac-0010187736b5">1</Value>
+          </Edge>
+          <Edge expanded="0" guid="51fd6a9e-70c8-11e4-917f-0010187736b5">
+            <Name expanded="0" guid="51fd6a9f-70c8-11e4-a78d-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="51fd6aa0-70c8-11e4-94f3-0010187736b5">SYLatticeOpticalPumping</OnChannel>
+            <Time expanded="0" guid="51fd6aa1-70c8-11e4-9d2a-0010187736b5">0</Time>
+            <Value expanded="0" guid="51fd6aa2-70c8-11e4-82ac-0010187736b5">-0.04</Value>
+          </Edge>
+          <Edge expanded="0" guid="51fd6a9e-70c8-11e4-917f-0010187736b5">
+            <Name expanded="0" guid="51fd6a9f-70c8-11e4-a78d-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="51fd6aa0-70c8-11e4-94f3-0010187736b5">RSCOptPumpShutter</OnChannel>
+            <Time expanded="0" guid="51fd6aa1-70c8-11e4-9d2a-0010187736b5">0</Time>
+            <Value expanded="0" guid="51fd6aa2-70c8-11e4-82ac-0010187736b5">0</Value>
+          </Edge>
+          <Edge expanded="0" guid="51fd6a9e-70c8-11e4-917f-0010187736b5">
+            <Name expanded="0" guid="51fd6a9f-70c8-11e4-a78d-0010187736b5">RepBeamON</Name>
+            <OnChannel expanded="0" guid="51fd6aa0-70c8-11e4-94f3-0010187736b5">SYLatticeOpticalPumping</OnChannel>
+            <Time expanded="0" guid="51fd6aa1-70c8-11e4-9d2a-0010187736b5">3</Time>
+            <Value expanded="0" guid="51fd6aa2-70c8-11e4-82ac-0010187736b5">10</Value>
+          </Edge>
+        </SubSequence>
+        <SubSequence expanded="1" guid="baacd2f1-70d9-11e4-9947-0010187736b5">
+          <StartTime expanded="0" guid="baacd2f2-70d9-11e4-83aa-0010187736b5">420</StartTime>
+          <Name expanded="0" guid="baacd2f3-70d9-11e4-b102-0010187736b5">Molasses Subsequence</Name>
+          <Description guid="baacd2f4-70d9-11e4-aee7-0010187736b5" expanded="0"/>
+          <Edge expanded="0" guid="baacd2f5-70d9-11e4-998b-0010187736b5">
+            <Name expanded="0" guid="baacd2f6-70d9-11e4-8d1d-0010187736b5">MOT Beam OFF AOM</Name>
+            <OnChannel expanded="0" guid="baacf9f0-70d9-11e4-9c55-0010187736b5">SRCCompCoilNorthSouth</OnChannel>
+            <Time expanded="0" guid="baacf9f1-70d9-11e4-8e7d-0010187736b5">0</Time>
+            <Value expanded="0" guid="baacf9f2-70d9-11e4-a62b-0010187736b5">0.6</Value>
+          </Edge>
+          <Edge expanded="0" guid="baacf9f3-70d9-11e4-a7f7-0010187736b5">
+            <Name expanded="0" guid="baacf9f4-70d9-11e4-a494-0010187736b5">MOT Beam OFF AOM</Name>
+            <OnChannel expanded="0" guid="baacf9f5-70d9-11e4-b306-0010187736b5">SRCCompCoilUpDown</OnChannel>
+            <Time expanded="0" guid="baacf9f6-70d9-11e4-a6e8-0010187736b5">0</Time>
+            <Value expanded="0" guid="baacf9f7-70d9-11e4-9dcc-0010187736b5">3.65</Value>
+          </Edge>
+          <Edge expanded="0" guid="baacf9f8-70d9-11e4-9185-0010187736b5">
+            <Name expanded="0" guid="baacf9f9-70d9-11e4-abe8-0010187736b5">MOT Beam OFF AOM</Name>
+            <OnChannel expanded="0" guid="baacf9fa-70d9-11e4-9872-0010187736b5">SRCCompCoilEastWest</OnChannel>
+            <Time expanded="0" guid="baacf9fb-70d9-11e4-989e-0010187736b5">0</Time>
+            <Value expanded="0" guid="baacf9fc-70d9-11e4-bc88-0010187736b5">-0.9</Value>
+          </Edge>
+          <Edge expanded="0" guid="baacf9fd-70d9-11e4-be55-0010187736b5">
+            <Name expanded="0" guid="baacf9fe-70d9-11e4-8690-0010187736b5">MOT Beam OFF AOM</Name>
+            <OnChannel expanded="0" guid="baacf9ff-70d9-11e4-ae5b-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+            <Time expanded="0" guid="baacfa00-70d9-11e4-a307-0010187736b5">0</Time>
+            <Value expanded="0" guid="baacfa01-70d9-11e4-aba6-0010187736b5">10</Value>
+          </Edge>
+          <Edge expanded="0" guid="baacfa02-70d9-11e4-b401-0010187736b5">
+            <Name expanded="0" guid="baacfa03-70d9-11e4-9d9b-0010187736b5">MOT Beam OFF AOM</Name>
+            <OnChannel expanded="0" guid="baacfa04-70d9-11e4-96f0-0010187736b5">SYMOTAmplitude</OnChannel>
+            <Time expanded="0" guid="baacfa05-70d9-11e4-858f-0010187736b5">0</Time>
+            <Value expanded="0" guid="baad2100-70d9-11e4-8047-0010187736b5">-0.04</Value>
+          </Edge>
+          <Edge expanded="0" guid="baad2106-70d9-11e4-bfd7-0010187736b5">
+            <Name expanded="0" guid="baad2107-70d9-11e4-b4c1-0010187736b5">MOT Coil Off</Name>
+            <OnChannel expanded="0" guid="baad2108-70d9-11e4-bb2d-0010187736b5">SrcMOTCoil</OnChannel>
+            <Time expanded="0" guid="baad2109-70d9-11e4-beff-0010187736b5">0.04</Time>
+            <Value expanded="0" guid="baad210a-70d9-11e4-ba93-0010187736b5">-1</Value>
+          </Edge>
+          <Edge expanded="0" guid="baad210b-70d9-11e4-b1b8-0010187736b5">
+            <Name expanded="0" guid="baad210c-70d9-11e4-95d9-0010187736b5">Molasses Beam On AOM</Name>
+            <OnChannel expanded="0" guid="baad210d-70d9-11e4-939f-0010187736b5">SYMOTAmplitude0</OnChannel>
+            <Time expanded="0" guid="baad210e-70d9-11e4-9221-0010187736b5">0.3</Time>
+            <Value expanded="0" guid="baad210f-70d9-11e4-943d-0010187736b5">10</Value>
+          </Edge>
+          <Interval expanded="0" guid="baad2110-70d9-11e4-898e-0010187736b5">
+            <OnChannel guid="baad2111-70d9-11e4-a3b5-0010187736b5">SYMOTAmplitude</OnChannel>
+            <StartTime guid="baad2112-70d9-11e4-a0bd-0010187736b5">0.3</StartTime>
+            <EndTime guid="baad2113-70d9-11e4-86f2-0010187736b5">1.7</EndTime>
+            <Value guid="baad2114-70d9-11e4-85b1-0010187736b5">10+(1-10)*TI/1.4</Value>
+            <VResolution guid="baad2115-70d9-11e4-ba1b-0010187736b5">0.002</VResolution>
+            <TResolution guid="baad480f-70d9-11e4-82a7-0010187736b5">0.004</TResolution>
+          </Interval>
+          <Interval expanded="0" guid="baad2110-70d9-11e4-898e-0010187736b5">
+            <OnChannel guid="baad2111-70d9-11e4-a3b5-0010187736b5">MOTVCOTuning</OnChannel>
+            <StartTime guid="baad2112-70d9-11e4-a0bd-0010187736b5">0</StartTime>
+            <EndTime guid="baad2113-70d9-11e4-86f2-0010187736b5">0.4</EndTime>
+            <Value guid="baad2114-70d9-11e4-85b1-0010187736b5">0.1+(2.2-0.1)*TI/0.4</Value>
+            <VResolution guid="baad2115-70d9-11e4-ba1b-0010187736b5">0.002</VResolution>
+            <TResolution guid="baad480f-70d9-11e4-82a7-0010187736b5">0.004</TResolution>
+          </Interval>
+          <Edge expanded="0" guid="baad4810-70d9-11e4-8180-0010187736b5">
+            <Name expanded="0" guid="baad4811-70d9-11e4-bf5e-0010187736b5">Molasses Beam OFF Shutter</Name>
+            <OnChannel expanded="0" guid="baad4812-70d9-11e4-a2d3-0010187736b5">SYMOTAmplitude0</OnChannel>
+            <Time expanded="0" guid="baad4813-70d9-11e4-a7a4-0010187736b5">3</Time>
+            <Value expanded="0" guid="baad4814-70d9-11e4-bc3c-0010187736b5">1</Value>
+          </Edge>
+          <Edge expanded="0" guid="baad4815-70d9-11e4-99f7-0010187736b5">
+            <Name expanded="0" guid="baad4816-70d9-11e4-a3f1-0010187736b5">Molasses Beam OFF Shutter</Name>
+            <OnChannel expanded="0" guid="baad4817-70d9-11e4-9c8e-0010187736b5">SYMOTAmplitude</OnChannel>
+            <Time expanded="0" guid="baad4818-70d9-11e4-a9b1-0010187736b5">3.0</Time>
+            <Value expanded="0" guid="baad4819-70d9-11e4-b177-0010187736b5">-0.04</Value>
+          </Edge>
+          <Edge expanded="0" guid="baad481a-70d9-11e4-9034-0010187736b5">
+            <Name expanded="0" guid="baad481b-70d9-11e4-94ce-0010187736b5">Molasses Beam OFF Shutter</Name>
+            <OnChannel expanded="0" guid="baad481c-70d9-11e4-9f65-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+            <Time expanded="0" guid="baad481d-70d9-11e4-8343-0010187736b5">3.0</Time>
+            <Value expanded="0" guid="baad481e-70d9-11e4-af08-0010187736b5">10</Value>
+          </Edge>
+          <Edge expanded="0" guid="baad481f-70d9-11e4-935d-0010187736b5">
+            <Name expanded="0" guid="baad4820-70d9-11e4-b407-0010187736b5">Molasses Beam OFF Shutter</Name>
+            <OnChannel expanded="0" guid="baad4821-70d9-11e4-822d-0010187736b5">MOTShutter</OnChannel>
+            <Time expanded="0" guid="baad4822-70d9-11e4-8a6f-0010187736b5">1.0</Time>
+            <Value expanded="0" guid="baad4823-70d9-11e4-a264-0010187736b5">0</Value>
+          </Edge>
+        </SubSequence>
+        <SubSequence expanded="1" guid="baae0b73-70d9-11e4-8090-0010187736b5">
+          <StartTime expanded="0" guid="baae3270-70d9-11e4-bb4c-0010187736b5">420+18</StartTime>
+          <Name expanded="0" guid="baae3271-70d9-11e4-a531-0010187736b5">LatticeOFF</Name>
+          <Description expanded="0" guid="baae3272-70d9-11e4-bb17-0010187736b5">Raman Sideband cooling in the SRC</Description>
+          <Edge expanded="0" guid="baae5994-70d9-11e4-84e9-0010187736b5">
+            <Name expanded="0" guid="baae5995-70d9-11e4-aabd-0010187736b5">SRC Lattice AOM Off</Name>
+            <OnChannel expanded="0" guid="baae5996-70d9-11e4-a822-0010187736b5">RepVCOTuning</OnChannel>
+            <Time expanded="0" guid="baae5997-70d9-11e4-b2c1-0010187736b5">0</Time>
+            <Value expanded="0" guid="baae808f-70d9-11e4-916c-0010187736b5">0.0</Value>
+          </Edge>
+          
+          <Edge expanded="0" guid="baae5994-70d9-11e4-84e9-0010187736b5">
+            <Name expanded="0" guid="baae5995-70d9-11e4-aabd-0010187736b5">SRC Lattice AOM Off</Name>
+            <OnChannel expanded="0" guid="baae5996-70d9-11e4-a822-0010187736b5">MOTShutter</OnChannel>
+            <Time expanded="0" guid="baae5997-70d9-11e4-b2c1-0010187736b5">5</Time>
+            <Value expanded="0" guid="baae808f-70d9-11e4-916c-0010187736b5">1</Value>
+          </Edge>
+          <Edge expanded="0" guid="baae5994-70d9-11e4-84e9-0010187736b5">
+            <Name expanded="0" guid="baae5995-70d9-11e4-aabd-0010187736b5">SRC Lattice AOM Off</Name>
+            <OnChannel expanded="0" guid="baae5996-70d9-11e4-a822-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+            <Time expanded="0" guid="baae5997-70d9-11e4-b2c1-0010187736b5">40</Time>
+            <Value expanded="0" guid="baae808f-70d9-11e4-916c-0010187736b5">10</Value>
+          </Edge>
+          <Interval guid="c29413cf-a282-11e4-8b02-0010187736b5" expanded="1">
+            <OnChannel guid="c29413d0-a282-11e4-9008-0010187736b5">MOTVCOTuning</OnChannel>
+            <StartTime guid="c29413d1-a282-11e4-8558-0010187736b5">0</StartTime>
+            <EndTime guid="c29413d2-a282-11e4-af14-0010187736b5">0.4</EndTime>
+            <Value guid="c29413d3-a282-11e4-b34d-0010187736b5">2.2+(0.0-2.2)/0.4*TI</Value>
+            <VResolution guid="c29413d4-a282-11e4-a304-0010187736b5">0.002</VResolution>
+            <TResolution guid="c29413d5-a282-11e4-9af0-0010187736b5">0.004</TResolution>
+          </Interval>
+        </SubSequence>
+      </SubSequence>
+      <SubSequence expanded="1" guid="7268711e-288b-11e4-ad06-0010187736b5">
+        <StartTime expanded="0" guid="7268711f-288b-11e4-91bd-0010187736b5">430.4+408+70</StartTime>
+        <Name expanded="0" guid="72687120-288b-11e4-a148-0010187736b5">UHVMOTCompression</Name>
+        <Description expanded="0" guid="72687121-288b-11e4-9663-0010187736b5">Detect atoms by time of flight</Description>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5"><Description/>
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCoilCurrentControl0</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">5.5</Value>
+        </Edge>
+              <Interval expanded="0" guid="51fe06e0-70c8-11e4-a407-0010187736b5">
+          <OnChannel guid="51fe06e1-70c8-11e4-88f7-0010187736b5">MOTVCOTuning0</OnChannel>
+          <StartTime guid="51fe06e2-70c8-11e4-970c-0010187736b5">0</StartTime>
+          <EndTime guid="51fe06e3-70c8-11e4-97a2-0010187736b5">0.4</EndTime>
+          <Value guid="51fe06e4-70c8-11e4-94ba-0010187736b5">0+(0.5-0)/0.4*TI</Value>
+          <VResolution guid="51fe06e5-70c8-11e4-8f37-0010187736b5">0.002</VResolution>
+          <TResolution guid="51fe06e6-70c8-11e4-963d-0010187736b5">0.004</TResolution>
+        </Interval>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYUHVMOTAmplitude0</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">10</Value>
+        </Edge><Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYMOTRepumperAmplitude0</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">2</Value>
+        </Edge>
+        
+        
+        
+        
+        <Edge expanded="0" guid="72689835-288b-11e4-81b5-0010187736b5">
+          <Name expanded="0" guid="72689836-288b-11e4-b5d9-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="72689837-288b-11e4-94d7-0010187736b5">ScopeTrigger0</OnChannel>
+          <Time expanded="0" guid="72689838-288b-11e4-a22a-0010187736b5">0</Time>
+          <Value expanded="0" guid="7268bf30-288b-11e4-9288-0010187736b5">1</Value>
+        </Edge>
+      </SubSequence>
+      <SubSequence expanded="1" guid="7268711e-288b-11e4-ad06-0010187736b5">
+        <StartTime expanded="0" guid="7268711f-288b-11e4-91bd-0010187736b5">430.4+408+80</StartTime>
+        <Name expanded="0" guid="72687120-288b-11e4-a148-0010187736b5">UHVMOT Absorption</Name>
+        <Description expanded="0" guid="72687121-288b-11e4-9663-0010187736b5">Detect atoms by time of flight</Description>
+        <Interval expanded="0" guid="51fe06e0-70c8-11e4-a407-0010187736b5">
+          <OnChannel guid="51fe06e1-70c8-11e4-88f7-0010187736b5">MOTVCOTuning</OnChannel>
+          <StartTime guid="51fe06e2-70c8-11e4-970c-0010187736b5">1</StartTime>
+          <EndTime guid="51fe06e3-70c8-11e4-97a2-0010187736b5">1.4</EndTime>
+          <Value guid="51fe06e4-70c8-11e4-94ba-0010187736b5">0.0+(-0.24-0)/0.4*TI</Value>
+          <VResolution guid="51fe06e5-70c8-11e4-8f37-0010187736b5">0.002</VResolution>
+          <TResolution guid="51fe06e6-70c8-11e4-963d-0010187736b5">0.004</TResolution>
+        </Interval><Interval expanded="0" guid="51fe06e0-70c8-11e4-a407-0010187736b5">
+          <OnChannel guid="51fe06e1-70c8-11e4-88f7-0010187736b5">RepVCOTuning0</OnChannel>
+          <StartTime guid="51fe06e2-70c8-11e4-970c-0010187736b5">1</StartTime>
+          <EndTime guid="51fe06e3-70c8-11e4-97a2-0010187736b5">1.4</EndTime>
+          <Value guid="51fe06e4-70c8-11e4-94ba-0010187736b5">0+(-0)/0.4*TI</Value>
+          <VResolution guid="51fe06e5-70c8-11e4-8f37-0010187736b5">0.002</VResolution>
+          <TResolution guid="51fe06e6-70c8-11e4-963d-0010187736b5">0.004</TResolution>
+        </Interval>
+        
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">FieldTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge><Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCompCoilEastWest0</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">1.5</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">-5</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0-490</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0-480</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYUHVMOTAmplitude</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">-0.04</Value>
+        </Edge><Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYMOTRepumperAmplitude</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">FingerMolassesShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">-0.5</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCoilSwitchNorth</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0.5</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCoilCurrentControl</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0.7</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">-1</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">DetectionShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">-0.5</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">-1</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">ScopeTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">2.0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">2.1</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">DetectionShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">2.1</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">-2.5</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">5.0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">10</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">15</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">10</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">DetectionShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500-0.5</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+2.0</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">10</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">SYDetectionAOM</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+2.1</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">-0.04</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">DetectionShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+2.1</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500-2.5</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+5</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" disable="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCameraShutter</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500+10</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">0</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCCDTrigger</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">500</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+        <Edge expanded="0" guid="7268982b-288b-11e4-828e-0010187736b5">
+          <Name expanded="0" guid="7268982c-288b-11e4-9ff6-0010187736b5">TOF Scope Trigger</Name>
+          <OnChannel expanded="0" guid="7268982d-288b-11e4-aeab-0010187736b5">UHVCoilSwitchNorth</OnChannel>
+          <Time expanded="0" guid="7268982e-288b-11e4-abe8-0010187736b5">1000</Time>
+          <Value expanded="0" guid="7268982f-288b-11e4-bb11-0010187736b5">1</Value>
+        </Edge>
+      </SubSequence>
+    </Sequence>
+  </body>
+</XTSM>
