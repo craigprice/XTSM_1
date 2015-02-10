@@ -541,7 +541,6 @@ class CommandLibrary():
         #if DEBUG: print exp_sync.active_xtsm
         xtsm_object = XTSMobjectify.XTSM_Object(exp_sync.active_xtsm)
         dc.update({'_active_xtsm_obj':xtsm_object})
-        
         # parse the active xtsm to produce timingstrings
         message = {"server_console": 
         "Started parsing shotnumber " + str(sn) + " at " + str(datetime.datetime.now()),
@@ -687,7 +686,7 @@ class CommandLibrary():
         # send back the timingstrings
         #pdb.set_trace()
         tsbytes = bytearray(parserOutput.package_timingstrings())
-        print "!!!"
+        #print "!!!"
         #timing_diagram.TimingString(tsbytes)
         timingstringOutput = str(tsbytes)
         #print parserOutput.timing_string_ints

@@ -28,6 +28,7 @@ import os
 import commands
 import sync
 import decimal
+import pprint
 
 #from IPy import IP
 
@@ -311,6 +312,19 @@ class XTSM_core(object):
             try: 
                 self._parseValue=eval(html.fromstring(self.PCDATA.replace('#','&')).text,globals(),tscope)  # evaluate expression
                 suc=True
+            except SyntaxError:#Unknown symbol to evaluate - try applying calibration
+                if self.get_tag().strip() == 'Value':
+                    try:
+                        self.apply_calibration(tscope)
+                        suc = True
+                    except Exception as Error:
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                        msg = ('Error in applying Calibration:', Error,
+                        'XTSMobjectify, line:', 
+                        exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
+                        print msg
+                        self.addAttribute("parser_error", msg) 
             except NameError as Error:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -320,8 +334,6 @@ class XTSM_core(object):
                 print msg
                 self.addAttribute("parser_error", msg) 
         if suc:
-            if self.get_tag().strip() == 'Value':
-                self.apply_calibration(additional_scope)
             if hasattr(self._parseValue,'__len__'):
                 if isinstance(self._parseValue,basestring) or len(self._parseValue)<2:
                     self.addAttribute('current_value',str(self._parseValue))
@@ -331,43 +343,43 @@ class XTSM_core(object):
         else:
             return None
     
-    def apply_calibration(self, additional_scope=None):
-        try:
-            chan_name = self.__parent__.OnChannel.PCDATA.strip()
-            ch = self.getOwnerXTSM().head.getItemByFieldValue('Channel',
-                                                              'ChannelName',
-                                                              chan_name)
-            calibration = ch.Calibration
-        except AttributeError:
-            return # No Calibration exists to be applied
+    def apply_calibration(self, additional_scope={}):
+        chan_name = self.__parent__.OnChannel.PCDATA.strip()
+        ch = self.getOwnerXTSM().head.getItemByFieldValue('Channel',
+                                                          'ChannelName',
+                                                          chan_name)
+        calibration = ch.Calibration
             
         self.stringio = StringIO.StringIO(self.PCDATA)
         self.names = []
         def handle_token(type, token, (srow, scol), (erow, ecol), line):
-            print "%d,%d-%d,%d:\t%s\t%s" % \
-                (srow, scol, erow, ecol, tokenize.tok_name[type], repr(token))
+            #print "%d,%d-%d,%d:\t%s\t%s" % \
+            #    (srow, scol, erow, ecol, tokenize.tok_name[type], repr(token))
             if tokenize.tok_name[type] == 'NAME':
-                self.names.append(repr(token))
+                self.names.append(token)
         
         tokenize.tokenize(self.stringio.readline, handle_token)     
         
-        if len(self.names) == 0:
-            return
         unit = self.names[-1]
         try:
             calibration_function = getattr(calibration, unit)
-        except Exception as Error:
-            return
-        try:
-            self._parseValue = calibration_function(self._parseValue)
-        except Exception as Error:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            msg = ('Error in calibrations:', Error,
-            'XTSMobjectify, line:', 
-            exc_type, fname, exc_tb.tb_lineno, traceback.format_exc())
-            print msg
-            self.addAttribute("parser_error", msg) 
+        except AttributeError:
+            old_stdout = sys.stdout
+            context = {'self':calibration}
+            context.update(additional_scope)
+            capturer = StringIO.StringIO()
+            sys.stdout = capturer
+            t0=time.time()
+            exec calibration._seq[0] in globals(), context
+            if DEBUG: print "class Script, function _execute, context:", capturer.getvalue()
+            t1=time.time()
+            context.update({"_starttime":t0,"_exectime":(t1-t0),"_script_console":capturer.getvalue()})
+            #del context['__builtin__']  # removes the backeffect of exec on context to add builtins
+            sys.stdout = old_stdout            
+            
+            calibration_function = getattr(calibration, unit)
+        
+        self._parseValue = calibration_function(calibration, self.PCDATA, additional_scope)
 
         '''
         expression = ''
@@ -2164,7 +2176,7 @@ class Sequence(gnosis.xml.objectify._XO_,XTSM_core):
                     str(maxlasttime), 'ms.',
                     'XTSMobjectify, line:', 
                     exc_type, fname, exc_tb.tb_lineno)
-                    print msg
+                    pprint.pprint(msg)
                     self.EndTime[0].addAttribute("parser_error",msg)
                     
         return self.endtime
@@ -2305,7 +2317,7 @@ class SubSequence(gnosis.xml.objectify._XO_,XTSM_core):
                 msg = ('Error in Parsing: Subsequence StartTime Invalid.',
                 'XTSMobjectify, line:', 
                 exc_type, fname, exc_tb.tb_lineno)
-                print msg
+                pprint.pprint(msg)
                 self.addAttribute("parser_error",msg) 
             
         return self.starttime
@@ -2695,50 +2707,84 @@ class Edge(gnosis.xml.objectify._XO_,XTSM_core):
 
 '''
 class Value(gnosis.xml.objectify._XO_,XTSM_core):
-    pass
-class Value(gnosis.xml.objectify._XO_,XTSM_core):
-    def __init__(self, value=None):
-        XTSM_core.__init__(self, value)
-        self.value = value
-    #def parse(self):
-    #    #v=self.PCDATA
-    #    #eval(html.fromstring(self.PCDATA.replace('#','&')).text,globals(),tscope)
-    #    
-    #    gnosis.xml.objectify._XO_,XTSM_core.parse(self)
+    def __init__(self):
+        XTSM_core.__init__(self)
+        #self.asdf = None
+        a = self.a = XTSM_Object('<A></A>').PCDATA #hack to make work - see Calibration class CP 2015-02-05
 '''
-
-
-class Channel(gnosis.xml.objectify._XO_,XTSM_core):
+"""
+class Calibration(gnosis.xml.objectify._XO_,XTSM_core):
+    '''
+    Very odd behavior of making classes of XTSM:
+    If you make a class like:
+    class ConnectsTo(gnosis.xml.objectify._XO_,XTSM_core):
+        def __init__(self):
+            XTSM_core.__init__(self)
+    that is objectified through XTSM_Object, then the objectify.py from gnosis
+    will throw a 'XXX' object has no attribute '_seq'' error.
+    It doesn't seem to be related to how the tags are treated in the .xsd,
+    however, if the tag has any children declared (in the xtsm) there will be
+    no error.
+    Also, if there are no children in the xtsm, yet in the initialization you
+    set self to have a variable *AND* you then access that local varialble's
+    PCDATA like this:
+        def __init__(self):
+        XTSM_core.__init__(self)
+        self.ScriptBody = XTSM_Object('<ScriptBody>pass</ScriptBody>')        
+        script = self.ScriptBody.PCDATA
+    Then there also will be no error.
+    There will still be an error if you only access the child. This will be an
+    error:
+        def __init__(self):
+        XTSM_core.__init__(self)
+        self.ScriptBody = XTSM_Object('<ScriptBody>pass</ScriptBody>')        
+        script = self.ScriptBody
+    This access of PCDATA must happen before the end of initialization
+    if there are no children in the XTSM
+    This works:
+    class Value(gnosis.xml.objectify._XO_,XTSM_core):
+        def __init__(self):
+            XTSM_core.__init__(self)       
+            t = self.asdf
+    but this does not:
+    class Value(gnosis.xml.objectify._XO_,XTSM_core):
+    def __init__(self):
+        XTSM_core.__init__(self)     
+        self.asdf = None
+        t = self.asdf
+    TODO: Understand and fix the above problem.
+    '''
     def __init__(self):
         XTSM_core.__init__(self)
-        
-class Calibration0(gnosis.xml.objectify._XO_,XTSM_core):
-    def __init__(self):
-        XTSM_core.__init__(self)
-        if hasattr(self, 'ScriptBody'):
-            self._execute()
+        pdb.set_trace()
+        a = self.a = XTSM_Object('<A>a</A>').XTSM.PCDATA #hack to make work - see class Calibration CP 2015-02-05
+        try:
+            pass
+            #self._execute()
+        except:
+            print "H"
+            
 
     def _execute(self):
         #pdb.set_trace()
-        script = self.ScriptBody.PCDATA
         old_stdout = sys.stdout
         context = {'self':self}
-        if DEBUG: print "class Calibration, function _execute, script:", script
+        if DEBUG: print "class Calibration, function _execute, script:", self._seq[0]
         try:
             capturer = StringIO.StringIO()
             sys.stdout = capturer
             t0=time.time()
-            exec script in globals(),context
+            exec self._seq[0] in globals(),context
             if DEBUG: print "class Script, function _execute, context:", capturer.getvalue()
             t1=time.time()
             context.update({"_starttime":t0,"_exectime":(t1-t0),"_script_console":capturer.getvalue()})
         except Exception as e: 
             context.update({'_SCRIPT_ERROR':e})
             print '_SCRIPT_ERROR'
-#          del context['__builtin__']  # removes the backeffect of exec on context to add builtins
+            #del context['__builtin__']  # removes the backeffect of exec on context to add builtins
         sys.stdout = old_stdout
 
-
+"""
 class Interval(gnosis.xml.objectify._XO_,XTSM_core):
     scopePeers=[['Channel','ChannelName','OnChannel']]
     def parse_proffer(self,startTime):
@@ -2803,7 +2849,7 @@ class Interval(gnosis.xml.objectify._XO_,XTSM_core):
             decimal.Decimal(dense_time_array[endind+1]))
             #If stopped here, see the above comment. CP
             #pdb.set_trace()
-            print msg
+            pprint.pprint(msg)
             self.addAttribute("parser_error",msg)
         
         self.T=dense_time_array[startind:(endind+1)]       
